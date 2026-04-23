@@ -106,14 +106,21 @@ export function StationList({ stations, onSelect, loading, selectedStation, isDa
                   title={favorites.some(s => s.stationuuid === station.stationuuid) ? 'Remove from Favorites' : 'Add to Favorites'}
                   onClick={(e) => {
                     e.stopPropagation()
+                    e.preventDefault()
                     toggleFavorite(station)
                   }}
                   style={{
-                    marginLeft: 'auto', background: 'transparent', border: 'none', cursor: 'pointer',
-                    fontSize: '1.2rem', color: favorites.some(s => s.stationuuid === station.stationuuid) ? '#ffd700' : theme.text,
-                    opacity: favorites.some(s => s.stationuuid === station.stationuuid) ? 1 : 0.4,
-                    transition: 'all 0.2s', padding: '4px', fontFamily: 'inherit',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    flexShrink: 0,
+                    background: 'transparent', border: 'none', cursor: 'pointer',
+                    fontSize: '1.4rem',
+                    color: favorites.some(s => s.stationuuid === station.stationuuid) ? '#ffd700' : theme.text,
+                    opacity: favorites.some(s => s.stationuuid === station.stationuuid) ? 1 : 0.5,
+                    transition: 'all 0.15s', padding: '8px', fontFamily: 'inherit',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    pointerEvents: 'all',
+                    position: 'relative',
+                    zIndex: 20,
+                    lineHeight: 1
                   }}
                 >
                   {favorites.some(s => s.stationuuid === station.stationuuid) ? '★' : '☆'}

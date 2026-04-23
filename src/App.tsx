@@ -67,22 +67,23 @@ function App() {
   const toggleFavorite = useCallback(async (station: RadioStation) => {
     if (!session) return
     const isFav = favorites.some(s => s.stationuuid === station.stationuuid)
+
+    // Optimistic local update first — always show visual response immediately
     if (isFav) {
-      // Remove from Supabase
-      const { error } = await supabase
-        .from('favorites')
-        .delete()
+      setFavorites(prev => prev.filter(s => s.stationuuid !== station.stationuuid))
+      supabase.from('favorites').delete()
         .eq('user_id', session.user.id)
         .eq('station_id', station.stationuuid)
-      if (error) { console.error('Failed to remove favorite:', error); return }
-      setFavorites(prev => prev.filter(s => s.stationuuid !== station.stationuuid))
+        .then(({ error }) => {
+          if (error) console.error('Failed to remove favorite:', error)
+        })
     } else {
-      // Add to Supabase
-      const { error } = await supabase
-        .from('favorites')
-        .insert({ user_id: session.user.id, station_id: station.stationuuid, station_name: station.name })
-      if (error) { console.error('Failed to add favorite:', error); return }
       setFavorites(prev => [...prev, station])
+      supabase.from('favorites')
+        .insert({ user_id: session.user.id, station_id: station.stationuuid, station_name: station.name })
+        .then(({ error }) => {
+          if (error) console.error('Failed to add favorite:', error)
+        })
     }
   }, [session, favorites])
 
