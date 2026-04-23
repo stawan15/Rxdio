@@ -5,7 +5,7 @@ export function AudioPlayer({ station, isDarkMode, favorites, toggleFavorite }: 
   station: RadioStation | null, 
   isDarkMode?: boolean,
   favorites: RadioStation[],
-  toggleFavorite: (s: RadioStation) => void
+  toggleFavorite: (s: RadioStation) => void | Promise<void>
 }) {
   const audioRef = useRef<HTMLAudioElement>(null)
   const [isPlaying, setIsPlaying] = useState(false)

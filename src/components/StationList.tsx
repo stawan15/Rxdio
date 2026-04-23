@@ -8,7 +8,7 @@ export function StationList({ stations, onSelect, loading, selectedStation, isDa
   selectedStation: RadioStation | null,
   isDarkMode?: boolean,
   favorites: RadioStation[],
-  toggleFavorite: (s: RadioStation) => void
+  toggleFavorite: (s: RadioStation) => void | Promise<void>
 }) {
   const [activeTab, setActiveTab] = useState<'all' | 'favs'>('all')
   const displayStations = activeTab === 'favs' ? favorites : stations;
@@ -36,7 +36,9 @@ export function StationList({ stations, onSelect, loading, selectedStation, isDa
       borderLeft: `1px solid ${theme.border}`,
       width: '350px',
       fontFamily: 'inherit',
-      transition: 'all 0.3s ease'
+      transition: 'all 0.3s ease',
+      position: 'relative',
+      zIndex: 10
     }}>
       <div style={{ padding: '24px 24px 0', borderBottom: `1px solid ${theme.border}` }}>
         <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
