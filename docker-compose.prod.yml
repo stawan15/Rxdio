@@ -1,0 +1,11 @@
+# Production compose — ใช้ nginx stage ของ Dockerfile เซิร์ฟบน port 80
+services:
+  radio-web:
+    build:
+      context: .
+      # ไม่ระบุ target = ใช้ final stage (nginx) ตาม Dockerfile
+    ports:
+      - "80:80"
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
