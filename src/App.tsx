@@ -4,6 +4,9 @@ import { Globe } from './components/Globe'
 import { radioApi, RadioStation } from './services/radioApi'
 import { StationList } from './components/StationList'
 import { AudioPlayer } from './components/AudioPlayer'
+import { supabase } from './services/supabaseClient'
+import { Auth } from './components/Auth'
+import { Session } from '@supabase/supabase-js'
 
 const ASIA = new Set(['afghanistan','armenia','azerbaijan','bahrain','bangladesh','bhutan','brunei','cambodia','china','cyprus','georgia','india','indonesia','iran','iraq','israel','japan','jordan','kazakhstan','kuwait','kyrgyzstan','laos','lebanon','malaysia','maldives','mongolia','myanmar','nepal','north korea','oman','pakistan','palestine','philippines','qatar','saudi arabia','singapore','south korea','sri lanka','syria','taiwan','tajikistan','thailand','timor-leste','turkey','turkmenistan','united arab emirates','uzbekistan','vietnam','yemen'])
 const EUROPE = new Set(['albania','andorra','austria','belarus','belgium','bosnia and herzegovina','bulgaria','croatia','czech republic','denmark','estonia','finland','france','germany','greece','hungary','iceland','ireland','italy','kosovo','latvia','liechtenstein','lithuania','luxembourg','malta','moldova','monaco','montenegro','netherlands','north macedonia','norway','poland','portugal','romania','russia','san marino','serbia','slovakia','slovenia','spain','sweden','switzerland','ukraine','united kingdom','vatican city'])
@@ -16,6 +19,7 @@ function getContinent(name: string) {
 }
 
 function App() {
+  const [session, setSession] = useState<Session | null>(null)
   const [stations, setStations] = useState<RadioStation[]>([])
   const [countries, setCountries] = useState<{ name: string; stationcount: number }[]>([])
   const [selectedCountry, setSelectedCountry] = useState('Thailand')
@@ -33,6 +37,20 @@ function App() {
       return []
     }
   })
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session)
+    })
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
 
   useEffect(() => {
     localStorage.setItem('radio_favs', JSON.stringify(favorites))
@@ -76,12 +94,13 @@ function App() {
   }, [])
 
   useEffect(() => {
+    if (!session) return
     setLoading(true)
     radioApi.getStationsByCountry(selectedCountry).then(data => {
       setStations(data)
       setLoading(false)
     })
-  }, [selectedCountry])
+  }, [selectedCountry, session])
 
   const handleSurprise = async () => {
     setLoading(true)
@@ -91,6 +110,10 @@ function App() {
       setSelectedStation(s)
     }
     setLoading(false)
+  }
+
+  if (!session) {
+    return <Auth />
   }
 
   return (
@@ -214,6 +237,17 @@ function App() {
             }}
           >
             Surprise Me
+          </button>
+
+          <button 
+            onClick={() => supabase.auth.signOut()}
+            style={{ 
+              background: '#ef4444', color: 'white', border: 'none', padding: '8px 16px', 
+              borderRadius: '6px', fontWeight: 500, cursor: 'pointer', transition: 'all 0.2s',
+              fontFamily: 'inherit', fontSize: '0.9rem'
+            }}
+          >
+            Sign Out
           </button>
         </div>
       </header>
