@@ -102,14 +102,12 @@ function App() {
   }, [selectedStation])
 
   const theme = {
-    wrapperBg: isDarkMode ? '#000' : '#f0f2f5',
-    bg: isDarkMode ? '#0a0a0a' : '#fff',
-    text: isDarkMode ? '#fff' : '#111',
-    headerBg: isDarkMode ? '#0f0f0f' : '#fff',
-    border: isDarkMode ? '#222' : '#eaeaea',
-    inputBg: isDarkMode ? '#1a1a1a' : '#f4f5f7',
-    buttonBg: isDarkMode ? '#fff' : '#111',
-    buttonText: isDarkMode ? '#111' : '#fff'
+    bg: isDarkMode ? '#000' : '#fff',
+    text: isDarkMode ? '#fff' : '#000',
+    border: isDarkMode ? '#1a1a1a' : '#eaeaea',
+    muted: isDarkMode ? '#444' : '#bbb',
+    inputBg: isDarkMode ? '#111' : '#f5f5f5',
+    headerBg: isDarkMode ? '#000' : '#fff',
   }
 
   useEffect(() => {
@@ -140,100 +138,115 @@ function App() {
   }
 
   return (
-    <div className="app-container" style={{ 
-      width: '100vw', height: '100vh', background: theme.bg, color: theme.text, 
-      fontFamily: "'Inter', system-ui, sans-serif",
+    <div className="app-container" style={{
+      width: '100vw', height: '100vh',
+      background: theme.bg, color: theme.text,
+      fontFamily: "'Space Grotesk', 'Inter', system-ui, sans-serif",
       overflow: 'hidden', display: 'flex', flexDirection: 'column',
-      transition: 'background 0.3s, color 0.3s'
     }}>
-      {/* Top Navigation */}
-      <header style={{ 
-        height: '70px', padding: '0 30px', display: 'flex', alignItems: 'center', 
-        justifyContent: 'space-between', borderBottom: `1px solid ${theme.border}`,
-        background: theme.headerBg, zIndex: 100, transition: 'all 0.3s'
+      {/* ══ Header ══ */}
+      <header style={{
+        height: '56px', padding: '0 28px',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        borderBottom: `1px solid ${theme.border}`,
+        background: theme.headerBg, zIndex: 100, flexShrink: 0,
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-          <div title="Rxdio Logo" style={{ width: '32px', height: '32px', background: theme.text, borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: theme.bg, fontWeight: 'bold', letterSpacing: '-0.5px', transition: 'all 0.3s' }}>Rx</div>
-          <div style={{ fontWeight: 600, fontSize: '1.2rem', letterSpacing: '-0.5px' }}>Rxdio</div>
+        {/* Brand */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{
+            width: '28px', height: '28px', background: theme.text,
+            borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: theme.bg, fontWeight: 700, fontSize: '0.72rem', letterSpacing: '-0.3px',
+          }}>Rx</div>
+          <span style={{ fontWeight: 600, fontSize: '0.95rem', letterSpacing: '-0.2px' }}>Rxdio</span>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <button 
-            title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+        {/* Nav actions */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {/* Theme toggle */}
+          <button
             onClick={() => setIsDarkMode(!isDarkMode)}
-            style={{ 
-              background: 'transparent', border: 'none', color: theme.text, 
-              cursor: 'pointer', fontSize: '1.2rem', display: 'flex', alignItems: 'center',
-              padding: '8px', borderRadius: '50%'
+            title={isDarkMode ? 'Light mode' : 'Dark mode'}
+            style={{
+              background: 'transparent', border: `1px solid ${theme.border}`,
+              color: theme.muted, padding: '5px 12px',
+              borderRadius: '6px', cursor: 'pointer', fontFamily: 'inherit',
+              fontSize: '0.72rem', letterSpacing: '0.06em', textTransform: 'uppercase',
+              transition: 'all 0.2s',
             }}
           >
-            {isDarkMode ? '☀️' : '🌙'}
+            {isDarkMode ? 'Light' : 'Dark'}
           </button>
-          
+
+          {/* Country search */}
           <div className="search-bar" ref={searchRef} style={{ position: 'relative' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: theme.inputBg, padding: '8px 16px', borderRadius: '30px', border: `1px solid ${theme.border}`, transition: 'all 0.3s' }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={theme.text} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.5 }}>
-                <circle cx="11" cy="11" r="8"></circle>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              background: theme.inputBg, padding: '6px 14px',
+              borderRadius: '6px', border: `1px solid ${theme.border}`, transition: 'all 0.2s',
+            }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={theme.muted} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
               </svg>
-              <input 
+              <input
                 type="text"
                 placeholder={selectedCountry}
                 value={searchQuery}
                 onFocus={() => setIsDropdownOpen(true)}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value)
-                  setIsDropdownOpen(true)
+                onChange={e => { setSearchQuery(e.target.value); setIsDropdownOpen(true) }}
+                style={{
+                  background: 'transparent', color: theme.text,
+                  border: 'none', outline: 'none',
+                  fontSize: '0.8rem', width: '120px', fontFamily: 'inherit',
                 }}
-                style={{ background: 'transparent', color: theme.text, border: 'none', outline: 'none', fontSize: '0.85rem', width: '130px', fontFamily: 'inherit' }}
               />
             </div>
-            
+
             {isDropdownOpen && (
-              <div className="dropdown-menu" style={{ 
-                position: 'absolute', top: '100%', right: 0, marginTop: '8px', width: '220px',
-                background: theme.headerBg, border: `1px solid ${theme.border}`, borderRadius: '12px', 
-                boxShadow: isDarkMode ? '0 10px 40px rgba(0,0,0,0.8)' : '0 10px 30px rgba(0,0,0,0.1)', 
-                maxHeight: '300px', overflowY: 'auto', zIndex: 1000 
+              <div style={{
+                position: 'absolute', top: 'calc(100% + 6px)', right: 0, width: '220px',
+                background: theme.headerBg, border: `1px solid ${theme.border}`,
+                borderRadius: '10px',
+                boxShadow: isDarkMode ? '0 12px 40px rgba(0,0,0,0.9)' : '0 8px 24px rgba(0,0,0,0.08)',
+                maxHeight: '300px', overflowY: 'auto', zIndex: 1000,
               }}>
                 {(() => {
                   const filtered = countries
                     .filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()))
                     .sort((a, b) => a.name.localeCompare(b.name));
-                  
-                  if (filtered.length === 0) return <div style={{ padding: '16px', fontSize: '0.85rem', color: theme.text, opacity: 0.5, textAlign: 'center' }}>No countries found</div>;
-                    
+                  if (filtered.length === 0) return (
+                    <div style={{ padding: '16px', fontSize: '0.8rem', color: theme.muted, textAlign: 'center' }}>No results</div>
+                  );
                   const grouped = {
                     Asia: filtered.filter(c => getContinent(c.name) === 'Asia'),
                     Europe: filtered.filter(c => getContinent(c.name) === 'Europe'),
                     Other: filtered.filter(c => getContinent(c.name) === 'Other'),
                   }
-                  
                   return Object.entries(grouped).map(([continent, items]) => {
                     if (items.length === 0) return null;
                     return (
                       <div key={continent}>
-                        <div style={{ padding: '8px 16px', fontSize: '0.65rem', fontWeight: 600, color: theme.text, opacity: 0.4, letterSpacing: '1px', textTransform: 'uppercase', background: theme.bg }}>
-                          {continent}
-                        </div>
+                        <div style={{
+                          padding: '8px 14px 4px',
+                          fontSize: '0.6rem', fontWeight: 600,
+                          color: theme.muted, letterSpacing: '0.1em', textTransform: 'uppercase',
+                        }}>{continent}</div>
                         {items.map(c => (
-                          <div 
-                            key={c.name} 
-                            onClick={() => {
-                              setSelectedCountry(c.name)
-                              setSearchQuery('')
-                              setIsDropdownOpen(false)
-                            }}
-                            style={{ 
-                              padding: '10px 16px', cursor: 'pointer', fontSize: '0.85rem', 
-                              borderBottom: `1px solid ${theme.border}`, transition: 'background 0.2s',
-                              display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                          <div
+                            key={c.name}
+                            onClick={() => { setSelectedCountry(c.name); setSearchQuery(''); setIsDropdownOpen(false) }}
+                            style={{
+                              padding: '9px 14px', cursor: 'pointer', fontSize: '0.82rem',
+                              borderBottom: `1px solid ${theme.border}`,
+                              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                              transition: 'background 0.1s',
                             }}
                             onMouseEnter={e => e.currentTarget.style.background = theme.inputBg}
                             onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                           >
                             <span>{c.name}</span>
-                            <span style={{ fontSize: '0.7rem', opacity: 0.3 }}>{c.stationcount}</span>
+                            <span style={{ fontSize: '0.65rem', color: theme.muted }}>{c.stationcount}</span>
                           </div>
                         ))}
                       </div>
@@ -243,58 +256,75 @@ function App() {
               </div>
             )}
           </div>
-          
-          <button 
-            title="Play a random radio station"
+
+          {/* Surprise */}
+          <button
             onClick={handleSurprise}
-            style={{ 
-              background: theme.buttonBg, color: theme.buttonText, border: 'none', padding: '8px 16px', 
-              borderRadius: '6px', fontWeight: 500, cursor: 'pointer', transition: 'all 0.2s',
-              fontFamily: 'inherit', fontSize: '0.9rem'
+            style={{
+              background: theme.text, color: theme.bg,
+              border: 'none', padding: '6px 14px',
+              borderRadius: '6px', fontWeight: 500, cursor: 'pointer',
+              fontFamily: 'inherit', fontSize: '0.78rem',
+              letterSpacing: '0.04em', transition: 'opacity 0.2s',
             }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.opacity = '0.8'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.opacity = '1'
-            }}
+            onMouseEnter={e => e.currentTarget.style.opacity = '0.75'}
+            onMouseLeave={e => e.currentTarget.style.opacity = '1'}
           >
-            Surprise Me
+            Shuffle
           </button>
 
-          <button 
+          {/* Sign Out */}
+          <button
             onClick={() => supabase.auth.signOut()}
-            style={{ 
-              background: '#ef4444', color: 'white', border: 'none', padding: '8px 16px', 
-              borderRadius: '6px', fontWeight: 500, cursor: 'pointer', transition: 'all 0.2s',
-              fontFamily: 'inherit', fontSize: '0.9rem'
+            style={{
+              background: 'transparent', color: theme.muted,
+              border: `1px solid ${theme.border}`,
+              padding: '6px 14px', borderRadius: '6px',
+              fontFamily: 'inherit', fontSize: '0.72rem',
+              letterSpacing: '0.06em', textTransform: 'uppercase',
+              cursor: 'pointer', transition: 'all 0.2s',
             }}
+            onMouseEnter={e => { e.currentTarget.style.color = theme.text; e.currentTarget.style.borderColor = theme.text }}
+            onMouseLeave={e => { e.currentTarget.style.color = theme.muted; e.currentTarget.style.borderColor = theme.border }}
           >
-            Sign Out
+            Out
           </button>
         </div>
       </header>
 
-      {/* Main Content Area */}
-      <div className="main-content" style={{ flex: 1, display: 'flex', position: 'relative', overflow: 'hidden' }}>
-        
-        {/* Globe Viewport */}
+      {/* ══ Main ══ */}
+      <div className="main-content" style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+        {/* Globe */}
         <div className="globe-container" style={{ flex: 1, position: 'relative', background: theme.bg }}>
           <Canvas camera={{ position: [0, 0, 6], fov: 45 }}>
             <Globe onSelectCountry={setSelectedCountry} isDarkMode={isDarkMode} />
           </Canvas>
-          
-          {/* Overlay Info */}
-          <div style={{ position: 'absolute', bottom: '40px', left: '40px', pointerEvents: 'none' }}>
-            <div style={{ fontSize: '3rem', fontWeight: 600, color: theme.text, letterSpacing: '-1px' }}>{selectedCountry}</div>
+
+          {/* Country label */}
+          <div style={{ position: 'absolute', bottom: '36px', left: '36px', pointerEvents: 'none' }}>
+            <div style={{
+              fontSize: 'clamp(2rem, 4vw, 3.5rem)',
+              fontWeight: 700, color: theme.text,
+              letterSpacing: '-0.03em', lineHeight: 1,
+            }}>
+              {selectedCountry}
+            </div>
+            {!loading && stations.length > 0 && (
+              <div style={{
+                marginTop: '8px', fontSize: '0.72rem', color: theme.muted,
+                letterSpacing: '0.08em', textTransform: 'uppercase', fontVariantNumeric: 'tabular-nums',
+              }}>
+                {stations.length} stations
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Sidebar Station List */}
-        <StationList 
-          stations={stations} 
-          loading={loading} 
-          onSelect={setSelectedStation} 
+        {/* Station list */}
+        <StationList
+          stations={stations}
+          loading={loading}
+          onSelect={setSelectedStation}
           selectedStation={selectedStation}
           isDarkMode={isDarkMode}
           favorites={favorites}
@@ -302,16 +332,16 @@ function App() {
         />
       </div>
 
-      {/* Persistent Audio Player */}
-      <AudioPlayer 
-        station={selectedStation} 
-        isDarkMode={isDarkMode} 
+      {/* ══ Player ══ */}
+      <AudioPlayer
+        station={selectedStation}
+        isDarkMode={isDarkMode}
         favorites={favorites}
         toggleFavorite={toggleFavorite}
       />
 
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
         html, body {
           margin: 0;
           padding: 0;
