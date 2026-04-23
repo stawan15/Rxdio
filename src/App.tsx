@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Globe } from './components/Globe'
 import { radioApi, RadioStation } from './services/radioApi'
@@ -30,13 +30,7 @@ function App() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const searchRef = useRef<HTMLDivElement>(null)
 
-  const [favorites, setFavorites] = useState<RadioStation[]>(() => {
-    try {
-      return JSON.parse(localStorage.getItem('radio_favs') || '[]')
-    } catch {
-      return []
-    }
-  })
+  const [favorites, setFavorites] = useState<RadioStation[]>([])
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -47,22 +41,50 @@ function App() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
+      if (!session) setFavorites([]) // clear on logout
     })
 
     return () => subscription.unsubscribe()
   }, [])
 
+  // Load favorites from Supabase when session is ready
   useEffect(() => {
-    localStorage.setItem('radio_favs', JSON.stringify(favorites))
-  }, [favorites])
+    if (!session) return
+    const loadFavorites = async () => {
+      const { data, error } = await supabase
+        .from('favorites')
+        .select('station_id')
+        .eq('user_id', session.user.id)
+      if (error) { console.error('Failed to load favorites:', error); return }
+      if (!data || data.length === 0) { setFavorites([]); return }
+      const uuids = data.map((row: { station_id: string }) => row.station_id)
+      const stations = await radioApi.getStationsByUuids(uuids)
+      setFavorites(stations)
+    }
+    loadFavorites()
+  }, [session])
 
-  const toggleFavorite = (station: RadioStation) => {
-    setFavorites(prev => {
-      const isFav = prev.some(s => s.stationuuid === station.stationuuid)
-      if (isFav) return prev.filter(s => s.stationuuid !== station.stationuuid)
-      return [...prev, station]
-    })
-  }
+  const toggleFavorite = useCallback(async (station: RadioStation) => {
+    if (!session) return
+    const isFav = favorites.some(s => s.stationuuid === station.stationuuid)
+    if (isFav) {
+      // Remove from Supabase
+      const { error } = await supabase
+        .from('favorites')
+        .delete()
+        .eq('user_id', session.user.id)
+        .eq('station_id', station.stationuuid)
+      if (error) { console.error('Failed to remove favorite:', error); return }
+      setFavorites(prev => prev.filter(s => s.stationuuid !== station.stationuuid))
+    } else {
+      // Add to Supabase
+      const { error } = await supabase
+        .from('favorites')
+        .insert({ user_id: session.user.id, station_id: station.stationuuid, station_name: station.name })
+      if (error) { console.error('Failed to add favorite:', error); return }
+      setFavorites(prev => [...prev, station])
+    }
+  }, [session, favorites])
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {

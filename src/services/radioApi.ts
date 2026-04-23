@@ -54,5 +54,18 @@ export const radioApi = {
       console.error('Error fetching random station:', error);
       return null;
     }
+  },
+
+  // ดึงสถานีตาม Station UUIDs (สำหรับ Favorites)
+  getStationsByUuids: async (uuids: string[]): Promise<RadioStation[]> => {
+    if (uuids.length === 0) return [];
+    try {
+      const response = await fetch(`${BASE_URL}/stations/byuuid?uuids=${uuids.join(',')}`);
+      if (!response.ok) throw new Error('Network response was not ok');
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching stations by uuids:', error);
+      return [];
+    }
   }
 };
