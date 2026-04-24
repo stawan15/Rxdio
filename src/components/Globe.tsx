@@ -50,10 +50,20 @@ export function Globe({ onSelectCountry, isDarkMode }: { onSelectCountry: (name:
     'https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_specular_2048.jpg'
   ])
 
-  // หมุนทั้งกลุ่ม (ลูกโลก + จุดพิกัด) ไปพร้อมกัน
-  useFrame(() => {
-    if (worldRef.current) worldRef.current.rotation.y += 0.001
-    if (cloudsRef.current) cloudsRef.current.rotation.y += 0.0012
+  // Animation loop
+  useFrame((state) => {
+    if (worldRef.current) worldRef.current.rotation.y += 0.0008
+    if (cloudsRef.current) cloudsRef.current.rotation.y += 0.001
+    
+    // Global pulse value
+    const pulse = Math.sin(state.clock.elapsedTime * 4) * 0.15 + 1
+    state.scene.traverse((obj) => {
+      if (obj.name === 'country-dot') {
+        const isHovered = obj.userData.hovered
+        const targetScale = (isHovered ? 2 : 1) * pulse
+        obj.scale.setScalar(THREE.MathUtils.lerp(obj.scale.x, targetScale, 0.2))
+      }
+    })
   })
 
   const markers = useMemo(() => {
@@ -106,9 +116,16 @@ export function Globe({ onSelectCountry, isDarkMode }: { onSelectCountry: (name:
             onPointerOver={() => setHovered(marker.name)}
             onPointerOut={() => setHovered(null)}
           >
-            <mesh scale={hovered === marker.name ? [2, 2, 2] : [1, 1, 1]}>
-              <sphereGeometry args={[0.025, 16, 16]} />
-              <meshBasicMaterial color={hovered === marker.name ? (isDarkMode ? "#fff" : "#111") : (isDarkMode ? "#aaa" : "#ffffff")} />
+            <mesh 
+              name="country-dot" 
+              userData={{ hovered: hovered === marker.name }}
+            >
+              <sphereGeometry args={[0.02, 16, 16]} />
+              <meshBasicMaterial 
+                color={hovered === marker.name ? "#fff" : "#00ff88"} 
+                transparent={true}
+                opacity={hovered === marker.name ? 1 : 0.7}
+              />
             </mesh>
             
             {hovered === marker.name && (

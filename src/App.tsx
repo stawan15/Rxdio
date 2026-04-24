@@ -300,6 +300,38 @@ function App() {
             <Globe onSelectCountry={setSelectedCountry} isDarkMode={isDarkMode} />
           </Canvas>
 
+          {/* Now Playing Banner Overlay */}
+          {selectedStation && (
+            <div style={{
+              position: 'absolute', top: '32px', left: '32px',
+              padding: '16px 20px',
+              background: theme.headerBg,
+              border: `1px solid ${theme.border}`,
+              borderRadius: '12px',
+              display: 'flex', flexDirection: 'column', gap: '4px',
+              boxShadow: isDarkMode ? '0 12px 40px rgba(0,0,0,0.9)' : '0 10px 30px rgba(0,0,0,0.05)',
+              zIndex: 5,
+              pointerEvents: 'none',
+              maxWidth: '300px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{
+                  width: '6px', height: '6px', borderRadius: '50%',
+                  background: '#00ff88', boxShadow: '0 0 10px #00ff88'
+                }} />
+                <span style={{ fontSize: '0.65rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#00ff88' }}>
+                  Broadcasting Live
+                </span>
+              </div>
+              <div style={{ fontSize: '1rem', fontWeight: 600, color: theme.text, marginTop: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {selectedStation.name}
+              </div>
+              <div style={{ fontSize: '0.72rem', color: theme.muted, letterSpacing: '0.04em' }}>
+                {selectedStation.country} · {selectedStation.codec || 'MP3'}
+              </div>
+            </div>
+          )}
+
           {/* Country label */}
           <div style={{ position: 'absolute', bottom: '36px', left: '36px', pointerEvents: 'none' }}>
             <div style={{
