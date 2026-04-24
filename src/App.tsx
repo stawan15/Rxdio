@@ -300,34 +300,43 @@ function App() {
             <Globe onSelectCountry={setSelectedCountry} isDarkMode={isDarkMode} selectedStation={selectedStation} />
           </Canvas>
 
-          {/* Now Playing Banner Overlay */}
+          {/* Modern Minimal Playing Banner */}
           {selectedStation && (
             <div style={{
-              position: 'absolute', top: '32px', left: '32px',
-              padding: '16px 20px',
-              background: theme.headerBg,
-              border: `1px solid ${theme.border}`,
-              borderRadius: '12px',
-              display: 'flex', flexDirection: 'column', gap: '4px',
-              boxShadow: isDarkMode ? '0 12px 40px rgba(0,0,0,0.9)' : '0 10px 30px rgba(0,0,0,0.05)',
+              position: 'absolute', top: '24px', left: '24px',
+              padding: '14px 22px',
+              background: 'rgba(0,0,0,0.85)',
+              backdropFilter: 'blur(12px)',
+              borderLeft: '2px solid #00ff88',
+              borderTop: '1px solid rgba(255,255,255,0.05)',
+              borderBottom: '1px solid rgba(255,255,255,0.05)',
+              borderRight: '1px solid rgba(255,255,255,0.05)',
+              borderRadius: '2px', // Sharp
+              display: 'flex', flexDirection: 'column', gap: '2px',
+              boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
               zIndex: 5,
               pointerEvents: 'none',
-              maxWidth: '300px'
+              maxWidth: '320px'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{
-                  width: '6px', height: '6px', borderRadius: '50%',
-                  background: '#00ff88', boxShadow: '0 0 10px #00ff88'
-                }} />
-                <span style={{ fontSize: '0.65rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#00ff88' }}>
-                  Broadcasting Live
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                <span style={{ 
+                  fontSize: '9px', fontWeight: 600, letterSpacing: '0.15em', 
+                  textTransform: 'uppercase', color: '#00ff88', opacity: 0.8 
+                }}>
+                  ● Live Data
                 </span>
               </div>
-              <div style={{ fontSize: '1rem', fontWeight: 600, color: theme.text, marginTop: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <div style={{ 
+                fontSize: '15px', fontWeight: 600, color: '#fff', 
+                letterSpacing: '-0.2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' 
+              }}>
                 {selectedStation.name}
               </div>
-              <div style={{ fontSize: '0.72rem', color: theme.muted, letterSpacing: '0.04em' }}>
-                {selectedStation.country} · {selectedStation.codec || 'MP3'}
+              <div style={{ 
+                fontSize: '10px', color: 'rgba(255,255,255,0.4)', 
+                letterSpacing: '0.05em', textTransform: 'uppercase', marginTop: '2px' 
+              }}>
+                {selectedStation.country} / {selectedStation.codec || 'MP3'}
               </div>
             </div>
           )}

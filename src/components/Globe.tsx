@@ -57,17 +57,25 @@ export function Globe({ onSelectCountry, isDarkMode, selectedStation }: {
 
   // Animation loop
   useFrame((state) => {
-    if (worldRef.current) worldRef.current.rotation.y += 0.0008
-    if (cloudsRef.current) cloudsRef.current.rotation.y += 0.001
+    const time = state.clock.elapsedTime
+    if (worldRef.current) worldRef.current.rotation.y += 0.0006
+    if (cloudsRef.current) cloudsRef.current.rotation.y += 0.0008
     
-    // Global pulse value
-    const pulse = Math.sin(state.clock.elapsedTime * 4) * 0.15 + 1
+    // Pulse/Ripple calculations
+    const rippleScale = (time % 1.2) * 4 + 1
+    const rippleOpacity = 1 - (time % 1.2) / 1.2
+    
     state.scene.traverse((obj) => {
-      if (obj.name === 'country-dot') {
-        const isHovered = obj.userData.hovered
+      if (obj.name === 'country-ripple' && obj instanceof THREE.Mesh) {
+        obj.scale.setScalar(rippleScale)
+        if (obj.material instanceof THREE.MeshBasicMaterial) {
+          obj.material.opacity = rippleOpacity * 0.3
+        }
+      }
+      if (obj.name === 'country-core') {
         const isSelected = obj.userData.selected
-        const targetScale = (isSelected ? 2.5 : isHovered ? 2 : 1) * pulse
-        obj.scale.setScalar(THREE.MathUtils.lerp(obj.scale.x, targetScale, 0.2))
+        const baseScale = isSelected ? 1.4 : 1
+        obj.scale.setScalar(baseScale + Math.sin(time * 5) * 0.08)
       }
     })
   })
@@ -122,53 +130,61 @@ export function Globe({ onSelectCountry, isDarkMode, selectedStation }: {
             onPointerOver={() => setHovered(marker.name)}
             onPointerOut={() => setHovered(null)}
           >
+            {/* Core Dot */}
             <mesh 
-              name="country-dot" 
-              userData={{ 
-                hovered: hovered === marker.name,
-                selected: selectedStation?.country === marker.name 
-              }}
+              name="country-core" 
+              userData={{ selected: selectedStation?.country === marker.name }}
             >
-              <sphereGeometry args={[0.02, 16, 16]} />
-              <meshBasicMaterial 
-                color={selectedStation?.country === marker.name ? "#fff" : "#00ff88"} 
-                transparent={true}
-                opacity={0.8}
-              />
+              <sphereGeometry args={[0.015, 16, 16]} />
+              <meshBasicMaterial color={selectedStation?.country === marker.name ? "#fff" : "#00ff88"} />
+            </mesh>
+
+            {/* Signal Ripple */}
+            <mesh name="country-ripple">
+              <ringGeometry args={[0.02, 0.022, 32]} />
+              <meshBasicMaterial color="#00ff88" transparent={true} opacity={0.3} side={THREE.DoubleSide} />
             </mesh>
             
             {hovered === marker.name && (
               <Html distanceFactor={10}>
                 <div style={{
-                  background: isDarkMode ? '#0a0a0a' : '#fff',
-                  color: isDarkMode ? '#fff' : '#000',
-                  padding: '10px 16px',
-                  borderRadius: '12px',
-                  fontSize: '13px',
-                  fontWeight: '600',
-                  border: `1px solid ${isDarkMode ? '#1a1a1a' : '#eee'}`,
-                  boxShadow: '0 8px 30px rgba(0,0,0,0.15)',
+                  background: 'rgba(0,0,0,0.95)',
+                  color: '#fff',
+                  padding: '12px 16px',
+                  borderRadius: '2px', // Sharp corners for formal look
+                  fontSize: '11px',
+                  fontWeight: '500',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
                   transform: 'translate(-50%, -140%)',
                   whiteSpace: 'nowrap',
                   pointerEvents: 'none',
-                  display: 'flex', flexDirection: 'column', gap: '4px'
+                  display: 'flex', flexDirection: 'column', gap: '8px'
                 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ fontSize: '11px', opacity: 0.5, letterSpacing: '0.04em' }}>COUNTRY</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '20px' }}>
+                    <span style={{ 
+                      fontSize: '9px', letterSpacing: '0.15em', opacity: 0.4, 
+                      textTransform: 'uppercase', fontFamily: '"Space Grotesk", sans-serif' 
+                    }}>Location</span>
                     {selectedStation?.country === marker.name && (
                       <span style={{ 
-                        fontSize: '9px', background: '#00ff88', color: '#000', 
-                        padding: '1px 5px', borderRadius: '4px', letterSpacing: '0.05em' 
-                      }}>LIVE</span>
+                        fontSize: '9px', color: '#00ff88', letterSpacing: '0.1em', 
+                        fontWeight: 700, textTransform: 'uppercase'
+                      }}>● Online</span>
                     )}
                   </div>
-                  <div style={{ fontSize: '15px', letterSpacing: '-0.2px' }}>{marker.name}</div>
+                  <div style={{ 
+                    fontSize: '14px', letterSpacing: '0.02em', fontWeight: 600,
+                    fontFamily: '"Space Grotesk", sans-serif'
+                  }}>{marker.name}</div>
+                  
                   {selectedStation?.country === marker.name && (
                     <div style={{ 
-                      marginTop: '4px', paddingTop: '6px', borderTop: `1px solid ${isDarkMode ? '#222' : '#eee'}`,
-                      fontSize: '11px', fontWeight: 500, color: '#00ff88'
+                      display: 'flex', flexDirection: 'column', gap: '2px',
+                      borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '8px'
                     }}>
-                      {selectedStation.name}
+                      <span style={{ fontSize: '9px', opacity: 0.3, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Broadcasting</span>
+                      <span style={{ color: '#00ff88', fontSize: '11px', fontWeight: 500 }}>{selectedStation.name}</span>
                     </div>
                   )}
                 </div>
