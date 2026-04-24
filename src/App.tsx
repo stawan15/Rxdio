@@ -297,7 +297,7 @@ function App() {
         {/* Globe */}
         <div className="globe-container" style={{ flex: 1, position: 'relative', background: theme.bg }}>
           <Canvas camera={{ position: [0, 0, 6], fov: 45 }}>
-            <Globe onSelectCountry={setSelectedCountry} isDarkMode={isDarkMode} />
+            <Globe onSelectCountry={setSelectedCountry} isDarkMode={isDarkMode} selectedStation={selectedStation} />
           </Canvas>
 
           {/* Now Playing Banner Overlay */}
