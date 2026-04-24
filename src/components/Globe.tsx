@@ -69,7 +69,7 @@ export function Globe({ onSelectCountry, isDarkMode }: { onSelectCountry: (name:
   const markers = useMemo(() => {
     return COUNTRY_NODES.map(node => ({
       ...node,
-      position: convertTo3D(node.lat, node.lon, 2.01)
+      position: convertTo3D(node.lat, node.lon, 2.02) // Slightly higher off surface
     }))
   }, [])
 
@@ -120,11 +120,13 @@ export function Globe({ onSelectCountry, isDarkMode }: { onSelectCountry: (name:
               name="country-dot" 
               userData={{ hovered: hovered === marker.name }}
             >
-              <sphereGeometry args={[0.02, 16, 16]} />
-              <meshBasicMaterial 
-                color={hovered === marker.name ? "#fff" : "#00ff88"} 
+              <sphereGeometry args={[0.045, 20, 20]} />
+              <meshStandardMaterial 
+                color="#00ff88"
+                emissive="#00ff88"
+                emissiveIntensity={hovered === marker.name ? 5 : 2}
                 transparent={true}
-                opacity={hovered === marker.name ? 1 : 0.7}
+                opacity={0.9}
               />
             </mesh>
             
