@@ -11,6 +11,7 @@ export interface RadioStation {
   votes: number;
   codec: string;
   bitrate: number;
+  lastcheckok: number;
 }
 
 const BASE_URL = 'https://de1.api.radio-browser.info/json';

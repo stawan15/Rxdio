@@ -29,6 +29,11 @@ const COUNTRY_NODES = [
   { name: 'New Zealand', lat: -40.90, lon: 174.88 },
 ]
 
+// Calculate normal vector for rotation
+const getNormal = (pos: THREE.Vector3) => {
+  return pos.clone().normalize()
+}
+
 // สูตรคำนวณพิกัด 3D ให้ตรงกับ Texture ของ Three.js
 const convertTo3D = (lat: number, lon: number, radius: number) => {
   const phi = (90 - lat) * (Math.PI / 180)
@@ -61,15 +66,11 @@ export function Globe({ onSelectCountry, isDarkMode, selectedStation }: {
     if (worldRef.current) worldRef.current.rotation.y += 0.0006
     if (cloudsRef.current) cloudsRef.current.rotation.y += 0.0008
     
-    // Pulse/Ripple calculations
-    const rippleScale = (time % 1.2) * 4 + 1
-    const rippleOpacity = 1 - (time % 1.2) / 1.2
-    
     state.scene.traverse((obj) => {
-      if (obj.name === 'country-ripple' && obj instanceof THREE.Mesh) {
-        obj.scale.setScalar(rippleScale)
+      if ((obj.name === 'country-beam' || obj.name === 'country-tip') && obj instanceof THREE.Mesh) {
+        const isSelected = obj.userData.selected
         if (obj.material instanceof THREE.MeshBasicMaterial) {
-          obj.material.opacity = rippleOpacity * 0.3
+          obj.material.opacity = isSelected ? 0.9 : 0.3 + Math.sin(time * 3) * 0.1
         }
       }
       if (obj.name === 'country-core') {
@@ -81,10 +82,21 @@ export function Globe({ onSelectCountry, isDarkMode, selectedStation }: {
   })
 
   const markers = useMemo(() => {
-    return COUNTRY_NODES.map(node => ({
-      ...node,
-      position: convertTo3D(node.lat, node.lon, 2.02) // Slightly higher off surface
-    }))
+    return COUNTRY_NODES.map(node => {
+      const position = convertTo3D(node.lat, node.lon, 2.01)
+      const normal = getNormal(position)
+      
+      // Create a quaternion to rotate the cylinder to face outward
+      const quaternion = new THREE.Quaternion()
+      const up = new THREE.Vector3(0, 1, 0)
+      quaternion.setFromUnitVectors(up, normal)
+
+      return {
+        ...node,
+        position,
+        quaternion
+      }
+    })
   }, [])
 
   return (
@@ -123,6 +135,7 @@ export function Globe({ onSelectCountry, isDarkMode, selectedStation }: {
           <group 
             key={marker.name} 
             position={marker.position}
+            quaternion={marker.quaternion}
             onClick={(e) => {
               e.stopPropagation()
               onSelectCountry(marker.name)
@@ -130,7 +143,7 @@ export function Globe({ onSelectCountry, isDarkMode, selectedStation }: {
             onPointerOver={() => setHovered(marker.name)}
             onPointerOut={() => setHovered(null)}
           >
-            {/* Core Dot */}
+            {/* Base Core Dot */}
             <mesh 
               name="country-core" 
               userData={{ selected: selectedStation?.country === marker.name }}
@@ -139,10 +152,24 @@ export function Globe({ onSelectCountry, isDarkMode, selectedStation }: {
               <meshBasicMaterial color={selectedStation?.country === marker.name ? "#fff" : "#00ff88"} />
             </mesh>
 
-            {/* Signal Ripple */}
-            <mesh name="country-ripple">
-              <ringGeometry args={[0.02, 0.022, 32]} />
-              <meshBasicMaterial color="#00ff88" transparent={true} opacity={0.3} side={THREE.DoubleSide} />
+            {/* Transmission Beam */}
+            <mesh 
+              name="country-beam"
+              position={[0, 0.08, 0]} // Shift up half height
+              userData={{ selected: selectedStation?.country === marker.name }}
+            >
+              <cylinderGeometry args={[0.002, 0.002, 0.16, 8]} />
+              <meshBasicMaterial color="#00ff88" transparent={true} opacity={0.3} />
+            </mesh>
+
+            {/* Antenna Tip */}
+            <mesh 
+              name="country-tip"
+              position={[0, 0.16, 0]} // Shift to top of beam
+              userData={{ selected: selectedStation?.country === marker.name }}
+            >
+              <sphereGeometry args={[0.008, 16, 16]} />
+              <meshBasicMaterial color={selectedStation?.country === marker.name ? "#fff" : "#00ff88"} transparent={true} opacity={0.6} />
             </mesh>
             
             {hovered === marker.name && (

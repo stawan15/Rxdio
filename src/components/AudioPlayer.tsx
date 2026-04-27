@@ -9,6 +9,7 @@ export function AudioPlayer({ station, isDarkMode, favorites, toggleFavorite }: 
 }) {
   const audioRef = useRef<HTMLAudioElement>(null)
   const [isPlaying, setIsPlaying] = useState(false)
+  const [hasError, setHasError] = useState(false)
   const [volume, setVolume] = useState(0.8)
 
   const bg = isDarkMode ? '#0a0a0a' : '#fff'
@@ -19,8 +20,12 @@ export function AudioPlayer({ station, isDarkMode, favorites, toggleFavorite }: 
 
   useEffect(() => {
     if (station && audioRef.current) {
+      setHasError(false)
       audioRef.current.load()
-      audioRef.current.play().catch(() => setIsPlaying(false))
+      audioRef.current.play().catch(() => {
+        setIsPlaying(false)
+        setHasError(true)
+      })
       setIsPlaying(true)
     }
   }, [station])
@@ -82,16 +87,24 @@ export function AudioPlayer({ station, isDarkMode, favorites, toggleFavorite }: 
               {isFav ? '★' : '☆'}
             </button>
           </div>
-          <div style={{ fontSize: '0.7rem', color: muted, marginTop: '2px', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-            {station.country}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
+            <span style={{ fontSize: '0.7rem', color: muted, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+              {station.country}
+            </span>
+            {hasError && (
+              <span style={{ 
+                fontSize: '0.6rem', background: isDarkMode ? '#330000' : '#ffebee', color: '#ff4444', 
+                padding: '1px 4px', borderRadius: '4px', fontWeight: 700, letterSpacing: '0.05em' 
+              }}>STREAM FAILED</span>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Play / Pause */}
       <button
+        disabled={hasError}
         onClick={() => {
-          if (!audioRef.current) return
+          if (!audioRef.current || hasError) return
           isPlaying ? audioRef.current.pause() : audioRef.current.play()
           setIsPlaying(!isPlaying)
         }}
@@ -101,9 +114,9 @@ export function AudioPlayer({ station, isDarkMode, favorites, toggleFavorite }: 
           color: isPlaying ? bg : text,
           border: `1px solid ${isDarkMode ? '#333' : '#ddd'}`,
           borderRadius: '50%',
-          cursor: 'pointer', fontSize: '0.85rem',
+          cursor: hasError ? 'not-allowed' : 'pointer', fontSize: '0.85rem',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          flexShrink: 0, transition: 'all 0.2s',
+          flexShrink: 0, transition: 'all 0.2s', opacity: hasError ? 0.4 : 1
         }}
       >
         {isPlaying ? '■' : '▶'}
@@ -125,6 +138,10 @@ export function AudioPlayer({ station, isDarkMode, favorites, toggleFavorite }: 
         src={station.url_resolved}
         onPlay={() => setIsPlaying(true)}
         onPause={() => setIsPlaying(false)}
+        onError={() => {
+          setHasError(true)
+          setIsPlaying(false)
+        }}
       />
     </div>
   )

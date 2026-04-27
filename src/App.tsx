@@ -31,6 +31,17 @@ function App() {
   const searchRef = useRef<HTMLDivElement>(null)
 
   const [favorites, setFavorites] = useState<RadioStation[]>([])
+  const [recents, setRecents] = useState<RadioStation[]>([])
+
+  // Load recents
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('rxdio_recents')
+      if (stored) setRecents(JSON.parse(stored))
+    } catch (e) {
+      console.error('Failed to load recents', e)
+    }
+  }, [])
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -99,6 +110,16 @@ function App() {
 
   useEffect(() => {
     document.title = selectedStation ? `Rxdio - ${selectedStation.name}` : `Rxdio`
+    
+    // Add to recents when selected
+    if (selectedStation) {
+      setRecents(prev => {
+        const filtered = prev.filter(s => s.stationuuid !== selectedStation.stationuuid)
+        const updated = [selectedStation, ...filtered].slice(0, 20)
+        try { localStorage.setItem('rxdio_recents', JSON.stringify(updated)) } catch (e) {}
+        return updated
+      })
+    }
   }, [selectedStation])
 
   const theme = {
@@ -370,6 +391,7 @@ function App() {
           isDarkMode={isDarkMode}
           favorites={favorites}
           toggleFavorite={toggleFavorite}
+          recents={recents}
         />
       </div>
 

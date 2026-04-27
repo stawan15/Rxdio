@@ -1,17 +1,18 @@
 import { useState } from 'react'
 import { RadioStation } from '../services/radioApi'
 
-export function StationList({ stations, onSelect, loading, selectedStation, isDarkMode, favorites, toggleFavorite }: { 
+export function StationList({ stations, onSelect, loading, selectedStation, isDarkMode, favorites, toggleFavorite, recents }: { 
   stations: RadioStation[], 
   onSelect: (s: RadioStation) => void, 
   loading: boolean,
   selectedStation: RadioStation | null,
   isDarkMode?: boolean,
   favorites: RadioStation[],
-  toggleFavorite: (s: RadioStation) => void | Promise<void>
+  toggleFavorite: (s: RadioStation) => void | Promise<void>,
+  recents: RadioStation[]
 }) {
-  const [activeTab, setActiveTab] = useState<'all' | 'favs'>('all')
-  const displayStations = activeTab === 'favs' ? favorites : stations;
+  const [activeTab, setActiveTab] = useState<'all' | 'favs' | 'recent'>('all')
+  const displayStations = activeTab === 'favs' ? favorites : activeTab === 'recent' ? recents : stations;
 
   const bg = isDarkMode ? '#000' : '#fff'
   const border = isDarkMode ? '#1a1a1a' : '#eaeaea'
@@ -35,7 +36,7 @@ export function StationList({ stations, onSelect, loading, selectedStation, isDa
       {/* Header */}
       <div style={{ padding: '24px 24px 0' }}>
         <div style={{ display: 'flex', gap: '24px', borderBottom: `1px solid ${border}` }}>
-          {(['all', 'favs'] as const).map(tab => (
+          {(['all', 'favs', 'recent'] as const).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -49,13 +50,15 @@ export function StationList({ stations, onSelect, loading, selectedStation, isDa
                 marginBottom: '-1px', transition: 'color 0.2s',
               }}
             >
-              {tab === 'all' ? 'Stations' : 'Saved'}
+              {tab === 'all' ? 'Stations' : tab === 'favs' ? 'Saved' : 'Recent'}
             </button>
           ))}
         </div>
         <div style={{ padding: '12px 0', fontSize: '0.72rem', color: muted, letterSpacing: '0.04em', fontVariantNumeric: 'tabular-nums' }}>
           {activeTab === 'favs'
             ? favorites.length > 0 ? `${favorites.length} saved` : 'None saved yet'
+            : activeTab === 'recent'
+              ? recents.length > 0 ? `${recents.length} recently played` : 'No recent history'
             : loading ? 'Scanning...' : `${stations.length} active`
           }
         </div>
@@ -105,8 +108,20 @@ export function StationList({ stations, onSelect, loading, selectedStation, isDa
 
                 {/* Name + meta */}
                 <div style={{ flex: 1, overflow: 'hidden' }}>
-                  <div style={{ fontSize: '0.88rem', fontWeight: 500, color: text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {station.name}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div style={{ 
+                      fontSize: '0.88rem', fontWeight: 500, color: station.lastcheckok === 0 ? muted : text, 
+                      whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                      textDecoration: station.lastcheckok === 0 ? 'line-through' : 'none'
+                    }}>
+                      {station.name}
+                    </div>
+                    {station.lastcheckok === 0 && (
+                      <span style={{ 
+                        fontSize: '0.55rem', background: isDarkMode ? '#330000' : '#ffebee', color: '#ff4444', 
+                        padding: '2px 4px', borderRadius: '4px', fontWeight: 700, letterSpacing: '0.05em' 
+                      }}>OFFLINE</span>
+                    )}
                   </div>
                   <div style={{ fontSize: '0.7rem', color: muted, marginTop: '2px', letterSpacing: '0.03em', fontVariantNumeric: 'tabular-nums' }}>
                     {station.codec || 'LIVE'} · {station.bitrate ? `${station.bitrate}k` : '—'}
