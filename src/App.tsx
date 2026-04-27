@@ -29,6 +29,7 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('')
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false)
+  const [isNavMenuOpen, setIsNavMenuOpen] = useState(false)
   const searchRef = useRef<HTMLDivElement>(null)
 
   const [favorites, setFavorites] = useState<RadioStation[]>([])
@@ -103,6 +104,11 @@ function App() {
     function handleClickOutside(event: MouseEvent) {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
         setIsDropdownOpen(false)
+      }
+      // Assuming naive handling for nav menu if click is outside (this can be improved but doing broad close)
+      const target = event.target as Element
+      if (!target.closest('.nav-menu-container')) {
+        setIsNavMenuOpen(false)
       }
     }
     document.addEventListener("mousedown", handleClickOutside)
@@ -186,21 +192,6 @@ function App() {
 
         {/* Nav actions */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {/* Theme toggle */}
-          <button
-            onClick={() => setIsDarkMode(!isDarkMode)}
-            title={isDarkMode ? 'Light mode' : 'Dark mode'}
-            style={{
-              background: 'transparent', border: `1px solid ${theme.border}`,
-              color: theme.muted, padding: '5px 12px',
-              borderRadius: '6px', cursor: 'pointer', fontFamily: 'inherit',
-              fontSize: '0.72rem', letterSpacing: '0.06em', textTransform: 'uppercase',
-              transition: 'all 0.2s',
-            }}
-          >
-            {isDarkMode ? 'Light' : 'Dark'}
-          </button>
-
           {/* Country search */}
           <div className="search-bar" ref={searchRef} style={{ position: 'relative' }}>
             <div style={{
@@ -208,7 +199,7 @@ function App() {
               background: theme.inputBg, padding: '6px 14px',
               borderRadius: '6px', border: `1px solid ${theme.border}`, transition: 'all 0.2s',
             }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={theme.muted} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={theme.muted} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="11" cy="11" r="8"/>
                 <line x1="21" y1="21" x2="16.65" y2="16.65"/>
               </svg>
@@ -286,12 +277,12 @@ function App() {
             onClick={() => setIsMobileSearchOpen(true)}
             style={{
               background: 'transparent', border: `1px solid ${theme.border}`,
-              color: theme.muted, padding: '6px 10px',
+              color: theme.text, padding: '6px 10px',
               borderRadius: '6px', cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center'
             }}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
           </button>
@@ -312,22 +303,61 @@ function App() {
             Shuffle
           </button>
 
-          {/* Sign Out */}
-          <button
-            onClick={() => supabase.auth.signOut()}
-            style={{
-              background: 'transparent', color: theme.muted,
-              border: `1px solid ${theme.border}`,
-              padding: '6px 14px', borderRadius: '6px',
-              fontFamily: 'inherit', fontSize: '0.72rem',
-              letterSpacing: '0.06em', textTransform: 'uppercase',
-              cursor: 'pointer', transition: 'all 0.2s',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.color = theme.text; e.currentTarget.style.borderColor = theme.text }}
-            onMouseLeave={e => { e.currentTarget.style.color = theme.muted; e.currentTarget.style.borderColor = theme.border }}
-          >
-            Out
-          </button>
+          {/* Hamburger Menu (Theme & Sign Out) */}
+          <div className="nav-menu-container" style={{ position: 'relative' }}>
+            <button
+              onClick={() => setIsNavMenuOpen(!isNavMenuOpen)}
+              style={{
+                background: 'transparent', border: `1px solid ${theme.border}`,
+                color: theme.muted, padding: '6px 10px',
+                borderRadius: '6px', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={e => { e.currentTarget.style.color = theme.text; e.currentTarget.style.borderColor = theme.text }}
+              onMouseLeave={e => { e.currentTarget.style.color = theme.muted; e.currentTarget.style.borderColor = theme.border }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+              </svg>
+            </button>
+            
+            {isNavMenuOpen && (
+              <div style={{
+                position: 'absolute', top: 'calc(100% + 6px)', right: 0, width: '160px',
+                background: theme.headerBg, border: `1px solid ${theme.border}`,
+                borderRadius: '8px',
+                boxShadow: isDarkMode ? '0 12px 40px rgba(0,0,0,0.9)' : '0 8px 24px rgba(0,0,0,0.08)',
+                zIndex: 1000, overflow: 'hidden'
+              }}>
+                <button
+                  onClick={() => { setIsDarkMode(!isDarkMode); setIsNavMenuOpen(false); }}
+                  style={{
+                    width: '100%', padding: '12px 16px', background: 'transparent', border: 'none',
+                    borderBottom: `1px solid ${theme.border}`, textAlign: 'left', outline: 'none',
+                    color: theme.text, fontSize: '0.8rem', cursor: 'pointer', fontFamily: 'inherit'
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = theme.inputBg}
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                >
+                  {isDarkMode ? 'Light Mode' : 'Dark Mode'}
+                </button>
+                <button
+                  onClick={() => supabase.auth.signOut()}
+                  style={{
+                    width: '100%', padding: '12px 16px', background: 'transparent', border: 'none', outline: 'none',
+                    textAlign: 'left', color: '#ff4444', fontSize: '0.8rem', cursor: 'pointer', fontFamily: 'inherit'
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = isDarkMode ? '#330000' : '#ffebee'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                >
+                  Sign Out
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
