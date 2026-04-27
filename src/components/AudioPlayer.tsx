@@ -42,8 +42,10 @@ export function AudioPlayer({ station, isDarkMode, favorites, toggleFavorite }: 
   if (!station) {
     return (
       <div style={{
-        height: '72px', background: bg, borderTop: `1px solid ${border}`,
-        display: 'flex', alignItems: 'center', padding: '0 32px',
+        height: 'calc(72px + env(safe-area-inset-bottom))', 
+        background: bg, borderTop: `1px solid ${border}`,
+        display: 'flex', alignItems: 'center', 
+        padding: '0 32px', paddingBottom: 'env(safe-area-inset-bottom)',
         fontFamily: 'inherit',
       }}>
         <span style={{ fontSize: '0.75rem', color: muted, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
@@ -57,8 +59,10 @@ export function AudioPlayer({ station, isDarkMode, favorites, toggleFavorite }: 
 
   return (
     <div style={{
-      height: '72px', background: bg, borderTop: `1px solid ${border}`,
-      display: 'flex', alignItems: 'center', padding: '0 32px',
+      height: 'calc(72px + env(safe-area-inset-bottom))', 
+      background: bg, borderTop: `1px solid ${border}`,
+      display: 'flex', alignItems: 'center', 
+      padding: '0 32px', paddingBottom: 'env(safe-area-inset-bottom)',
       fontFamily: 'inherit', gap: '24px', zIndex: 100,
     }}>
       {/* Station info */}

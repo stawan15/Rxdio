@@ -28,6 +28,7 @@ function App() {
   const [isDarkMode, setIsDarkMode] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false)
   const searchRef = useRef<HTMLDivElement>(null)
 
   const [favorites, setFavorites] = useState<RadioStation[]>([])
@@ -167,7 +168,8 @@ function App() {
     }}>
       {/* ══ Header ══ */}
       <header style={{
-        height: '56px', padding: '0 28px',
+        height: 'calc(56px + env(safe-area-inset-top))', 
+        padding: 'env(safe-area-inset-top) 28px 0',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         borderBottom: `1px solid ${theme.border}`,
         background: theme.headerBg, zIndex: 100, flexShrink: 0,
@@ -277,6 +279,22 @@ function App() {
               </div>
             )}
           </div>
+
+           {/* Mobile Search Toggle */}
+          <button
+            className="mobile-search-toggle"
+            onClick={() => setIsMobileSearchOpen(true)}
+            style={{
+              background: 'transparent', border: `1px solid ${theme.border}`,
+              color: theme.muted, padding: '6px 10px',
+              borderRadius: '6px', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+          </button>
 
           {/* Surprise */}
           <button
@@ -430,8 +448,60 @@ function App() {
           .search-bar {
             display: none !important;
           }
+          .mobile-search-toggle {
+            display: flex !important;
+          }
+        }
+        .mobile-search-toggle {
+          display: none;
         }
       `}</style>
+
+      {/* Mobile Search Overlay */}
+      {isMobileSearchOpen && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: theme.bg, zIndex: 9999,
+          padding: 'calc(16px + env(safe-area-inset-top)) 16px 16px',
+          display: 'flex', flexDirection: 'column'
+        }}>
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', background: theme.inputBg,
+              padding: '10px 14px', borderRadius: '8px', border: `1px solid ${theme.border}` }}>
+              <input
+                autoFocus
+                type="text"
+                placeholder="Search country..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                style={{ background: 'transparent', color: theme.text, border: 'none', outline: 'none', width: '100%', fontSize: '1rem', fontFamily: 'inherit' }}
+              />
+            </div>
+            <button
+              onClick={() => setIsMobileSearchOpen(false)}
+              style={{ background: 'transparent', color: theme.text, border: 'none', padding: '10px', fontSize: '1rem', fontWeight: 600 }}
+            >
+              Close
+            </button>
+          </div>
+          
+          <div style={{ flex: 1, overflowY: 'auto' }}>
+            {(() => {
+              const filtered = countries.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase())).sort((a, b) => a.name.localeCompare(b.name));
+              if (filtered.length === 0) return <div style={{ padding: '20px', textAlign: 'center', color: theme.muted }}>No countries found</div>;
+              return filtered.map(c => (
+                <div
+                  key={c.name}
+                  onClick={() => { setSelectedCountry(c.name); setIsMobileSearchOpen(false); setSearchQuery(''); }}
+                  style={{ padding: '16px', borderBottom: `1px solid ${theme.border}`, display: 'flex', justifyContent: 'space-between', color: theme.text, fontSize: '1rem' }}
+                >
+                  {c.name} <span style={{ color: theme.muted, fontSize: '0.8rem' }}>{c.stationcount} stn</span>
+                </div>
+              ));
+            })()}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
