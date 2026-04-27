@@ -481,6 +481,14 @@ function App() {
           .mobile-search-toggle {
             display: flex !important;
           }
+          .audio-player {
+            padding: 0 16px !important;
+            gap: 12px !important;
+            height: calc(85px + env(safe-area-inset-bottom)) !important;
+          }
+          .hide-on-mobile {
+            display: none !important;
+          }
         }
         .mobile-search-toggle {
           display: none;

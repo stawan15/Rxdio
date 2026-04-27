@@ -41,7 +41,7 @@ export function AudioPlayer({ station, isDarkMode, favorites, toggleFavorite }: 
 
   if (!station) {
     return (
-      <div style={{
+      <div className="audio-player" style={{
         height: 'calc(72px + env(safe-area-inset-bottom))', 
         background: bg, borderTop: `1px solid ${border}`,
         display: 'flex', alignItems: 'center', 
@@ -58,7 +58,7 @@ export function AudioPlayer({ station, isDarkMode, favorites, toggleFavorite }: 
   const isFav = favorites.some(s => s.stationuuid === station.stationuuid)
 
   return (
-    <div style={{
+    <div className="audio-player" style={{
       height: 'calc(72px + env(safe-area-inset-bottom))', 
       background: bg, borderTop: `1px solid ${border}`,
       display: 'flex', alignItems: 'center', 
@@ -127,7 +127,7 @@ export function AudioPlayer({ station, isDarkMode, favorites, toggleFavorite }: 
       </button>
 
       {/* Volume */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+      <div className="hide-on-mobile" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
         <span style={{ fontSize: '0.7rem', color: muted, letterSpacing: '0.06em', textTransform: 'uppercase', userSelect: 'none' }}>Vol</span>
         <input
           type="range" min="0" max="1" step="0.01"
