@@ -171,6 +171,7 @@ function App() {
       background: theme.bg, color: theme.text,
       fontFamily: "'Space Grotesk', 'Inter', system-ui, sans-serif",
       overflow: 'hidden', display: 'flex', flexDirection: 'column',
+      paddingBottom: 'calc(64px + env(safe-area-inset-bottom))',
     }}>
       {/* ══ Header ══ */}
       <header style={{
@@ -484,7 +485,7 @@ function App() {
           .audio-player {
             padding: 0 16px !important;
             gap: 12px !important;
-            height: calc(85px + env(safe-area-inset-bottom)) !important;
+            height: calc(60px + env(safe-area-inset-bottom)) !important;
           }
           .hide-on-mobile {
             display: none !important;
