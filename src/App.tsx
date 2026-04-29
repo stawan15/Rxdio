@@ -130,12 +130,12 @@ function App() {
   }, [selectedStation])
 
   const theme = {
-    bg: isDarkMode ? '#000' : '#fff',
-    text: isDarkMode ? '#fff' : '#000',
-    border: isDarkMode ? '#1a1a1a' : '#eaeaea',
-    muted: isDarkMode ? '#444' : '#bbb',
-    inputBg: isDarkMode ? '#111' : '#f5f5f5',
-    headerBg: isDarkMode ? '#000' : '#fff',
+    bg: isDarkMode ? '#000' : '#faf9f7',
+    text: isDarkMode ? '#fff' : '#1a1a1a',
+    border: isDarkMode ? '#1a1a1a' : '#e8e5e0',
+    muted: isDarkMode ? '#444' : '#9a9590',
+    inputBg: isDarkMode ? '#111' : '#f3f1ee',
+    headerBg: isDarkMode ? '#000' : '#faf9f7',
   }
 
   useEffect(() => {
@@ -223,7 +223,7 @@ function App() {
                 position: 'absolute', top: 'calc(100% + 6px)', right: 0, width: '220px',
                 background: theme.headerBg, border: `1px solid ${theme.border}`,
                 borderRadius: '10px',
-                boxShadow: isDarkMode ? '0 12px 40px rgba(0,0,0,0.9)' : '0 8px 24px rgba(0,0,0,0.08)',
+                boxShadow: isDarkMode ? '0 12px 40px rgba(0,0,0,0.9)' : '0 12px 40px rgba(0,0,0,0.06)',
                 maxHeight: '300px', overflowY: 'auto', zIndex: 1000,
               }}>
                 {(() => {
@@ -330,7 +330,7 @@ function App() {
                 position: 'absolute', top: 'calc(100% + 6px)', right: 0, width: '160px',
                 background: theme.headerBg, border: `1px solid ${theme.border}`,
                 borderRadius: '8px',
-                boxShadow: isDarkMode ? '0 12px 40px rgba(0,0,0,0.9)' : '0 8px 24px rgba(0,0,0,0.08)',
+                boxShadow: isDarkMode ? '0 12px 40px rgba(0,0,0,0.9)' : '0 12px 40px rgba(0,0,0,0.06)',
                 zIndex: 1000, overflow: 'hidden'
               }}>
                 <button

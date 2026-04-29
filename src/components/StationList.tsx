@@ -14,16 +14,16 @@ export function StationList({ stations, onSelect, loading, selectedStation, isDa
   const [activeTab, setActiveTab] = useState<'all' | 'favs' | 'recent'>('all')
   const displayStations = activeTab === 'favs' ? favorites : activeTab === 'recent' ? recents : stations;
 
-  const bg = isDarkMode ? '#000' : '#fff'
-  const border = isDarkMode ? '#1a1a1a' : '#eaeaea'
-  const text = isDarkMode ? '#fff' : '#000'
-  const muted = isDarkMode ? '#444' : '#bbb'
-  const subtle = isDarkMode ? '#222' : '#f5f5f5'
-  const selectedBg = isDarkMode ? '#111' : '#f9f9f9'
+  const bg = isDarkMode ? '#000' : '#faf9f7'
+  const border = isDarkMode ? '#1a1a1a' : '#e8e5e0'
+  const text = isDarkMode ? '#fff' : '#1a1a1a'
+  const muted = isDarkMode ? '#444' : '#9a9590'
+  const subtle = isDarkMode ? '#222' : '#f3f1ee'
+  const selectedBg = isDarkMode ? '#111' : '#efecea'
 
   const getPlaceholder = (name: string) => {
     const char = name.charAt(0).toUpperCase()
-    return `https://ui-avatars.com/api/?name=${char}&background=${isDarkMode ? '111' : 'f0f0f0'}&color=${isDarkMode ? 'fff' : '000'}&bold=true&format=svg`
+    return `https://ui-avatars.com/api/?name=${char}&background=${isDarkMode ? '111' : 'f3f1ee'}&color=${isDarkMode ? 'fff' : '1a1a1a'}&bold=true&format=svg`
   }
 
   return (

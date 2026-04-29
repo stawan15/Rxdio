@@ -12,11 +12,11 @@ export function AudioPlayer({ station, isDarkMode, favorites, toggleFavorite }: 
   const [hasError, setHasError] = useState(false)
   const [volume, setVolume] = useState(0.8)
 
-  const bg = isDarkMode ? '#0a0a0a' : '#fff'
-  const border = isDarkMode ? '#1a1a1a' : '#eaeaea'
-  const text = isDarkMode ? '#fff' : '#000'
-  const muted = isDarkMode ? '#555' : '#aaa'
-  const subtle = isDarkMode ? '#111' : '#f8f8f8'
+  const bg = isDarkMode ? '#0a0a0a' : '#faf9f7'
+  const border = isDarkMode ? '#1a1a1a' : '#e8e5e0'
+  const text = isDarkMode ? '#fff' : '#1a1a1a'
+  const muted = isDarkMode ? '#555' : '#9a9590'
+  const subtle = isDarkMode ? '#111' : '#f3f1ee'
 
   useEffect(() => {
     if (station && audioRef.current) {
@@ -44,13 +44,13 @@ export function AudioPlayer({ station, isDarkMode, favorites, toggleFavorite }: 
       <div className="audio-player" style={{
         position: 'fixed', bottom: 0, left: 0, right: 0,
         height: 'calc(64px + env(safe-area-inset-bottom))', 
-        background: isDarkMode ? 'rgba(10,10,10,0.92)' : 'rgba(255,255,255,0.92)',
+        background: isDarkMode ? 'rgba(10,10,10,0.92)' : 'rgba(250,249,247,0.85)',
         backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
         borderTop: `1px solid ${border}`,
         display: 'flex', alignItems: 'center', 
         padding: '0 32px', paddingBottom: 'env(safe-area-inset-bottom)',
         fontFamily: 'inherit', zIndex: 1000,
-        boxShadow: isDarkMode ? '0 -4px 30px rgba(0,0,0,0.5)' : '0 -4px 20px rgba(0,0,0,0.08)',
+        boxShadow: isDarkMode ? '0 -4px 30px rgba(0,0,0,0.5)' : '0 -4px 30px rgba(0,0,0,0.04)',
       }}>
         <span style={{ fontSize: '0.75rem', color: muted, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
           Select a station to begin
@@ -65,13 +65,13 @@ export function AudioPlayer({ station, isDarkMode, favorites, toggleFavorite }: 
     <div className="audio-player" style={{
       position: 'fixed', bottom: 0, left: 0, right: 0,
       height: 'calc(64px + env(safe-area-inset-bottom))', 
-      background: isDarkMode ? 'rgba(10,10,10,0.92)' : 'rgba(255,255,255,0.92)',
+      background: isDarkMode ? 'rgba(10,10,10,0.92)' : 'rgba(250,249,247,0.85)',
       backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
       borderTop: `1px solid ${border}`,
       display: 'flex', alignItems: 'center', 
       padding: '0 32px', paddingBottom: 'env(safe-area-inset-bottom)',
       fontFamily: 'inherit', gap: '24px', zIndex: 1000,
-      boxShadow: isDarkMode ? '0 -4px 30px rgba(0,0,0,0.5)' : '0 -4px 20px rgba(0,0,0,0.08)',
+      boxShadow: isDarkMode ? '0 -4px 30px rgba(0,0,0,0.5)' : '0 -4px 30px rgba(0,0,0,0.04)',
     }}>
       {/* Station info */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1, minWidth: 0 }}>
