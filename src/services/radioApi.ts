@@ -36,7 +36,28 @@ export const radioApi = {
       const response = await fetch(`${BASE_URL}/stations/bycountry/${country.toLowerCase()}`);
       if (!response.ok) throw new Error('Network response was not ok');
       const data = await response.json();
-      return data.filter((s: RadioStation) => s.name && s.url_resolved).slice(0, 50); // เอาแค่ 50 อันดับแรกพอ เดี๋ยวค้าง
+      let stations = data.filter((s: RadioStation) => s.name && s.url_resolved).slice(0, 50);
+
+      // Inject EFM 94 for Thailand manually because it's missing from the global API
+      if (country.toLowerCase() === 'thailand') {
+        stations.unshift({
+          changeid: "custom-efm94",
+          stationuuid: "custom-efm94-uuid-1",
+          name: "EFM 94",
+          url: "https://live.atimemedia.com/efm/live.m3u8",
+          url_resolved: "https://live.atimemedia.com/efm/live.m3u8",
+          homepage: "https://atime.live/efm",
+          favicon: "https://atime.live/images/v2/logo_efm.png",
+          tags: "pop,thailand",
+          country: "Thailand",
+          votes: 9999,
+          codec: "HLS",
+          bitrate: 128,
+          lastcheckok: 1
+        } as any);
+      }
+
+      return stations;
     } catch (error) {
       console.error('Error fetching stations:', error);
       return [];
@@ -57,13 +78,40 @@ export const radioApi = {
     }
   },
 
-  // ดึงสถานีตาม Station UUIDs (สำหรับ Favorites)
   getStationsByUuids: async (uuids: string[]): Promise<RadioStation[]> => {
     if (uuids.length === 0) return [];
     try {
-      const response = await fetch(`${BASE_URL}/stations/byuuid?uuids=${uuids.join(',')}`);
-      if (!response.ok) throw new Error('Network response was not ok');
-      return await response.json();
+      const customUuids = uuids.filter(id => id.startsWith('custom-'));
+      const apiUuids = uuids.filter(id => !id.startsWith('custom-'));
+      
+      let results: RadioStation[] = [];
+      
+      if (apiUuids.length > 0) {
+        const response = await fetch(`${BASE_URL}/stations/byuuid?uuids=${apiUuids.join(',')}`);
+        if (!response.ok) throw new Error('Network response was not ok');
+        results = await response.json();
+      }
+
+      // Add back custom stations if they were requested
+      if (customUuids.includes('custom-efm94-uuid-1')) {
+        results.push({
+          changeid: "custom-efm94",
+          stationuuid: "custom-efm94-uuid-1",
+          name: "EFM 94",
+          url: "https://live.atimemedia.com/efm/live.m3u8",
+          url_resolved: "https://live.atimemedia.com/efm/live.m3u8",
+          homepage: "https://atime.live/efm",
+          favicon: "https://atime.live/images/v2/logo_efm.png",
+          tags: "pop,thailand",
+          country: "Thailand",
+          votes: 9999,
+          codec: "HLS",
+          bitrate: 128,
+          lastcheckok: 1
+        } as any);
+      }
+
+      return results;
     } catch (error) {
       console.error('Error fetching stations by uuids:', error);
       return [];
