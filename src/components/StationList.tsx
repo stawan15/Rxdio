@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { RadioStation } from '../services/radioApi'
 
-export function StationList({ stations, onSelect, loading, selectedStation, isDarkMode, favorites, toggleFavorite, recents }: { 
+export function StationList({ stations, onSelect, loading, selectedStation, isDarkMode, favorites, toggleFavorite, recents, playlists, createPlaylist }: { 
   stations: RadioStation[], 
   onSelect: (s: RadioStation) => void, 
   loading: boolean,
@@ -9,10 +9,15 @@ export function StationList({ stations, onSelect, loading, selectedStation, isDa
   isDarkMode?: boolean,
   favorites: RadioStation[],
   toggleFavorite: (s: RadioStation) => void | Promise<void>,
-  recents: RadioStation[]
+  recents: RadioStation[],
+  playlists: import('../App').Playlist[],
+  createPlaylist: (name: string) => void
 }) {
-  const [activeTab, setActiveTab] = useState<'all' | 'favs' | 'recent'>('all')
-  const displayStations = activeTab === 'favs' ? favorites : activeTab === 'recent' ? recents : stations;
+  const [activeTab, setActiveTab] = useState<string>('all')
+  const displayStations: RadioStation[] = activeTab === 'all' ? stations 
+    : activeTab === 'favs' ? favorites 
+    : activeTab === 'recent' ? recents 
+    : playlists.find(p => p.id === activeTab)?.stations || [];
 
   const bg = isDarkMode ? '#000' : '#faf9f7'
   const border = isDarkMode ? '#1a1a1a' : '#e8e5e0'
@@ -35,8 +40,8 @@ export function StationList({ stations, onSelect, loading, selectedStation, isDa
     }}>
       {/* Header */}
       <div style={{ padding: '24px 24px 0' }}>
-        <div style={{ display: 'flex', gap: '24px', borderBottom: `1px solid ${border}` }}>
-          {(['all', 'favs', 'recent'] as const).map(tab => (
+        <div style={{ display: 'flex', gap: '24px', borderBottom: `1px solid ${border}`, overflowX: 'auto', whiteSpace: 'nowrap', paddingBottom: '2px', scrollbarWidth: 'none' }}>
+          {(['all', 'favs', 'recent', ...playlists.map(p => p.id)]).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -50,17 +55,29 @@ export function StationList({ stations, onSelect, loading, selectedStation, isDa
                 marginBottom: '-1px', transition: 'color 0.2s',
               }}
             >
-              {tab === 'all' ? 'Stations' : tab === 'favs' ? 'Saved' : 'Recent'}
+              {tab === 'all' ? 'Stations' : tab === 'favs' ? 'Saved' : tab === 'recent' ? 'Recent' : playlists.find(p => p.id === tab)?.name}
             </button>
           ))}
+          <button
+            onClick={() => {
+              const name = window.prompt("Enter playlist name:");
+              if (name && name.trim()) {
+                createPlaylist(name.trim());
+              }
+            }}
+            style={{
+               background: 'transparent', border: 'none', padding: '0 0 14px',
+               fontFamily: 'inherit', fontWeight: 700, flexShrink: 0, fontSize: '0.9rem',
+               color: text, cursor: 'pointer', opacity: 0.6,
+               display: 'flex', alignItems: 'center'
+            }}
+          >
+            +
+          </button>
         </div>
         <div style={{ padding: '12px 0', fontSize: '0.72rem', color: muted, letterSpacing: '0.04em', fontVariantNumeric: 'tabular-nums' }}>
-          {activeTab === 'favs'
-            ? favorites.length > 0 ? `${favorites.length} saved` : 'None saved yet'
-            : activeTab === 'recent'
-              ? recents.length > 0 ? `${recents.length} recently played` : 'No recent history'
-            : loading ? 'Scanning...' : `${stations.length} active`
-          }
+          {activeTab === 'all' ? (loading ? 'Scanning...' : `${stations.length} active`) 
+            : displayStations.length > 0 ? `${displayStations.length} stations` : 'Empty playlist'}
         </div>
       </div>
 

@@ -8,6 +8,12 @@ import { supabase } from './services/supabaseClient'
 import { Auth } from './components/Auth'
 import { Session } from '@supabase/supabase-js'
 
+export interface Playlist {
+  id: string;
+  name: string;
+  stations: RadioStation[];
+}
+
 const ASIA = new Set(['afghanistan','armenia','azerbaijan','bahrain','bangladesh','bhutan','brunei','cambodia','china','cyprus','georgia','india','indonesia','iran','iraq','israel','japan','jordan','kazakhstan','kuwait','kyrgyzstan','laos','lebanon','malaysia','maldives','mongolia','myanmar','nepal','north korea','oman','pakistan','palestine','philippines','qatar','saudi arabia','singapore','south korea','sri lanka','syria','taiwan','tajikistan','thailand','timor-leste','turkey','turkmenistan','united arab emirates','uzbekistan','vietnam','yemen'])
 const EUROPE = new Set(['albania','andorra','austria','belarus','belgium','bosnia and herzegovina','bulgaria','croatia','czech republic','denmark','estonia','finland','france','germany','greece','hungary','iceland','ireland','italy','kosovo','latvia','liechtenstein','lithuania','luxembourg','malta','moldova','monaco','montenegro','netherlands','north macedonia','norway','poland','portugal','romania','russia','san marino','serbia','slovakia','slovenia','spain','sweden','switzerland','ukraine','united kingdom','vatican city'])
 
@@ -34,6 +40,37 @@ function App() {
 
   const [favorites, setFavorites] = useState<RadioStation[]>([])
   const [recents, setRecents] = useState<RadioStation[]>([])
+  const [playlists, setPlaylists] = useState<Playlist[]>([])
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('rxdio_playlists')
+      if (stored) setPlaylists(JSON.parse(stored))
+    } catch(e) {}
+  }, [])
+
+  const createPlaylist = (name: string) => {
+    const newPl: Playlist = { id: `pl-${Date.now()}`, name, stations: [] }
+    const next = [...playlists, newPl]
+    setPlaylists(next)
+    try { localStorage.setItem('rxdio_playlists', JSON.stringify(next)) } catch(e) {}
+  }
+
+  const toggleStationInPlaylist = (playlistId: string, station: RadioStation) => {
+    const next = playlists.map(pl => {
+      if (pl.id === playlistId) {
+        const exists = pl.stations.some(s => s.stationuuid === station.stationuuid)
+        if (exists) {
+          return { ...pl, stations: pl.stations.filter(s => s.stationuuid !== station.stationuuid) }
+        } else {
+          return { ...pl, stations: [...pl.stations, station] }
+        }
+      }
+      return pl;
+    })
+    setPlaylists(next)
+    try { localStorage.setItem('rxdio_playlists', JSON.stringify(next)) } catch(e) {}
+  }
 
   // Load recents
   useEffect(() => {
@@ -441,6 +478,8 @@ function App() {
           favorites={favorites}
           toggleFavorite={toggleFavorite}
           recents={recents}
+          playlists={playlists}
+          createPlaylist={createPlaylist}
         />
       </div>
 
@@ -450,6 +489,8 @@ function App() {
         isDarkMode={isDarkMode}
         favorites={favorites}
         toggleFavorite={toggleFavorite}
+        playlists={playlists}
+        toggleStationInPlaylist={toggleStationInPlaylist}
       />
 
       <style>{`
