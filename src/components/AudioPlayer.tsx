@@ -55,21 +55,16 @@ export function AudioPlayer({ station, isDarkMode, favorites, toggleFavorite }: 
     };
   }, [sleepTimer]);
 
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (timerRef.current && !timerRef.current.contains(e.target as Node)) {
-        setIsTimerMenuOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
-
   const bg = isDarkMode ? '#0a0a0a' : '#faf9f7'
   const border = isDarkMode ? '#1a1a1a' : '#e8e5e0'
   const text = isDarkMode ? '#fff' : '#1a1a1a'
   const muted = isDarkMode ? '#555' : '#9a9590'
   const subtle = isDarkMode ? '#111' : '#f3f1ee'
+
+  const getPlaceholder = (name: string) => {
+    const char = name.charAt(0).toUpperCase()
+    return `https://ui-avatars.com/api/?name=${char}&background=${isDarkMode ? '111' : 'f3f1ee'}&color=${isDarkMode ? 'fff' : '1a1a1a'}&bold=true&format=png`
+  }
 
   const retryConnection = () => {
     if (!audioRef.current || !station) return;
@@ -99,8 +94,54 @@ export function AudioPlayer({ station, isDarkMode, favorites, toggleFavorite }: 
         setHasError(true)
       })
       setIsPlaying(true)
+
+      // --- Media Session API for Dynamic Island & Lock Screen ---
+      if ('mediaSession' in navigator) {
+        const artworkUrl = station.favicon && station.favicon.startsWith('http') 
+          ? station.favicon 
+          : getPlaceholder(station.name);
+          
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: station.name,
+          artist: station.country || 'Live Radio',
+          album: 'Rxdio PWA',
+          artwork: [
+            { src: artworkUrl, sizes: '96x96', type: 'image/png' },
+            { src: artworkUrl, sizes: '128x128', type: 'image/png' },
+            { src: artworkUrl, sizes: '192x192', type: 'image/png' },
+            { src: artworkUrl, sizes: '256x256', type: 'image/png' },
+            { src: artworkUrl, sizes: '384x384', type: 'image/png' },
+            { src: artworkUrl, sizes: '512x512', type: 'image/png' },
+          ]
+        });
+
+        navigator.mediaSession.setActionHandler('play', () => {
+          audioRef.current?.play();
+          setIsPlaying(true);
+        });
+        
+        navigator.mediaSession.setActionHandler('pause', () => {
+          audioRef.current?.pause();
+          setIsPlaying(false);
+        });
+        
+        navigator.mediaSession.setActionHandler('stop', () => {
+          audioRef.current?.pause();
+          setIsPlaying(false);
+        });
+      }
     }
   }, [station])
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (timerRef.current && !timerRef.current.contains(e.target as Node)) {
+        setIsTimerMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   useEffect(() => {
     let timeout: ReturnType<typeof setTimeout>;
@@ -125,11 +166,6 @@ export function AudioPlayer({ station, isDarkMode, favorites, toggleFavorite }: 
   useEffect(() => {
     if (audioRef.current) audioRef.current.volume = volume
   }, [volume])
-
-  const getPlaceholder = (name: string) => {
-    const char = name.charAt(0).toUpperCase()
-    return `https://ui-avatars.com/api/?name=${char}&background=${isDarkMode ? '111' : 'f0f0f0'}&color=${isDarkMode ? 'fff' : '000'}&bold=true&format=svg`
-  }
 
   if (!station) {
     return (
