@@ -43,33 +43,81 @@ function App() {
   const [playlists, setPlaylists] = useState<Playlist[]>([])
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem('rxdio_playlists')
-      if (stored) setPlaylists(JSON.parse(stored))
-    } catch(e) {}
-  }, [])
+    if (!session) return;
+    const fetchPlaylists = async () => {
+      const { data: playlistsData, error: pError } = await supabase.from('playlists').select('*').eq('user_id', session.user.id);
+      if (pError) { console.error('Failed to load playlists:', pError); return; }
 
-  const createPlaylist = (name: string) => {
-    const newPl: Playlist = { id: `pl-${Date.now()}`, name, stations: [] }
-    const next = [...playlists, newPl]
-    setPlaylists(next)
-    try { localStorage.setItem('rxdio_playlists', JSON.stringify(next)) } catch(e) {}
+      const { data: stationsData, error: sError } = await supabase.from('playlist_stations').select('*').eq('user_id', session.user.id);
+      if (sError) { console.error('Failed to load playlist_stations:', sError); return; }
+
+      const stGrouped: Record<string, string[]> = {};
+      stationsData.forEach((row: any) => {
+        if (!stGrouped[row.playlist_id]) stGrouped[row.playlist_id] = [];
+        stGrouped[row.playlist_id].push(row.station_id);
+      });
+
+      const uniqueUuids = Array.from(new Set(stationsData.map((row: any) => row.station_id)));
+      let allStations: RadioStation[] = [];
+      if (uniqueUuids.length > 0) {
+        allStations = await radioApi.getStationsByUuids(uniqueUuids as string[]);
+      }
+
+      const formattedPlaylists: Playlist[] = playlistsData.map((pl: any) => {
+        const pUuids = stGrouped[pl.id] || [];
+        const plStations = allStations.filter(s => pUuids.includes(s.stationuuid));
+        return { id: pl.id, name: pl.name, stations: plStations };
+      });
+      setPlaylists(formattedPlaylists);
+    };
+    fetchPlaylists();
+  }, [session])
+
+  const createPlaylist = async (name: string) => {
+    if (!session) return;
+    const tempId = `temp-${Date.now()}`;
+    const newPl: Playlist = { id: tempId, name, stations: [] };
+    setPlaylists(prev => [...prev, newPl]); // Optimistic update
+
+    const { data, error } = await supabase.from('playlists').insert({ user_id: session.user.id, name }).select().single();
+    if (error) {
+      console.error('Failed to save playlist:', error);
+      setPlaylists(prev => prev.filter(p => p.id !== tempId));
+    } else {
+      setPlaylists(prev => prev.map(p => p.id === tempId ? { ...p, id: data.id } : p));
+    }
   }
 
-  const toggleStationInPlaylist = (playlistId: string, station: RadioStation) => {
-    const next = playlists.map(pl => {
-      if (pl.id === playlistId) {
-        const exists = pl.stations.some(s => s.stationuuid === station.stationuuid)
-        if (exists) {
-          return { ...pl, stations: pl.stations.filter(s => s.stationuuid !== station.stationuuid) }
-        } else {
-          return { ...pl, stations: [...pl.stations, station] }
-        }
+  const toggleStationInPlaylist = async (playlistId: string, station: RadioStation) => {
+    if (!session) return;
+    const pl = playlists.find(p => p.id === playlistId);
+    if (!pl) return;
+    
+    const exists = pl.stations.some(s => s.stationuuid === station.stationuuid);
+
+    // Optimistic UI update
+    setPlaylists(prev => prev.map(p => {
+      if (p.id === playlistId) {
+        if (exists) return { ...p, stations: p.stations.filter(s => s.stationuuid !== station.stationuuid) };
+        else return { ...p, stations: [...p.stations, station] };
       }
-      return pl;
-    })
-    setPlaylists(next)
-    try { localStorage.setItem('rxdio_playlists', JSON.stringify(next)) } catch(e) {}
+      return p;
+    }));
+
+    if (exists) {
+      const { error } = await supabase.from('playlist_stations').delete()
+        .eq('playlist_id', playlistId)
+        .eq('station_id', station.stationuuid)
+        .eq('user_id', session.user.id);
+      if (error) console.error('Failed to remove station from playlist:', error);
+    } else {
+      const { error } = await supabase.from('playlist_stations').insert({
+        playlist_id: playlistId,
+        user_id: session.user.id,
+        station_id: station.stationuuid
+      });
+      if (error) console.error('Failed to add station to playlist:', error);
+    }
   }
 
   // Load recents

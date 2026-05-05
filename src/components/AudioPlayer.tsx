@@ -216,77 +216,9 @@ export function AudioPlayer({ station, isDarkMode, favorites, toggleFavorite, pl
           style={{ width: '38px', height: '38px', borderRadius: '6px', objectFit: 'contain', background: subtle, flexShrink: 0 }}
           onError={e => (e.currentTarget.src = getPlaceholder(station.name))}
         />
-        <div style={{ overflow: 'hidden' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ fontSize: '0.9rem', fontWeight: 600, color: text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '200px' }}>
-              {station.name}
-            </div>
-            <button
-              onClick={() => toggleFavorite(station)}
-              style={{
-                background: 'transparent', border: 'none',
-                cursor: 'pointer', fontSize: '0.95rem',
-                color: isFav ? '#f59e0b' : muted,
-                padding: 0, flexShrink: 0, transition: 'color 0.15s',
-                lineHeight: 1, display: 'flex', alignItems: 'center'
-              }}
-            >
-              {isFav ? '★' : '☆'}
-            </button>
-            <div ref={playlistMenuRef} style={{ position: 'relative' }}>
-              <button
-                onClick={e => { e.stopPropagation(); setIsPlaylistMenuOpen(!isPlaylistMenuOpen) }}
-                style={{
-                  background: 'transparent', border: 'none', cursor: 'pointer',
-                  fontSize: '1.2rem', color: muted, padding: '0 4px', lineHeight: 1,
-                  display: 'flex', alignItems: 'center', opacity: 0.8
-                }}
-              >
-                +
-              </button>
-              {isPlaylistMenuOpen && (
-                <div style={{
-                  position: 'absolute', bottom: 'calc(100% + 10px)', left: 0,
-                  background: isDarkMode ? '#1a1a1a' : '#faf9f7',
-                  border: `1px solid ${border}`, borderRadius: '12px',
-                  boxShadow: isDarkMode ? '0 12px 40px rgba(0,0,0,0.9)' : '0 12px 40px rgba(0,0,0,0.06)',
-                  padding: '8px 0', minWidth: '160px', zIndex: 1100,
-                }}>
-                  <div style={{ padding: '4px 16px 8px', fontSize: '0.7rem', color: muted, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-                    Add to Playlist
-                  </div>
-                  {playlists.length === 0 ? (
-                    <div style={{ padding: '8px 16px', fontSize: '0.75rem', color: muted }}>
-                      Use + tab to create one.
-                    </div>
-                  ) : (
-                    playlists.map(pl => {
-                      const isAdded = pl.stations.some(s => s.stationuuid === station.stationuuid)
-                      return (
-                        <button
-                          key={pl.id}
-                          onClick={(e) => { 
-                            e.stopPropagation(); 
-                            if (toggleStationInPlaylist) toggleStationInPlaylist(pl.id, station); 
-                          }}
-                          style={{
-                            width: '100%', padding: '10px 16px', background: 'transparent', border: 'none',
-                            color: isAdded ? '#f59e0b' : text, textAlign: 'left', cursor: 'pointer',
-                            fontSize: '0.85rem', fontFamily: 'inherit', fontWeight: isAdded ? 600 : 400,
-                            display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-                          }}
-                          onMouseEnter={e => e.currentTarget.style.background = subtle}
-                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                        >
-                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100px' }}>{pl.name}</span>
-                          {isAdded && <span>✓</span>}
-                        </button>
-                      )
-                    })
-                  )}
-                </div>
-              )}
-            </div>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
+          <div style={{ fontSize: '0.9rem', fontWeight: 600, color: text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {station.name}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
             <span style={{ fontSize: '0.7rem', color: muted, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
@@ -310,6 +242,77 @@ export function AudioPlayer({ station, isDarkMode, favorites, toggleFavorite, pl
                 padding: '2px 6px', borderRadius: '4px', fontWeight: 700, letterSpacing: '0.05em' 
               }}>STREAM FAILED</span>
             ) : null}
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+          <button
+            onClick={() => toggleFavorite(station)}
+            style={{
+              background: 'transparent', border: 'none',
+              cursor: 'pointer', fontSize: '1.05rem',
+              color: isFav ? '#f59e0b' : muted,
+              padding: '0 4px', transition: 'color 0.15s',
+              lineHeight: 1, display: 'flex', alignItems: 'center'
+            }}
+          >
+            {isFav ? '★' : '☆'}
+          </button>
+          
+          <div ref={playlistMenuRef} style={{ position: 'relative' }}>
+            <button
+              onClick={e => { e.stopPropagation(); setIsPlaylistMenuOpen(!isPlaylistMenuOpen) }}
+              style={{
+                background: 'transparent', border: 'none', cursor: 'pointer',
+                fontSize: '1.2rem', color: muted, padding: '0 4px', lineHeight: 1,
+                display: 'flex', alignItems: 'center', opacity: 0.8
+              }}
+            >
+              +
+            </button>
+            {isPlaylistMenuOpen && (
+              <div style={{
+                position: 'absolute', bottom: 'calc(100% + 10px)', left: 0,
+                background: isDarkMode ? '#1a1a1a' : '#faf9f7',
+                border: `1px solid ${border}`, borderRadius: '12px',
+                boxShadow: isDarkMode ? '0 12px 40px rgba(0,0,0,0.9)' : '0 12px 40px rgba(0,0,0,0.06)',
+                padding: '8px 0', minWidth: '160px', zIndex: 1100,
+              }}>
+                <div style={{ padding: '4px 16px 8px', fontSize: '0.7rem', color: muted, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                  Add to Playlist
+                </div>
+                {playlists.length === 0 ? (
+                  <div style={{ padding: '8px 16px', fontSize: '0.75rem', color: muted }}>
+                    Use + tab to create one.
+                  </div>
+                ) : (
+                  playlists.map(pl => {
+                    const isAdded = pl.stations.some(s => s.stationuuid === station.stationuuid)
+                    return (
+                      <button
+                        key={pl.id}
+                        onClick={(e) => { 
+                          e.stopPropagation(); 
+                          if (toggleStationInPlaylist) toggleStationInPlaylist(pl.id, station); 
+                        }}
+                        style={{
+                          width: '100%', padding: '10px 16px', background: 'transparent', border: 'none',
+                          color: isAdded ? '#f59e0b' : text, textAlign: 'left', cursor: 'pointer',
+                          fontSize: '0.85rem', fontFamily: 'inherit', fontWeight: isAdded ? 600 : 400,
+                          display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.background = subtle}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                      >
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100px' }}>{pl.name}</span>
+                        {isAdded && <span>✓</span>}
+                      </button>
+                    )
+                  })
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
