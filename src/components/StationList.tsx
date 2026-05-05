@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { RadioStation } from '../services/radioApi'
 
-export function StationList({ stations, onSelect, loading, selectedStation, isDarkMode, favorites, toggleFavorite, recents, playlists, createPlaylist, renamePlaylist, deletePlaylist }: { 
+export function StationList({ stations, onSelect, loading, selectedStation, isDarkMode, favorites, toggleFavorite, recents, playlists, createPlaylist, onManagePlaylists }: { 
   stations: RadioStation[], 
   onSelect: (s: RadioStation) => void, 
   loading: boolean,
@@ -12,11 +12,9 @@ export function StationList({ stations, onSelect, loading, selectedStation, isDa
   recents: RadioStation[],
   playlists: import('../App').Playlist[],
   createPlaylist: (name: string) => void,
-  renamePlaylist: (id: string, newName: string) => void,
-  deletePlaylist: (id: string) => void
+  onManagePlaylists?: () => void
 }) {
   const [activeTab, setActiveTab] = useState<string>('all')
-  const [isEditingPlaylists, setIsEditingPlaylists] = useState(false)
   const displayStations: RadioStation[] = activeTab === 'all' ? stations 
     : activeTab === 'favs' ? favorites 
     : activeTab === 'recent' ? recents 
@@ -78,10 +76,10 @@ export function StationList({ stations, onSelect, loading, selectedStation, isDa
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingLeft: '16px', paddingBottom: '14px', flexShrink: 0 }}>
             {playlists.length > 0 && (
               <button 
-                onClick={() => setIsEditingPlaylists(!isEditingPlaylists)}
-                style={{ background: 'transparent', border: 'none', padding: 0, fontFamily: 'inherit', fontWeight: 600, fontSize: '0.8rem', color: isEditingPlaylists ? '#f59e0b' : muted, cursor: 'pointer', transition: 'color 0.2s', minWidth: '44px', minHeight: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                onClick={onManagePlaylists}
+                style={{ background: 'transparent', border: 'none', padding: 0, fontFamily: 'inherit', fontWeight: 600, fontSize: '0.8rem', color: text, cursor: 'pointer', transition: 'color 0.2s', minWidth: '44px', minHeight: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               >
-                {isEditingPlaylists ? 'DONE' : 'EDIT'}
+                MANAGE
               </button>
             )}
             <button
@@ -103,34 +101,7 @@ export function StationList({ stations, onSelect, loading, selectedStation, isDa
 
       {/* List */}
       <div style={{ flex: 1, overflowY: 'auto' }}>
-        {isEditingPlaylists ? (
-          <div style={{ padding: '24px' }}>
-            <h3 style={{ color: text, marginBottom: '20px', fontSize: '1.2rem', fontWeight: 700 }}>Manage Playlists</h3>
-            {playlists.length === 0 ? (
-              <p style={{ color: muted, fontSize: '0.9rem' }}>No playlists to manage.</p>
-            ) : playlists.map(pl => (
-              <div key={pl.id} style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '20px', background: selectedBg, borderRadius: '12px', marginBottom: '12px' }}>
-                <span style={{ fontSize: '1.1rem', fontWeight: 600, color: text }}>{pl.name}</span>
-                <div style={{ display: 'flex', gap: '12px' }}>
-                  <button onClick={() => {
-                    const newName = window.prompt('Rename playlist:', pl.name);
-                    if (newName && newName.trim()) renamePlaylist(pl.id, newName.trim());
-                  }} style={{ flex: 1, background: 'transparent', border: `1px solid ${text}`, color: text, padding: '12px', borderRadius: '8px', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer', minHeight: '44px' }}>
-                    RENAME
-                  </button>
-                  <button onClick={() => {
-                    if (window.confirm('Delete playlist?')) {
-                      deletePlaylist(pl.id);
-                      if (activeTab === pl.id) setActiveTab('all');
-                    }
-                  }} style={{ flex: 1, background: '#ef4444', border: 'none', color: '#fff', padding: '12px', borderRadius: '8px', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer', minHeight: '44px' }}>
-                    DELETE
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : loading ? (
+        {loading ? (
           <div style={{ padding: '40px 24px', color: muted, fontSize: '0.8rem', letterSpacing: '0.04em' }}>
             Loading...
           </div>

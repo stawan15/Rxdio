@@ -30,6 +30,7 @@ function App() {
   const [countries, setCountries] = useState<{ name: string; stationcount: number }[]>([])
   const [selectedCountry, setSelectedCountry] = useState('Thailand')
   const [loading, setLoading] = useState(false)
+  const [isManagingPlaylists, setIsManagingPlaylists] = useState(false)
   const [selectedStation, setSelectedStation] = useState<RadioStation | null>(null)
   const [isDarkMode, setIsDarkMode] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -542,10 +543,57 @@ function App() {
           recents={recents}
           playlists={playlists}
           createPlaylist={createPlaylist}
-          renamePlaylist={renamePlaylist}
-          deletePlaylist={deletePlaylist}
+          onManagePlaylists={() => setIsManagingPlaylists(true)}
         />
       </div>
+
+      {isManagingPlaylists && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
+          background: isDarkMode ? '#0a0a0a' : '#faf9f7', 
+          zIndex: 99999, overflowY: 'auto', padding: 'env(safe-area-inset-top) 24px 80px'
+        }}>
+          <div style={{ maxWidth: '600px', margin: '0 auto', paddingTop: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>
+              <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: theme.text, margin: 0 }}>Manage Playlists</h2>
+              <button 
+                onClick={() => setIsManagingPlaylists(false)}
+                style={{ background: 'transparent', border: 'none', color: theme.muted, fontSize: '1.2rem', cursor: 'pointer', padding: '8px' }}
+              >
+                ✕
+              </button>
+            </div>
+            
+            {playlists.length === 0 ? (
+              <p style={{ color: theme.muted, textAlign: 'center', marginTop: '40px' }}>No playlists to manage.</p>
+            ) : playlists.map(pl => (
+              <div key={pl.id} style={{ 
+                background: isDarkMode ? '#1a1a1a' : '#fff', 
+                border: `1px solid ${theme.border}`, borderRadius: '16px', padding: '24px',
+                marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '16px',
+                boxShadow: isDarkMode ? '0 8px 30px rgba(0,0,0,0.4)' : '0 8px 30px rgba(0,0,0,0.05)'
+              }}>
+                <h3 style={{ fontSize: '1.4rem', fontWeight: 600, color: theme.text, margin: 0 }}>{pl.name}</h3>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button onClick={() => {
+                    const newName = window.prompt('Rename playlist:', pl.name);
+                    if (newName && newName.trim()) renamePlaylist(pl.id, newName.trim());
+                  }} style={{ flex: 1, background: 'transparent', border: `1px solid ${theme.text}`, color: theme.text, padding: '16px', borderRadius: '12px', fontWeight: 700, fontSize: '1rem', cursor: 'pointer' }}>
+                    RENAME
+                  </button>
+                  <button onClick={() => {
+                    if (window.confirm('Delete playlist?')) {
+                      deletePlaylist(pl.id);
+                    }
+                  }} style={{ flex: 1, background: '#ef4444', border: 'none', color: '#fff', padding: '16px', borderRadius: '12px', fontWeight: 700, fontSize: '1rem', cursor: 'pointer' }}>
+                    DELETE
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ══ Player ══ */}
       <AudioPlayer
