@@ -324,8 +324,8 @@ export function AudioPlayer({ station, isDarkMode, favorites, toggleFavorite, pl
 
   // Base player styling wrappers
   const glassmorphism = {
-    background: isDarkMode ? 'rgba(8,8,8,0.98)' : 'rgba(250,249,247,0.98)',
-    backdropFilter: 'blur(30px)', WebkitBackdropFilter: 'blur(30px)',
+    background: isDarkMode ? 'rgba(15,15,15,0.6)' : 'rgba(250,249,247,0.7)',
+    backdropFilter: 'blur(30px) saturate(150%)', WebkitBackdropFilter: 'blur(30px) saturate(150%)',
   }
 
   const renderPlayer = () => {

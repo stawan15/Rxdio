@@ -51,33 +51,42 @@ export function StationList({ stations, onSelect, loading, selectedStation, isDa
               const plData = isPl ? playlists.find(p => p.id === tab) : null;
               
               return (
-                <div key={tab} style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div key={tab} style={{ 
+                  position: 'relative', display: 'flex', alignItems: 'center', gap: '8px',
+                  paddingBottom: '14px', marginBottom: '-1px',
+                  borderBottom: activeTab === tab ? `2px solid ${text}` : '2px solid transparent',
+                  transition: 'border-color 0.2s'
+                }}>
                   <button
                     onClick={() => setActiveTab(tab)}
                     style={{
-                      background: 'transparent', border: 'none', padding: '0 0 14px',
+                      background: 'transparent', border: 'none', padding: '0',
                       fontFamily: 'inherit', fontWeight: activeTab === tab ? 700 : 500,
                       fontSize: '0.78rem', letterSpacing: '0.08em', textTransform: 'uppercase',
                       color: activeTab === tab ? text : muted,
-                      cursor: 'pointer', borderBottom: activeTab === tab ? `1px solid ${text}` : '1px solid transparent',
-                      marginBottom: '-1px', transition: 'color 0.2s',
+                      cursor: 'pointer', transition: 'color 0.2s',
+                      display: 'flex', alignItems: 'center'
                     }}
                   >
                     {tab === 'all' ? 'Stations' : tab === 'favs' ? 'Saved' : tab === 'recent' ? 'Recent' : plData?.name}
                   </button>
                   
                   {isEditingPlaylists && isPl && (
-                    <div style={{ display: 'flex', gap: '4px', paddingBottom: '14px', marginBottom: '-1px', borderBottom: '1px solid transparent' }}>
+                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                       <button onClick={() => {
                         const newName = window.prompt('Rename playlist:', plData?.name);
                         if (newName && newName.trim()) renamePlaylist(tab, newName.trim());
-                      }} title="Rename" style={{ background:'transparent', border:'none', cursor:'pointer', fontSize:'0.75rem', padding: 0 }}>✎</button>
+                      }} title="Rename" style={{ background:'transparent', border:'none', cursor:'pointer', padding: 0, color: muted, display: 'flex' }}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                      </button>
                       <button onClick={() => {
                         if (window.confirm('Delete playlist?')) {
                           deletePlaylist(tab);
                           if (activeTab === tab) setActiveTab('all');
                         }
-                      }} title="Delete" style={{ background:'transparent', border:'none', cursor:'pointer', fontSize:'0.75rem', padding: 0 }}>🗑️</button>
+                      }} title="Delete" style={{ background:'transparent', border:'none', cursor:'pointer', padding: 0, color: '#f87171', display: 'flex' }}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                      </button>
                     </div>
                   )}
                 </div>
