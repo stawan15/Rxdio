@@ -14,7 +14,18 @@ export function AudioPlayer({ station, isDarkMode, favorites, toggleFavorite }: 
   const [sleepTimer, setSleepTimer] = useState<number | null>(null)
   const [timeLeft, setTimeLeft] = useState<number | null>(null)
   const [isTimerMenuOpen, setIsTimerMenuOpen] = useState(false)
+  const [customTimerInput, setCustomTimerInput] = useState('')
   const timerRef = useRef<HTMLDivElement>(null)
+
+  const handleCustomTimer = (e: React.FormEvent) => {
+    e.preventDefault();
+    const val = parseInt(customTimerInput, 10);
+    if (!isNaN(val) && val > 0) {
+      setSleepTimer(val);
+      setIsTimerMenuOpen(false);
+      setCustomTimerInput('');
+    }
+  }
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
@@ -229,6 +240,27 @@ export function AudioPlayer({ station, isDarkMode, favorites, toggleFavorite }: 
                 {mins} minutes
               </button>
             ))}
+            <div style={{ height: '1px', background: border, margin: '4px 0' }} />
+            <form onSubmit={handleCustomTimer} style={{ padding: '6px 16px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <input 
+                type="number" min="1" placeholder="Mins" 
+                value={customTimerInput}
+                onChange={e => setCustomTimerInput(e.target.value)}
+                style={{ 
+                  flex: 1, width: '0', padding: '6px 8px', borderRadius: '6px',
+                  border: `1px solid ${border}`, background: isDarkMode ? '#111' : '#fff',
+                  color: text, fontSize: '0.8rem', fontFamily: 'inherit', outline: 'none'
+                }}
+              />
+              <button 
+                type="submit"
+                style={{
+                  padding: '6px 12px', background: text, color: bg,
+                  border: 'none', borderRadius: '6px', cursor: 'pointer',
+                  fontSize: '0.75rem', fontWeight: 600, fontFamily: 'inherit'
+                }}
+              >Set</button>
+            </form>
             <div style={{ height: '1px', background: border, margin: '4px 0' }} />
             <button
               onClick={() => { setSleepTimer(null); setIsTimerMenuOpen(false); }}
