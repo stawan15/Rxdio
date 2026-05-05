@@ -194,8 +194,9 @@ export function AudioPlayer({ station, isDarkMode, favorites, toggleFavorite }: 
             background: sleepTimer ? text : 'transparent',
             color: sleepTimer ? bg : text,
             border: `1px solid ${isDarkMode ? '#333' : '#ddd'}`,
-            borderRadius: '50%',
-            width: '36px', height: '36px',
+            borderRadius: sleepTimer ? '18px' : '50%',
+            width: sleepTimer ? 'auto' : '36px', minWidth: '36px', height: '36px',
+            padding: sleepTimer ? '0 8px' : '0',
             cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
             transition: 'all 0.2s', fontSize: '0.75rem', fontWeight: 600, flexShrink: 0
           }}
