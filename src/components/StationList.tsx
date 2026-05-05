@@ -70,25 +70,6 @@ export function StationList({ stations, onSelect, loading, selectedStation, isDa
                   >
                     {tab === 'all' ? 'Stations' : tab === 'favs' ? 'Saved' : tab === 'recent' ? 'Recent' : plData?.name}
                   </button>
-                  
-                  {isEditingPlaylists && isPl && (
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                      <button onClick={() => {
-                        const newName = window.prompt('Rename playlist:', plData?.name);
-                        if (newName && newName.trim()) renamePlaylist(tab, newName.trim());
-                      }} title="Rename" style={{ background:'transparent', border:'1px solid ' + muted, borderRadius: '6px', cursor:'pointer', padding: '0 12px', color: text, fontFamily: 'inherit', fontWeight: 600, fontSize: '0.75rem', minWidth: '44px', minHeight: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        RENAME
-                      </button>
-                      <button onClick={() => {
-                        if (window.confirm('Delete playlist?')) {
-                          deletePlaylist(tab);
-                          if (activeTab === tab) setActiveTab('all');
-                        }
-                      }} title="Delete" style={{ background:'transparent', border:'1px solid #f87171', borderRadius: '6px', cursor:'pointer', padding: '0 12px', color: '#f87171', fontFamily: 'inherit', fontWeight: 600, fontSize: '0.75rem', minWidth: '44px', minHeight: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        DELETE
-                      </button>
-                    </div>
-                  )}
                 </div>
               )
             })}
@@ -122,7 +103,34 @@ export function StationList({ stations, onSelect, loading, selectedStation, isDa
 
       {/* List */}
       <div style={{ flex: 1, overflowY: 'auto' }}>
-        {loading ? (
+        {isEditingPlaylists ? (
+          <div style={{ padding: '24px' }}>
+            <h3 style={{ color: text, marginBottom: '20px', fontSize: '1.2rem', fontWeight: 700 }}>Manage Playlists</h3>
+            {playlists.length === 0 ? (
+              <p style={{ color: muted, fontSize: '0.9rem' }}>No playlists to manage.</p>
+            ) : playlists.map(pl => (
+              <div key={pl.id} style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '20px', background: selectedBg, borderRadius: '12px', marginBottom: '12px' }}>
+                <span style={{ fontSize: '1.1rem', fontWeight: 600, color: text }}>{pl.name}</span>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button onClick={() => {
+                    const newName = window.prompt('Rename playlist:', pl.name);
+                    if (newName && newName.trim()) renamePlaylist(pl.id, newName.trim());
+                  }} style={{ flex: 1, background: 'transparent', border: `1px solid ${text}`, color: text, padding: '12px', borderRadius: '8px', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer', minHeight: '44px' }}>
+                    RENAME
+                  </button>
+                  <button onClick={() => {
+                    if (window.confirm('Delete playlist?')) {
+                      deletePlaylist(pl.id);
+                      if (activeTab === pl.id) setActiveTab('all');
+                    }
+                  }} style={{ flex: 1, background: '#ef4444', border: 'none', color: '#fff', padding: '12px', borderRadius: '8px', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer', minHeight: '44px' }}>
+                    DELETE
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : loading ? (
           <div style={{ padding: '40px 24px', color: muted, fontSize: '0.8rem', letterSpacing: '0.04em' }}>
             Loading...
           </div>
