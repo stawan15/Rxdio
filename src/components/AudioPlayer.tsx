@@ -10,6 +10,7 @@ export function AudioPlayer({ station, isDarkMode, favorites, toggleFavorite }: 
   const audioRef = useRef<HTMLAudioElement>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [hasError, setHasError] = useState(false)
+  const [isReconnecting, setIsReconnecting] = useState(false)
   const [volume, setVolume] = useState(0.8)
   const [sleepTimer, setSleepTimer] = useState<number | null>(null)
   const [timeLeft, setTimeLeft] = useState<number | null>(null)
@@ -70,9 +71,28 @@ export function AudioPlayer({ station, isDarkMode, favorites, toggleFavorite }: 
   const muted = isDarkMode ? '#555' : '#9a9590'
   const subtle = isDarkMode ? '#111' : '#f3f1ee'
 
+  const retryConnection = () => {
+    if (!audioRef.current || !station) return;
+    setIsReconnecting(true);
+    setHasError(false);
+    audioRef.current.load();
+    const playPromise = audioRef.current.play();
+    if (playPromise !== undefined) {
+      playPromise.then(() => {
+        setIsPlaying(true);
+        setIsReconnecting(false);
+      }).catch(() => {
+        setHasError(true);
+        setIsPlaying(false);
+        setIsReconnecting(false);
+      });
+    }
+  };
+
   useEffect(() => {
     if (station && audioRef.current) {
       setHasError(false)
+      setIsReconnecting(false)
       audioRef.current.load()
       audioRef.current.play().catch(() => {
         setIsPlaying(false)
@@ -81,6 +101,26 @@ export function AudioPlayer({ station, isDarkMode, favorites, toggleFavorite }: 
       setIsPlaying(true)
     }
   }, [station])
+
+  useEffect(() => {
+    let timeout: ReturnType<typeof setTimeout>;
+    if (hasError) {
+      timeout = setTimeout(() => {
+         retryConnection();
+      }, 5000);
+    }
+    return () => clearTimeout(timeout);
+  }, [hasError]);
+
+  useEffect(() => {
+    const handleOnline = () => {
+      if (hasError || isReconnecting) {
+        retryConnection();
+      }
+    };
+    window.addEventListener('online', handleOnline);
+    return () => window.removeEventListener('online', handleOnline);
+  }, [hasError, isReconnecting]);
 
   useEffect(() => {
     if (audioRef.current) audioRef.current.volume = volume
@@ -155,12 +195,24 @@ export function AudioPlayer({ station, isDarkMode, favorites, toggleFavorite }: 
             <span style={{ fontSize: '0.7rem', color: muted, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
               {station.country}
             </span>
-            {hasError && (
+            {isReconnecting ? (
+              <span style={{ 
+                fontSize: '0.6rem', background: subtle, color: text, 
+                padding: '2px 6px', borderRadius: '4px', fontWeight: 600, letterSpacing: '0.05em',
+                display: 'flex', alignItems: 'center', gap: '4px'
+              }}>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'spin 1.5s linear infinite' }}>
+                   <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"></path>
+                   <polyline points="21 3 21 8 16 8"></polyline>
+                </svg>
+                RECONNECTING
+              </span>
+            ) : hasError ? (
               <span style={{ 
                 fontSize: '0.6rem', background: isDarkMode ? '#330000' : '#ffebee', color: '#ff4444', 
-                padding: '1px 4px', borderRadius: '4px', fontWeight: 700, letterSpacing: '0.05em' 
+                padding: '2px 6px', borderRadius: '4px', fontWeight: 700, letterSpacing: '0.05em' 
               }}>STREAM FAILED</span>
-            )}
+            ) : null}
           </div>
         </div>
       </div>
@@ -293,8 +345,10 @@ export function AudioPlayer({ station, isDarkMode, favorites, toggleFavorite }: 
       <audio
         ref={audioRef}
         src={station.url_resolved}
-        onPlay={() => setIsPlaying(true)}
+        onPlay={() => { setIsPlaying(true); setIsReconnecting(false); setHasError(false); }}
         onPause={() => setIsPlaying(false)}
+        onWaiting={() => setIsReconnecting(true)}
+        onPlaying={() => setIsReconnecting(false)}
         onError={() => {
           setHasError(true)
           setIsPlaying(false)
