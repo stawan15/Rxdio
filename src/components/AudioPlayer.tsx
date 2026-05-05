@@ -11,6 +11,47 @@ export function AudioPlayer({ station, isDarkMode, favorites, toggleFavorite }: 
   const [isPlaying, setIsPlaying] = useState(false)
   const [hasError, setHasError] = useState(false)
   const [volume, setVolume] = useState(0.8)
+  const [sleepTimer, setSleepTimer] = useState<number | null>(null)
+  const [timeLeft, setTimeLeft] = useState<number | null>(null)
+  const [isTimerMenuOpen, setIsTimerMenuOpen] = useState(false)
+  const timerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval>;
+    if (sleepTimer !== null) {
+      const endTime = Date.now() + sleepTimer * 60 * 1000;
+      setTimeLeft(sleepTimer * 60);
+
+      interval = setInterval(() => {
+        const remaining = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
+        setTimeLeft(remaining);
+        
+        if (remaining <= 0) {
+          if (audioRef.current) audioRef.current.pause();
+          setIsPlaying(false);
+          setSleepTimer(null);
+          setTimeLeft(null);
+          clearInterval(interval);
+        }
+      }, 1000);
+    } else {
+      setTimeLeft(null);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [sleepTimer]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (timerRef.current && !timerRef.current.contains(e.target as Node)) {
+        setIsTimerMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const bg = isDarkMode ? '#0a0a0a' : '#faf9f7'
   const border = isDarkMode ? '#1a1a1a' : '#e8e5e0'
@@ -133,6 +174,77 @@ export function AudioPlayer({ station, isDarkMode, favorites, toggleFavorite }: 
       >
         {isPlaying ? '■' : '▶'}
       </button>
+
+      {/* Sleep Timer */}
+      <div ref={timerRef} style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+        <button
+          onClick={() => setIsTimerMenuOpen(!isTimerMenuOpen)}
+          style={{
+            background: sleepTimer ? text : 'transparent',
+            color: sleepTimer ? bg : text,
+            border: `1px solid ${isDarkMode ? '#333' : '#ddd'}`,
+            borderRadius: '50%',
+            width: '36px', height: '36px',
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transition: 'all 0.2s', fontSize: '0.75rem', fontWeight: 600, flexShrink: 0
+          }}
+          title="Sleep Timer"
+        >
+          {timeLeft !== null ? (
+            timeLeft < 60 ? '<1m' : `${Math.ceil(timeLeft / 60)}m`
+          ) : (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+          )}
+        </button>
+
+        {isTimerMenuOpen && (
+          <div style={{
+            position: 'absolute', bottom: 'calc(100% + 12px)', right: '-10px',
+            background: isDarkMode ? '#1a1a1a' : '#faf9f7',
+            border: `1px solid ${border}`, borderRadius: '12px',
+            boxShadow: isDarkMode ? '0 12px 40px rgba(0,0,0,0.9)' : '0 12px 40px rgba(0,0,0,0.06)',
+            padding: '8px 0', minWidth: '140px', zIndex: 1100,
+            display: 'flex', flexDirection: 'column'
+          }}>
+            <div style={{ padding: '4px 16px 8px', fontSize: '0.7rem', color: muted, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+              Sleep Timer
+            </div>
+            {[15, 30, 45, 60].map(mins => (
+              <button
+                key={mins}
+                onClick={() => { setSleepTimer(mins); setIsTimerMenuOpen(false); }}
+                style={{
+                  width: '100%', padding: '10px 16px', background: 'transparent',
+                  border: 'none', color: sleepTimer === mins ? '#f59e0b' : text,
+                  textAlign: 'left', cursor: 'pointer', fontSize: '0.85rem',
+                  fontFamily: 'inherit', fontWeight: sleepTimer === mins ? 600 : 400,
+                  transition: 'background 0.2s'
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = subtle}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+              >
+                {mins} minutes
+              </button>
+            ))}
+            <div style={{ height: '1px', background: border, margin: '4px 0' }} />
+            <button
+              onClick={() => { setSleepTimer(null); setIsTimerMenuOpen(false); }}
+              style={{
+                width: '100%', padding: '10px 16px', background: 'transparent',
+                border: 'none', color: '#f87171', textAlign: 'left', cursor: 'pointer',
+                fontSize: '0.85rem', fontFamily: 'inherit', transition: 'background 0.2s'
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = subtle}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+            >
+              Turn Off
+            </button>
+          </div>
+        )}
+      </div>
 
       {/* Volume */}
       <div className="hide-on-mobile" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
