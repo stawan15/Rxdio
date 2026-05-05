@@ -177,7 +177,7 @@ export function AudioPlayer({ station, isDarkMode, favorites, toggleFavorite, pl
 
   // Reusable action buttons renderers
   const renderPlayPause = (size: 'small' | 'large' = 'small') => {
-    const dim = size === 'large' ? '64px' : '40px'
+    const dim = size === 'large' ? '64px' : '44px'
     const fz = size === 'large' ? '1.4rem' : '0.85rem'
     return (
       <button
@@ -204,10 +204,10 @@ export function AudioPlayer({ station, isDarkMode, favorites, toggleFavorite, pl
   }
 
   const renderTimerMenu = (menuAlign: 'left' | 'right' | 'center' | 'top') => {
-    const alignStyles = menuAlign === 'right' ? { right: '-10px', bottom: 'calc(100% + 12px)' }
+    const alignStyles = menuAlign === 'right' ? { right: '0px', bottom: 'calc(100% + 12px)' }
       : menuAlign === 'center' ? { left: '50%', transform: 'translateX(-50%)', bottom: 'calc(100% + 12px)' }
-      : menuAlign === 'top' ? { right: '0', top: 'calc(100% + 12px)' } 
-      : { left: '-10px', bottom: 'calc(100% + 12px)' }
+      : menuAlign === 'top' ? { left: '0', bottom: 'calc(100% + 12px)' } 
+      : { left: '0', bottom: 'calc(100% + 12px)' }
 
     return (
       <div ref={timerRef} style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
@@ -216,9 +216,9 @@ export function AudioPlayer({ station, isDarkMode, favorites, toggleFavorite, pl
           style={{
             background: sleepTimer ? text : 'transparent', color: sleepTimer ? bg : text,
             border: `1px solid ${isDarkMode ? '#333' : '#ddd'}`,
-            borderRadius: sleepTimer ? '18px' : '50%',
-            width: sleepTimer ? 'auto' : '36px', minWidth: '36px', height: '36px',
-            padding: sleepTimer ? '0 8px' : '0',
+            borderRadius: sleepTimer ? '22px' : '50%',
+            width: sleepTimer ? 'auto' : '44px', minWidth: '44px', height: '44px',
+            padding: sleepTimer ? '0 12px' : '0',
             cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
             transition: 'all 0.2s', fontSize: '0.75rem', fontWeight: 600, flexShrink: 0
           }}
@@ -274,7 +274,7 @@ export function AudioPlayer({ station, isDarkMode, favorites, toggleFavorite, pl
       <div ref={playlistMenuRef} style={{ position: 'relative' }}>
         <button
           onClick={e => { e.stopPropagation(); setIsPlaylistMenuOpen(!isPlaylistMenuOpen) }}
-          style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.2rem', color: muted, padding: '0 4px', lineHeight: 1, display: 'flex', alignItems: 'center', opacity: 0.8 }}
+          style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.2rem', color: muted, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.8, minWidth: '44px', minHeight: '44px' }}
         >+</button>
         {isPlaylistMenuOpen && (
           <div onClick={e => e.stopPropagation()} style={{
@@ -324,8 +324,7 @@ export function AudioPlayer({ station, isDarkMode, favorites, toggleFavorite, pl
 
   // Base player styling wrappers
   const glassmorphism = {
-    background: isDarkMode ? 'rgba(15,15,15,0.6)' : 'rgba(250,249,247,0.7)',
-    backdropFilter: 'blur(30px) saturate(150%)', WebkitBackdropFilter: 'blur(30px) saturate(150%)',
+    background: isDarkMode ? '#0a0a0a' : '#ffffff',
   }
 
   const renderPlayer = () => {

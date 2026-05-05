@@ -72,20 +72,20 @@ export function StationList({ stations, onSelect, loading, selectedStation, isDa
                   </button>
                   
                   {isEditingPlaylists && isPl && (
-                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                       <button onClick={() => {
                         const newName = window.prompt('Rename playlist:', plData?.name);
                         if (newName && newName.trim()) renamePlaylist(tab, newName.trim());
-                      }} title="Rename" style={{ background:'transparent', border:'none', cursor:'pointer', padding: 0, color: muted, display: 'flex' }}>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                      }} title="Rename" style={{ background:'transparent', border:'1px solid ' + muted, borderRadius: '6px', cursor:'pointer', padding: '0 12px', color: text, fontFamily: 'inherit', fontWeight: 600, fontSize: '0.75rem', minWidth: '44px', minHeight: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        RENAME
                       </button>
                       <button onClick={() => {
                         if (window.confirm('Delete playlist?')) {
                           deletePlaylist(tab);
                           if (activeTab === tab) setActiveTab('all');
                         }
-                      }} title="Delete" style={{ background:'transparent', border:'none', cursor:'pointer', padding: 0, color: '#f87171', display: 'flex' }}>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                      }} title="Delete" style={{ background:'transparent', border:'1px solid #f87171', borderRadius: '6px', cursor:'pointer', padding: '0 12px', color: '#f87171', fontFamily: 'inherit', fontWeight: 600, fontSize: '0.75rem', minWidth: '44px', minHeight: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        DELETE
                       </button>
                     </div>
                   )}
@@ -94,11 +94,11 @@ export function StationList({ stations, onSelect, loading, selectedStation, isDa
             })}
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', paddingLeft: '16px', paddingBottom: '14px', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingLeft: '16px', paddingBottom: '14px', flexShrink: 0 }}>
             {playlists.length > 0 && (
               <button 
                 onClick={() => setIsEditingPlaylists(!isEditingPlaylists)}
-                style={{ background: 'transparent', border: 'none', padding: 0, fontFamily: 'inherit', fontWeight: 600, fontSize: '0.75rem', color: isEditingPlaylists ? '#f59e0b' : muted, cursor: 'pointer', transition: 'color 0.2s' }}
+                style={{ background: 'transparent', border: 'none', padding: 0, fontFamily: 'inherit', fontWeight: 600, fontSize: '0.8rem', color: isEditingPlaylists ? '#f59e0b' : muted, cursor: 'pointer', transition: 'color 0.2s', minWidth: '44px', minHeight: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               >
                 {isEditingPlaylists ? 'DONE' : 'EDIT'}
               </button>
@@ -108,7 +108,7 @@ export function StationList({ stations, onSelect, loading, selectedStation, isDa
                 const name = window.prompt("Enter playlist name:");
                 if (name && name.trim()) createPlaylist(name.trim());
               }}
-              style={{ background: 'transparent', border: 'none', padding: 0, fontFamily: 'inherit', fontWeight: 700, fontSize: '1rem', color: text, cursor: 'pointer', opacity: 0.8 }}
+              style={{ background: 'transparent', border: 'none', padding: 0, fontFamily: 'inherit', fontWeight: 700, fontSize: '1.2rem', color: text, cursor: 'pointer', opacity: 0.8, minWidth: '44px', minHeight: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
               +
             </button>
