@@ -324,8 +324,8 @@ export function AudioPlayer({ station, isDarkMode, favorites, toggleFavorite, pl
 
   // Base player styling wrappers
   const glassmorphism = {
-    background: isDarkMode ? 'rgba(10,10,10,0.92)' : 'rgba(250,249,247,0.85)',
-    backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+    background: isDarkMode ? 'rgba(8,8,8,0.98)' : 'rgba(250,249,247,0.98)',
+    backdropFilter: 'blur(30px)', WebkitBackdropFilter: 'blur(30px)',
   }
 
   const renderPlayer = () => {
@@ -421,10 +421,11 @@ export function AudioPlayer({ station, isDarkMode, favorites, toggleFavorite, pl
       <div className="audio-player desktop-player" style={{
         position: 'fixed', bottom: 0, left: 0, right: 0, height: 'calc(64px + env(safe-area-inset-bottom))', 
         ...glassmorphism, borderTop: `1px solid ${border}`,
-        display: 'flex', alignItems: 'center', padding: '0 32px', gap: '24px', zIndex: 1000,
-        boxShadow: isDarkMode ? '0 -4px 30px rgba(0,0,0,0.5)' : '0 -4px 30px rgba(0,0,0,0.04)'
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', gap: '16px', zIndex: 1000,
+        boxShadow: isDarkMode ? '0 -4px 30px rgba(0,0,0,0.5)' : '0 -4px 30px rgba(0,0,0,0.04)',
+        minWidth: 0
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1, minWidth: 0, maxWidth: '300px' }}>
           <img src={artworkUrl} alt="" style={{ width: '48px', height: '48px', borderRadius: '6px', objectFit: 'contain', background: subtle, flexShrink: 0 }} />
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
             <div style={{ fontSize: '0.95rem', fontWeight: 600, color: text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{station.name}</div>
@@ -433,20 +434,22 @@ export function AudioPlayer({ station, isDarkMode, favorites, toggleFavorite, pl
               {tagIndicator}
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-            <button onClick={() => toggleFavorite(station)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.2rem', color: isFav ? '#f59e0b' : muted }}>
-              {isFav ? '★' : '☆'}
-            </button>
-            {renderPlaylistMenu()}
-          </div>
         </div>
         
-        {renderPlayPause('small')}
-        {renderTimerMenu('right')}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '20px', flex: 1 }}>
+          {renderPlayPause('small')}
+        </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
-          <span style={{ fontSize: '0.7rem', color: muted, textTransform: 'uppercase' }}>Vol</span>
-          <input type="range" min="0" max="1" step="0.01" value={volume} onChange={e => setVolume(parseFloat(e.target.value))} style={{ width: '90px', accentColor: text, cursor: 'pointer' }} />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '16px', flex: 1, flexShrink: 0 }}>
+          <button onClick={() => toggleFavorite(station)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.2rem', color: isFav ? '#f59e0b' : muted }}>
+            {isFav ? '★' : '☆'}
+          </button>
+          {renderPlaylistMenu('center')}
+          {renderTimerMenu('center')}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '0.7rem', color: muted, textTransform: 'uppercase' }}>Vol</span>
+            <input type="range" min="0" max="1" step="0.01" value={volume} onChange={e => setVolume(parseFloat(e.target.value))} style={{ width: '80px', accentColor: text, cursor: 'pointer' }} />
+          </div>
         </div>
       </div>
     )

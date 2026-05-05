@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { RadioStation } from '../services/radioApi'
 
-export function StationList({ stations, onSelect, loading, selectedStation, isDarkMode, favorites, toggleFavorite, recents, playlists, createPlaylist }: { 
+export function StationList({ stations, onSelect, loading, selectedStation, isDarkMode, favorites, toggleFavorite, recents, playlists, createPlaylist, renamePlaylist, deletePlaylist }: { 
   stations: RadioStation[], 
   onSelect: (s: RadioStation) => void, 
   loading: boolean,
@@ -11,9 +11,12 @@ export function StationList({ stations, onSelect, loading, selectedStation, isDa
   toggleFavorite: (s: RadioStation) => void | Promise<void>,
   recents: RadioStation[],
   playlists: import('../App').Playlist[],
-  createPlaylist: (name: string) => void
+  createPlaylist: (name: string) => void,
+  renamePlaylist: (id: string, newName: string) => void,
+  deletePlaylist: (id: string) => void
 }) {
   const [activeTab, setActiveTab] = useState<string>('all')
+  const [isEditingPlaylists, setIsEditingPlaylists] = useState(false)
   const displayStations: RadioStation[] = activeTab === 'all' ? stations 
     : activeTab === 'favs' ? favorites 
     : activeTab === 'recent' ? recents 
@@ -40,40 +43,67 @@ export function StationList({ stations, onSelect, loading, selectedStation, isDa
     }}>
       {/* Header */}
       <div style={{ padding: '24px 24px 0' }}>
-        <div style={{ display: 'flex', gap: '24px', borderBottom: `1px solid ${border}`, overflowX: 'auto', whiteSpace: 'nowrap', paddingBottom: '2px', scrollbarWidth: 'none' }}>
-          {(['all', 'favs', 'recent', ...playlists.map(p => p.id)]).map(tab => (
+        <div style={{ display: 'flex', alignItems: 'center', borderBottom: `1px solid ${border}` }}>
+          
+          <div style={{ flex: 1, display: 'flex', gap: '20px', overflowX: 'auto', whiteSpace: 'nowrap', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
+            {(['all', 'favs', 'recent', ...playlists.map(p => p.id)]).map(tab => {
+              const isPl = tab !== 'all' && tab !== 'favs' && tab !== 'recent';
+              const plData = isPl ? playlists.find(p => p.id === tab) : null;
+              
+              return (
+                <div key={tab} style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <button
+                    onClick={() => setActiveTab(tab)}
+                    style={{
+                      background: 'transparent', border: 'none', padding: '0 0 14px',
+                      fontFamily: 'inherit', fontWeight: activeTab === tab ? 700 : 500,
+                      fontSize: '0.78rem', letterSpacing: '0.08em', textTransform: 'uppercase',
+                      color: activeTab === tab ? text : muted,
+                      cursor: 'pointer', borderBottom: activeTab === tab ? `1px solid ${text}` : '1px solid transparent',
+                      marginBottom: '-1px', transition: 'color 0.2s',
+                    }}
+                  >
+                    {tab === 'all' ? 'Stations' : tab === 'favs' ? 'Saved' : tab === 'recent' ? 'Recent' : plData?.name}
+                  </button>
+                  
+                  {isEditingPlaylists && isPl && (
+                    <div style={{ display: 'flex', gap: '4px', paddingBottom: '14px', marginBottom: '-1px', borderBottom: '1px solid transparent' }}>
+                      <button onClick={() => {
+                        const newName = window.prompt('Rename playlist:', plData?.name);
+                        if (newName && newName.trim()) renamePlaylist(tab, newName.trim());
+                      }} title="Rename" style={{ background:'transparent', border:'none', cursor:'pointer', fontSize:'0.75rem', padding: 0 }}>✎</button>
+                      <button onClick={() => {
+                        if (window.confirm('Delete playlist?')) {
+                          deletePlaylist(tab);
+                          if (activeTab === tab) setActiveTab('all');
+                        }
+                      }} title="Delete" style={{ background:'transparent', border:'none', cursor:'pointer', fontSize:'0.75rem', padding: 0 }}>🗑️</button>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', paddingLeft: '16px', paddingBottom: '14px', flexShrink: 0 }}>
+            {playlists.length > 0 && (
+              <button 
+                onClick={() => setIsEditingPlaylists(!isEditingPlaylists)}
+                style={{ background: 'transparent', border: 'none', padding: 0, fontFamily: 'inherit', fontWeight: 600, fontSize: '0.75rem', color: isEditingPlaylists ? '#f59e0b' : muted, cursor: 'pointer', transition: 'color 0.2s' }}
+              >
+                {isEditingPlaylists ? 'DONE' : 'EDIT'}
+              </button>
+            )}
             <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              style={{
-                background: 'transparent', border: 'none', padding: '0 0 14px',
-                fontFamily: 'inherit', fontWeight: 500,
-                fontSize: '0.78rem', letterSpacing: '0.08em', textTransform: 'uppercase',
-                color: activeTab === tab ? text : muted,
-                cursor: 'pointer',
-                borderBottom: activeTab === tab ? `1px solid ${text}` : '1px solid transparent',
-                marginBottom: '-1px', transition: 'color 0.2s',
+              onClick={() => {
+                const name = window.prompt("Enter playlist name:");
+                if (name && name.trim()) createPlaylist(name.trim());
               }}
+              style={{ background: 'transparent', border: 'none', padding: 0, fontFamily: 'inherit', fontWeight: 700, fontSize: '1rem', color: text, cursor: 'pointer', opacity: 0.8 }}
             >
-              {tab === 'all' ? 'Stations' : tab === 'favs' ? 'Saved' : tab === 'recent' ? 'Recent' : playlists.find(p => p.id === tab)?.name}
+              +
             </button>
-          ))}
-          <button
-            onClick={() => {
-              const name = window.prompt("Enter playlist name:");
-              if (name && name.trim()) {
-                createPlaylist(name.trim());
-              }
-            }}
-            style={{
-               background: 'transparent', border: 'none', padding: '0 0 14px',
-               fontFamily: 'inherit', fontWeight: 700, flexShrink: 0, fontSize: '0.9rem',
-               color: text, cursor: 'pointer', opacity: 0.6,
-               display: 'flex', alignItems: 'center'
-            }}
-          >
-            +
-          </button>
+          </div>
         </div>
         <div style={{ padding: '12px 0', fontSize: '0.72rem', color: muted, letterSpacing: '0.04em', fontVariantNumeric: 'tabular-nums' }}>
           {activeTab === 'all' ? (loading ? 'Scanning...' : `${stations.length} active`) 

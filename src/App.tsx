@@ -120,6 +120,20 @@ function App() {
     }
   }
 
+  const renamePlaylist = async (id: string, newName: string) => {
+    if (!session) return;
+    setPlaylists(prev => prev.map(p => p.id === id ? { ...p, name: newName } : p));
+    const { error } = await supabase.from('playlists').update({ name: newName }).eq('id', id).eq('user_id', session.user.id);
+    if (error) console.error('Failed to rename playlist', error);
+  }
+
+  const deletePlaylist = async (id: string) => {
+    if (!session) return;
+    setPlaylists(prev => prev.filter(p => p.id !== id));
+    const { error } = await supabase.from('playlists').delete().eq('id', id).eq('user_id', session.user.id);
+    if (error) console.error('Failed to delete playlist', error);
+  }
+
   // Load recents
   useEffect(() => {
     try {
@@ -528,6 +542,8 @@ function App() {
           recents={recents}
           playlists={playlists}
           createPlaylist={createPlaylist}
+          renamePlaylist={renamePlaylist}
+          deletePlaylist={deletePlaylist}
         />
       </div>
 
