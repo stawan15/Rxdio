@@ -372,14 +372,14 @@ export function AudioPlayer({ station, isDarkMode, favorites, toggleFavorite, pl
       return (
         <div className="audio-player full-player" style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: isDarkMode ? 'rgba(5,5,5,0.98)' : 'rgba(250,249,247,0.98)',
-          backdropFilter: 'blur(40px)', WebkitBackdropFilter: 'blur(40px)',
+          backgroundColor: isDarkMode ? '#111111' : '#ffffff',
+          opacity: 1,
           zIndex: 9999, display: 'flex', flexDirection: 'column',
           padding: 'env(safe-area-inset-top) 24px calc(32px + env(safe-area-inset-bottom))',
           animation: 'slideUp 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)'
         }}>
           <style>{`
-            @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+            @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
           `}</style>
           
           <button onClick={() => setIsExpanded(false)} style={{ background: 'transparent', border: 'none', color: text, width: '100%', padding: '16px 0', cursor: 'pointer', display: 'flex', justifyContent: 'center' }}>
