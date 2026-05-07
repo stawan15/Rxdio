@@ -15,7 +15,7 @@ export function AudioPlayer({ station, isDarkMode, favorites, toggleFavorite, pl
   const [isReconnecting, setIsReconnecting] = useState(false)
   const [volume, setVolume] = useState(0.8)
   const [sleepTimer, setSleepTimer] = useState<number | null>(null)
-  const [timeLeft, setTimeLeft] = useState<number | null>(null)
+  const [timeLeft, setTimeLeft] = useState<number | null>(null) 
   const [isTimerMenuOpen, setIsTimerMenuOpen] = useState(false)
   const [customTimerInput, setCustomTimerInput] = useState('')
   const [isPlaylistMenuOpen, setIsPlaylistMenuOpen] = useState(false)

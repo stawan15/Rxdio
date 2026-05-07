@@ -635,7 +635,7 @@ function App() {
           .mobile-search-toggle {
             display: flex !important;
           }
-          .audio-player {
+          .audio-player:not(.full-player) {
             padding: 0 16px !important;
             gap: 12px !important;
             height: calc(60px + env(safe-area-inset-bottom)) !important;
