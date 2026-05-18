@@ -11,6 +11,7 @@ import { isThemeMode, THEME_STORAGE_KEY, type ThemeMode } from './theme'
 import { useThemeDocument } from './hooks/useThemeDocument'
 import { cn } from './lib/cn'
 import { IconMenu, IconSearch } from './components/icons'
+import { SpeedInsights } from '@vercel/speed-insights/react'
 
 export interface Playlist {
   id: string
@@ -469,6 +470,7 @@ function App() {
           </div>
         </div>
       )}
+      <SpeedInsights />
     </div>
   )
 }
