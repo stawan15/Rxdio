@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { RadioStation } from '../services/radioApi'
 
-export function AudioPlayer({ station, isDarkMode, favorites, toggleFavorite, playlists = [], toggleStationInPlaylist }: { 
+export function AudioPlayer({ station, isDarkMode, themeMode, favorites, toggleFavorite, playlists = [], toggleStationInPlaylist }: { 
   station: RadioStation | null, 
   isDarkMode?: boolean,
+  themeMode?: 'dark' | 'light' | 'pink',
   favorites: RadioStation[],
   toggleFavorite: (s: RadioStation) => void | Promise<void>,
   playlists?: import('../App').Playlist[],
@@ -69,16 +70,18 @@ export function AudioPlayer({ station, isDarkMode, favorites, toggleFavorite, pl
     };
   }, [sleepTimer]);
 
-  const bg = isDarkMode ? '#0a0a0a' : '#faf9f7'
-  const border = isDarkMode ? '#1a1a1a' : '#e8e5e0'
-  const text = isDarkMode ? '#fff' : '#1a1a1a'
-  const muted = isDarkMode ? '#555' : '#9a9590'
-  const subtle = isDarkMode ? '#111' : '#f3f1ee'
+  const isPinkMode = themeMode === 'pink'
+  const bg = isDarkMode ? '#0a0a0a' : isPinkMode ? '#fff0f7' : '#faf9f7'
+  const border = isDarkMode ? '#1a1a1a' : isPinkMode ? '#f0c1dc' : '#e8e5e0'
+  const text = isDarkMode ? '#fff' : isPinkMode ? '#381842' : '#1a1a1a'
+  const muted = isDarkMode ? '#555' : isPinkMode ? '#8a5a7c' : '#9a9590'
+  const subtle = isDarkMode ? '#111' : isPinkMode ? '#ffe8f4' : '#f3f1ee'
+  const accent = isDarkMode ? '#00ff88' : isPinkMode ? '#ff6fb4' : '#2f6fdb'
 
   const getPlaceholder = useCallback((name: string) => {
     const char = name.charAt(0).toUpperCase()
-    return `https://ui-avatars.com/api/?name=${char}&background=${isDarkMode ? '111' : 'f3f1ee'}&color=${isDarkMode ? 'fff' : '1a1a1a'}&bold=true&format=png`
-  }, [isDarkMode])
+    return `https://ui-avatars.com/api/?name=${char}&background=${isDarkMode ? '111' : isPinkMode ? 'ffc1de' : 'f3f1ee'}&color=${isDarkMode ? 'fff' : isPinkMode ? '381842' : '1a1a1a'}&bold=true&format=png`
+  }, [isDarkMode, isPinkMode])
 
   const getArtworkUrl = useCallback((s: RadioStation) => {
     if (!s) return '';
@@ -192,7 +195,7 @@ export function AudioPlayer({ station, isDarkMode, favorites, toggleFavorite, pl
           width: dim, height: dim,
           background: isPlaying ? text : 'transparent',
           color: isPlaying ? bg : text,
-          border: `1px solid ${isDarkMode ? '#333' : '#ddd'}`,
+          border: `1px solid ${isDarkMode ? '#333' : isPinkMode ? '#ffbfd4' : '#ddd'}`,
           borderRadius: '50%', cursor: hasError ? 'not-allowed' : 'pointer', 
           fontSize: fz, display: 'flex', alignItems: 'center', justifyContent: 'center',
           flexShrink: 0, transition: 'all 0.2s', opacity: hasError ? 0.4 : 1
@@ -252,7 +255,7 @@ export function AudioPlayer({ station, isDarkMode, favorites, toggleFavorite, pl
             <div style={{ height: '1px', background: border, margin: '4px 0' }} />
             <form onSubmit={handleCustomTimer} style={{ padding: '6px 16px', display: 'flex', gap: '8px', alignItems: 'center' }}>
               <input type="number" min="1" placeholder="Mins" value={customTimerInput} onChange={e => setCustomTimerInput(e.target.value)}
-                style={{ flex: 1, width: '0', padding: '6px 8px', borderRadius: '6px', border: `1px solid ${border}`, background: isDarkMode ? '#111' : '#fff', color: text, fontSize: '0.8rem', outline: 'none' }} />
+                style={{ flex: 1, width: '0', padding: '6px 8px', borderRadius: '6px', border: `1px solid ${border}`, background: isDarkMode ? '#111' : isPinkMode ? '#fff1f9' : '#fff', color: text, fontSize: '0.8rem', outline: 'none' }} />
               <button type="submit" style={{ padding: '6px 12px', background: text, color: bg, border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600 }}>Set</button>
             </form>
             <div style={{ height: '1px', background: border, margin: '4px 0' }} />
@@ -318,15 +321,15 @@ export function AudioPlayer({ station, isDarkMode, favorites, toggleFavorite, pl
       RECONNECTING
     </span>
   ) : hasError ? (
-    <span style={{ fontSize: '0.6rem', background: isDarkMode ? '#330000' : '#ffebee', color: '#ff4444', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>STREAM FAILED</span>
+    <span style={{ fontSize: '0.6rem', background: isDarkMode ? '#330000' : isPinkMode ? '#ffe5ee' : '#ffebee', color: '#ff4444', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>STREAM FAILED</span>
   ) : null;
 
 
   // Base player styling wrappers
   const glassmorphism = {
-    backgroundColor: isDarkMode ? '#111111' : '#ffffff',
+    backgroundColor: isDarkMode ? '#111111' : isPinkMode ? 'rgba(255,240,247,0.95)' : '#ffffff',
     opacity: 1,
-    boxShadow: isDarkMode ? '0 -4px 30px rgba(0,0,0,0.8)' : '0 -4px 30px rgba(0,0,0,0.1)',
+    boxShadow: isDarkMode ? '0 -4px 30px rgba(0,0,0,0.8)' : isPinkMode ? '0 -4px 30px rgba(255, 157, 212, 0.22)' : '0 -4px 30px rgba(0,0,0,0.1)',
   }
 
   const renderPlayer = () => {
@@ -372,7 +375,7 @@ export function AudioPlayer({ station, isDarkMode, favorites, toggleFavorite, pl
       return (
         <div className="audio-player full-player" style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: isDarkMode ? '#111111' : '#ffffff',
+          backgroundColor: isDarkMode ? '#111111' : isPinkMode ? '#fff2f8' : '#ffffff',
           opacity: 1,
           zIndex: 9999, display: 'flex', flexDirection: 'column',
           padding: 'env(safe-area-inset-top) 24px calc(32px + env(safe-area-inset-bottom))',

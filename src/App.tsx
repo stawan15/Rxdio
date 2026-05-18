@@ -14,8 +14,8 @@ export interface Playlist {
   stations: RadioStation[];
 }
 
-const ASIA = new Set(['afghanistan','armenia','azerbaijan','bahrain','bangladesh','bhutan','brunei','cambodia','china','cyprus','georgia','india','indonesia','iran','iraq','israel','japan','jordan','kazakhstan','kuwait','kyrgyzstan','laos','lebanon','malaysia','maldives','mongolia','myanmar','nepal','north korea','oman','pakistan','palestine','philippines','qatar','saudi arabia','singapore','south korea','sri lanka','syria','taiwan','tajikistan','thailand','timor-leste','turkey','turkmenistan','united arab emirates','uzbekistan','vietnam','yemen'])
-const EUROPE = new Set(['albania','andorra','austria','belarus','belgium','bosnia and herzegovina','bulgaria','croatia','czech republic','denmark','estonia','finland','france','germany','greece','hungary','iceland','ireland','italy','kosovo','latvia','liechtenstein','lithuania','luxembourg','malta','moldova','monaco','montenegro','netherlands','north macedonia','norway','poland','portugal','romania','russia','san marino','serbia','slovakia','slovenia','spain','sweden','switzerland','ukraine','united kingdom','vatican city'])
+const ASIA = new Set(['afghanistan', 'armenia', 'azerbaijan', 'bahrain', 'bangladesh', 'bhutan', 'brunei', 'cambodia', 'china', 'cyprus', 'georgia', 'india', 'indonesia', 'iran', 'iraq', 'israel', 'japan', 'jordan', 'kazakhstan', 'kuwait', 'kyrgyzstan', 'laos', 'lebanon', 'malaysia', 'maldives', 'mongolia', 'myanmar', 'nepal', 'north korea', 'oman', 'pakistan', 'palestine', 'philippines', 'qatar', 'saudi arabia', 'singapore', 'south korea', 'sri lanka', 'syria', 'taiwan', 'tajikistan', 'thailand', 'timor-leste', 'turkey', 'turkmenistan', 'united arab emirates', 'uzbekistan', 'vietnam', 'yemen'])
+const EUROPE = new Set(['albania', 'andorra', 'austria', 'belarus', 'belgium', 'bosnia and herzegovina', 'bulgaria', 'croatia', 'czech republic', 'denmark', 'estonia', 'finland', 'france', 'germany', 'greece', 'hungary', 'iceland', 'ireland', 'italy', 'kosovo', 'latvia', 'liechtenstein', 'lithuania', 'luxembourg', 'malta', 'moldova', 'monaco', 'montenegro', 'netherlands', 'north macedonia', 'norway', 'poland', 'portugal', 'romania', 'russia', 'san marino', 'serbia', 'slovakia', 'slovenia', 'spain', 'sweden', 'switzerland', 'ukraine', 'united kingdom', 'vatican city'])
 
 function getContinent(name: string) {
   const n = name.toLowerCase();
@@ -32,7 +32,8 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [isManagingPlaylists, setIsManagingPlaylists] = useState(false)
   const [selectedStation, setSelectedStation] = useState<RadioStation | null>(null)
-  const [isDarkMode, setIsDarkMode] = useState(true)
+  const [themeMode, setThemeMode] = useState<'dark' | 'light' | 'pink'>('dark')
+  const isDarkMode = themeMode === 'dark'
   const [searchQuery, setSearchQuery] = useState('')
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false)
@@ -93,7 +94,7 @@ function App() {
     if (!session) return;
     const pl = playlists.find(p => p.id === playlistId);
     if (!pl) return;
-    
+
     const exists = pl.stations.some(s => s.stationuuid === station.stationuuid);
 
     // Optimistic UI update
@@ -217,30 +218,43 @@ function App() {
 
   useEffect(() => {
     document.title = selectedStation ? `Rxdio - ${selectedStation.name}` : `Rxdio`
-    
+
     // Add to recents when selected
     if (selectedStation) {
       setRecents(prev => {
         const filtered = prev.filter(s => s.stationuuid !== selectedStation.stationuuid)
         const updated = [selectedStation, ...filtered].slice(0, 20)
-        try { localStorage.setItem('rxdio_recents', JSON.stringify(updated)) } catch (e) {}
+        try { localStorage.setItem('rxdio_recents', JSON.stringify(updated)) } catch (e) { }
         return updated
       })
     }
   }, [selectedStation])
 
   const theme = {
-    bg: isDarkMode ? '#000' : '#faf9f7',
-    text: isDarkMode ? '#fff' : '#1a1a1a',
-    border: isDarkMode ? '#1a1a1a' : '#e8e5e0',
-    muted: isDarkMode ? '#444' : '#9a9590',
-    inputBg: isDarkMode ? '#111' : '#f3f1ee',
-    headerBg: isDarkMode ? '#000' : '#faf9f7',
+    bg: themeMode === 'dark' ? '#000' : themeMode === 'pink' ? '#ffeef7' : '#faf9f7',
+    text: themeMode === 'dark' ? '#fff' : themeMode === 'pink' ? '#381842' : '#1a1a1a',
+    border: themeMode === 'dark' ? '#1a1a1a' : themeMode === 'pink' ? '#f0c1dc' : '#e8e5e0',
+    muted: themeMode === 'dark' ? '#444' : themeMode === 'pink' ? '#8a5a7c' : '#9a9590',
+    inputBg: themeMode === 'dark' ? '#111' : themeMode === 'pink' ? '#ffe8f4' : '#f3f1ee',
+    headerBg: themeMode === 'dark' ? '#000' : themeMode === 'pink' ? '#fff0f7' : '#faf9f7',
+    accent: themeMode === 'dark' ? '#00ff88' : themeMode === 'pink' ? '#ff6fb4' : '#2f6fdb',
+    panelBg: themeMode === 'dark' ? 'rgba(0,0,0,0.85)' : themeMode === 'pink' ? 'rgba(255,239,250,0.88)' : 'rgba(255,255,255,0.92)',
   }
 
   useEffect(() => {
     radioApi.getCountries().then(setCountries)
   }, [])
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('rxdio_theme')
+    if (savedTheme === 'light' || savedTheme === 'dark' || savedTheme === 'pink') {
+      setThemeMode(savedTheme)
+    }
+  }, [])
+
+  useEffect(() => {
+    localStorage.setItem('rxdio_theme', themeMode)
+  }, [themeMode])
 
   useEffect(() => {
     if (!session) return
@@ -275,7 +289,7 @@ function App() {
     }}>
       {/* ══ Header ══ */}
       <header style={{
-        height: 'calc(56px + env(safe-area-inset-top))', 
+        height: 'calc(56px + env(safe-area-inset-top))',
         padding: 'env(safe-area-inset-top) 28px 0',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         borderBottom: `1px solid ${theme.border}`,
@@ -301,8 +315,8 @@ function App() {
               borderRadius: '6px', border: `1px solid ${theme.border}`, transition: 'all 0.2s',
             }}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={theme.muted} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="11" cy="11" r="8"/>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
               </svg>
               <input
                 type="text"
@@ -372,7 +386,7 @@ function App() {
             )}
           </div>
 
-           {/* Mobile Search Toggle */}
+          {/* Mobile Search Toggle */}
           <button
             className="mobile-search-toggle"
             onClick={() => setIsMobileSearchOpen(true)}
@@ -384,7 +398,7 @@ function App() {
             }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
           </button>
 
@@ -424,7 +438,7 @@ function App() {
                 <line x1="3" y1="18" x2="21" y2="18"></line>
               </svg>
             </button>
-            
+
             {isNavMenuOpen && (
               <div style={{
                 position: 'absolute', top: 'calc(100% + 6px)', right: 0, width: '160px',
@@ -434,16 +448,40 @@ function App() {
                 zIndex: 1000, overflow: 'hidden'
               }}>
                 <button
-                  onClick={() => { setIsDarkMode(!isDarkMode); setIsNavMenuOpen(false); }}
+                  onClick={() => { setThemeMode('dark'); setIsNavMenuOpen(false); }}
                   style={{
-                    width: '100%', padding: '12px 16px', background: 'transparent', border: 'none',
-                    borderBottom: `1px solid ${theme.border}`, textAlign: 'left', outline: 'none',
-                    color: theme.text, fontSize: '0.8rem', cursor: 'pointer', fontFamily: 'inherit'
+                    width: '100%', padding: '12px 16px', background: 'transparent', border: `1px solid ${theme.border}`,
+                    textAlign: 'left', outline: 'none', color: theme.text, fontSize: '0.8rem', cursor: 'pointer', fontFamily: 'inherit',
+                    fontWeight: themeMode === 'dark' ? 700 : 500
                   }}
                   onMouseEnter={e => e.currentTarget.style.background = theme.inputBg}
                   onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                 >
-                  {isDarkMode ? 'Light Mode' : 'Dark Mode'}
+                  Dark Mode
+                </button>
+                <button
+                  onClick={() => { setThemeMode('light'); setIsNavMenuOpen(false); }}
+                  style={{
+                    width: '100%', padding: '12px 16px', background: 'transparent', border: `1px solid ${theme.border}`,
+                    textAlign: 'left', outline: 'none', color: theme.text, fontSize: '0.8rem', cursor: 'pointer', fontFamily: 'inherit',
+                    fontWeight: themeMode === 'light' ? 700 : 500
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = theme.inputBg}
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                >
+                  Light Mode
+                </button>
+                <button
+                  onClick={() => { setThemeMode('pink'); setIsNavMenuOpen(false); }}
+                  style={{
+                    width: '100%', padding: '12px 16px', background: 'transparent', border: `1px solid ${theme.border}`,
+                    textAlign: 'left', outline: 'none', color: theme.text, fontSize: '0.8rem', cursor: 'pointer', fontFamily: 'inherit',
+                    fontWeight: themeMode === 'pink' ? 700 : 500
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = theme.inputBg}
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                >
+                  Pink Cute Mode
                 </button>
                 <button
                   onClick={() => supabase.auth.signOut()}
@@ -467,7 +505,7 @@ function App() {
         {/* Globe */}
         <div className="globe-container" style={{ flex: 1, position: 'relative', background: theme.bg }}>
           <Canvas camera={{ position: [0, 0, 6], fov: 45 }}>
-            <Globe onSelectCountry={setSelectedCountry} isDarkMode={isDarkMode} selectedStation={selectedStation} />
+            <Globe onSelectCountry={setSelectedCountry} themeMode={themeMode} selectedStation={selectedStation} />
           </Canvas>
 
           {/* Modern Minimal Playing Banner */}
@@ -475,36 +513,36 @@ function App() {
             <div style={{
               position: 'absolute', top: '24px', left: '24px',
               padding: '14px 22px',
-              background: 'rgba(0,0,0,0.85)',
+              background: theme.panelBg,
               backdropFilter: 'blur(12px)',
-              borderLeft: '2px solid #00ff88',
-              borderTop: '1px solid rgba(255,255,255,0.05)',
-              borderBottom: '1px solid rgba(255,255,255,0.05)',
-              borderRight: '1px solid rgba(255,255,255,0.05)',
-              borderRadius: '2px', // Sharp
+              borderLeft: `2px solid ${theme.accent}`,
+              borderTop: `1px solid ${theme.border}`,
+              borderBottom: `1px solid ${theme.border}`,
+              borderRight: `1px solid ${theme.border}`,
+              borderRadius: '16px',
               display: 'flex', flexDirection: 'column', gap: '2px',
-              boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
+              boxShadow: isDarkMode ? '0 20px 50px rgba(0,0,0,0.5)' : '0 20px 50px rgba(255, 152, 211, 0.15)',
               zIndex: 5,
               pointerEvents: 'none',
               maxWidth: '320px'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                <span style={{ 
-                  fontSize: '9px', fontWeight: 600, letterSpacing: '0.15em', 
-                  textTransform: 'uppercase', color: '#00ff88', opacity: 0.8 
+                <span style={{
+                  fontSize: '9px', fontWeight: 600, letterSpacing: '0.15em',
+                  textTransform: 'uppercase', color: '#00ff88', opacity: 0.8
                 }}>
                   ● Live Data
                 </span>
               </div>
-              <div style={{ 
-                fontSize: '15px', fontWeight: 600, color: '#fff', 
-                letterSpacing: '-0.2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' 
+              <div style={{
+                fontSize: '15px', fontWeight: 600, color: '#fff',
+                letterSpacing: '-0.2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
               }}>
                 {selectedStation.name}
               </div>
-              <div style={{ 
-                fontSize: '10px', color: 'rgba(255,255,255,0.4)', 
-                letterSpacing: '0.05em', textTransform: 'uppercase', marginTop: '2px' 
+              <div style={{
+                fontSize: '10px', color: 'rgba(255,255,255,0.4)',
+                letterSpacing: '0.05em', textTransform: 'uppercase', marginTop: '2px'
               }}>
                 {selectedStation.country} / {selectedStation.codec || 'MP3'}
               </div>
@@ -537,7 +575,7 @@ function App() {
           loading={loading}
           onSelect={setSelectedStation}
           selectedStation={selectedStation}
-          isDarkMode={isDarkMode}
+          themeMode={themeMode}
           favorites={favorites}
           toggleFavorite={toggleFavorite}
           recents={recents}
@@ -549,26 +587,26 @@ function App() {
 
       {isManagingPlaylists && (
         <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
-          background: isDarkMode ? '#0a0a0a' : '#faf9f7', 
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: isDarkMode ? '#0a0a0a' : '#faf9f7',
           zIndex: 99999, overflowY: 'auto', padding: 'env(safe-area-inset-top) 24px 80px'
         }}>
           <div style={{ maxWidth: '600px', margin: '0 auto', paddingTop: '24px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>
               <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: theme.text, margin: 0 }}>Manage Playlists</h2>
-              <button 
+              <button
                 onClick={() => setIsManagingPlaylists(false)}
                 style={{ background: 'transparent', border: 'none', color: theme.muted, fontSize: '1.2rem', cursor: 'pointer', padding: '8px' }}
               >
                 ✕
               </button>
             </div>
-            
+
             {playlists.length === 0 ? (
               <p style={{ color: theme.muted, textAlign: 'center', marginTop: '40px' }}>No playlists to manage.</p>
             ) : playlists.map(pl => (
-              <div key={pl.id} style={{ 
-                background: isDarkMode ? '#1a1a1a' : '#fff', 
+              <div key={pl.id} style={{
+                background: isDarkMode ? '#1a1a1a' : '#fff',
                 border: `1px solid ${theme.border}`, borderRadius: '16px', padding: '24px',
                 marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '16px',
                 boxShadow: isDarkMode ? '0 8px 30px rgba(0,0,0,0.4)' : '0 8px 30px rgba(0,0,0,0.05)'
@@ -598,7 +636,7 @@ function App() {
       {/* ══ Player ══ */}
       <AudioPlayer
         station={selectedStation}
-        isDarkMode={isDarkMode}
+        themeMode={themeMode}
         favorites={favorites}
         toggleFavorite={toggleFavorite}
         playlists={playlists}
@@ -611,7 +649,8 @@ function App() {
           margin: 0;
           padding: 0;
           overflow: hidden;
-          background: #000;
+          background: ${theme.bg};
+          color: ${theme.text};
         }
         ::-webkit-scrollbar { display: none; }
         * { box-sizing: border-box; scrollbar-width: none; }
@@ -658,8 +697,10 @@ function App() {
           display: 'flex', flexDirection: 'column'
         }}>
           <div style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', background: theme.inputBg,
-              padding: '10px 14px', borderRadius: '8px', border: `1px solid ${theme.border}` }}>
+            <div style={{
+              flex: 1, display: 'flex', alignItems: 'center', background: theme.inputBg,
+              padding: '10px 14px', borderRadius: '8px', border: `1px solid ${theme.border}`
+            }}>
               <input
                 autoFocus
                 type="text"
@@ -676,7 +717,7 @@ function App() {
               Close
             </button>
           </div>
-          
+
           <div style={{ flex: 1, overflowY: 'auto' }}>
             {(() => {
               const filtered = countries.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase())).sort((a, b) => a.name.localeCompare(b.name));

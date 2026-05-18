@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { RadioStation } from '../services/radioApi'
 
-export function StationList({ stations, onSelect, loading, selectedStation, isDarkMode, favorites, toggleFavorite, recents, playlists, createPlaylist, onManagePlaylists }: { 
+export function StationList({ stations, onSelect, loading, selectedStation, isDarkMode, themeMode, favorites, toggleFavorite, recents, playlists, createPlaylist, onManagePlaylists }: { 
   stations: RadioStation[], 
   onSelect: (s: RadioStation) => void, 
   loading: boolean,
   selectedStation: RadioStation | null,
   isDarkMode?: boolean,
+  themeMode?: 'dark' | 'light' | 'pink',
   favorites: RadioStation[],
   toggleFavorite: (s: RadioStation) => void | Promise<void>,
   recents: RadioStation[],
@@ -19,17 +20,18 @@ export function StationList({ stations, onSelect, loading, selectedStation, isDa
     : activeTab === 'favs' ? favorites 
     : activeTab === 'recent' ? recents 
     : playlists.find(p => p.id === activeTab)?.stations || [];
+  const isPinkMode = themeMode === 'pink'
 
-  const bg = isDarkMode ? '#000' : '#faf9f7'
-  const border = isDarkMode ? '#1a1a1a' : '#e8e5e0'
-  const text = isDarkMode ? '#fff' : '#1a1a1a'
-  const muted = isDarkMode ? '#444' : '#9a9590'
-  const subtle = isDarkMode ? '#222' : '#f3f1ee'
-  const selectedBg = isDarkMode ? '#111' : '#efecea'
+  const bg = isDarkMode ? '#000' : isPinkMode ? '#ffeef7' : '#faf9f7'
+  const border = isDarkMode ? '#1a1a1a' : isPinkMode ? '#f0c1dc' : '#e8e5e0'
+  const text = isDarkMode ? '#fff' : isPinkMode ? '#381842' : '#1a1a1a'
+  const muted = isDarkMode ? '#444' : isPinkMode ? '#8a5a7c' : '#9a9590'
+  const subtle = isDarkMode ? '#222' : isPinkMode ? '#ffe8f4' : '#f3f1ee'
+  const selectedBg = isDarkMode ? '#111' : isPinkMode ? '#ffdeea' : '#efecea'
 
   const getPlaceholder = (name: string) => {
     const char = name.charAt(0).toUpperCase()
-    return `https://ui-avatars.com/api/?name=${char}&background=${isDarkMode ? '111' : 'f3f1ee'}&color=${isDarkMode ? 'fff' : '1a1a1a'}&bold=true&format=svg`
+    return `https://ui-avatars.com/api/?name=${char}&background=${isDarkMode ? '111' : isPinkMode ? 'ffc1de' : 'f3f1ee'}&color=${isDarkMode ? 'fff' : isPinkMode ? '381842' : '1a1a1a'}&bold=true&format=svg`
   }
 
   return (
@@ -153,7 +155,7 @@ export function StationList({ stations, onSelect, loading, selectedStation, isDa
                     </div>
                     {station.lastcheckok === 0 && (
                       <span style={{ 
-                        fontSize: '0.55rem', background: isDarkMode ? '#330000' : '#ffebee', color: '#ff4444', 
+                        fontSize: '0.55rem', background: isDarkMode ? '#330000' : isPinkMode ? '#ffdde6' : '#ffebee', color: '#ff4444', 
                         padding: '2px 4px', borderRadius: '4px', fontWeight: 700, letterSpacing: '0.05em' 
                       }}>OFFLINE</span>
                     )}

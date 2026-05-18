@@ -45,9 +45,10 @@ const convertTo3D = (lat: number, lon: number, radius: number) => {
   )
 }
 
-export function Globe({ onSelectCountry, isDarkMode, selectedStation }: { 
+export function Globe({ onSelectCountry, isDarkMode, themeMode, selectedStation }: { 
   onSelectCountry: (name: string) => void, 
   isDarkMode?: boolean,
+  themeMode?: 'dark' | 'light' | 'pink',
   selectedStation: RadioStation | null
 }) {
   const worldRef = useRef<THREE.Group>(null!)
