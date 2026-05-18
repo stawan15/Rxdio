@@ -1,460 +1,353 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { RadioStation } from '../services/radioApi'
-import { getTheme, ribbonBunny, type ThemeMode } from '../theme'
+import { avatarUrl, type ThemeMode } from '../theme'
+import { cn } from '../lib/cn'
+import { IconClock, IconReconnect } from './icons'
+import type { Playlist } from '../App'
 
-export function AudioPlayer({ station, themeMode = 'dark', favorites, toggleFavorite, playlists = [], toggleStationInPlaylist }: { 
-  station: RadioStation | null, 
-  themeMode?: ThemeMode,
-  favorites: RadioStation[],
-  toggleFavorite: (s: RadioStation) => void | Promise<void>,
-  playlists?: import('../App').Playlist[],
+type Props = {
+  station: RadioStation | null
+  themeMode: ThemeMode
+  favorites: RadioStation[]
+  toggleFavorite: (s: RadioStation) => void | Promise<void>
+  playlists?: Playlist[]
   toggleStationInPlaylist?: (id: string, s: RadioStation) => void
-}) {
+}
+
+const playerBar = cn(
+  'audio-player fixed inset-x-0 bottom-0 z-[1000] flex items-center border-t border-border bg-surface-muted shadow-player',
+  'h-[calc(64px+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)]',
+)
+
+const dropdown = 'absolute z-[1100] min-w-[140px] rounded-xl border border-border bg-surface-raised py-2 shadow-dropdown'
+
+export function AudioPlayer({
+  station, themeMode, favorites, toggleFavorite,
+  playlists = [], toggleStationInPlaylist,
+}: Props) {
   const audioRef = useRef<HTMLAudioElement>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [hasError, setHasError] = useState(false)
   const [isReconnecting, setIsReconnecting] = useState(false)
   const [volume, setVolume] = useState(0.8)
   const [sleepTimer, setSleepTimer] = useState<number | null>(null)
-  const [timeLeft, setTimeLeft] = useState<number | null>(null) 
+  const [timeLeft, setTimeLeft] = useState<number | null>(null)
   const [isTimerMenuOpen, setIsTimerMenuOpen] = useState(false)
   const [customTimerInput, setCustomTimerInput] = useState('')
   const [isPlaylistMenuOpen, setIsPlaylistMenuOpen] = useState(false)
   const timerRef = useRef<HTMLDivElement>(null)
   const playlistMenuRef = useRef<HTMLDivElement>(null)
-  
-  // Responsive / Expanded state
   const [isExpanded, setIsExpanded] = useState(false)
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768)
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 768)
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth <= 768);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  const handleCustomTimer = (e: React.FormEvent) => {
-    e.preventDefault();
-    const val = parseInt(customTimerInput, 10);
-    if (!isNaN(val) && val > 0) {
-      setSleepTimer(val);
-      setIsTimerMenuOpen(false);
-      setCustomTimerInput('');
-    }
-  }
-
-  useEffect(() => {
-    let interval: ReturnType<typeof setInterval>;
-    if (sleepTimer !== null) {
-      const endTime = Date.now() + sleepTimer * 60 * 1000;
-      setTimeLeft(sleepTimer * 60);
-
-      interval = setInterval(() => {
-        const remaining = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
-        setTimeLeft(remaining);
-        
-        if (remaining <= 0) {
-          if (audioRef.current) audioRef.current.pause();
-          setIsPlaying(false);
-          setSleepTimer(null);
-          setTimeLeft(null);
-          clearInterval(interval);
-        }
-      }, 1000);
-    } else {
-      setTimeLeft(null);
-    }
-
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [sleepTimer]);
-
-  const t = getTheme(themeMode)
-  const bg = t.isDark ? '#0a0a0a' : t.bg
-  const border = t.border
-  const text = t.text
-  const muted = t.isDark ? '#555' : t.muted
-  const subtle = t.subtle
-  const accent = t.accent
-
-  const getPlaceholder = useCallback((name: string) => {
-    const char = name.charAt(0).toUpperCase()
-    const avBg = t.isDark ? '111' : t.isPink ? ribbonBunny.avatarBg : 'f3f1ee'
-    const avColor = t.isDark ? 'fff' : t.isPink ? ribbonBunny.text.replace('#', '') : '1a1a1a'
-    return `https://ui-avatars.com/api/?name=${char}&background=${avBg}&color=${avColor}&bold=true&format=png`
-  }, [t.isDark, t.isPink])
+    const onResize = () => setIsMobile(window.innerWidth <= 768)
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
 
   const getArtworkUrl = useCallback((s: RadioStation) => {
-    if (!s) return '';
-    return s.favicon && s.favicon.startsWith('http') ? s.favicon : getPlaceholder(s.name);
-  }, [getPlaceholder])
+    if (!s) return ''
+    return s.favicon?.startsWith('http') ? s.favicon : avatarUrl(themeMode, s.name, 'png')
+  }, [themeMode])
 
-  const retryConnection = () => {
-    if (!audioRef.current || !station) return;
-    setIsReconnecting(true);
-    setHasError(false);
-    audioRef.current.load();
-    const playPromise = audioRef.current.play();
-    if (playPromise !== undefined) {
-      playPromise.then(() => {
-        setIsPlaying(true);
-        setIsReconnecting(false);
-      }).catch(() => {
-        setHasError(true);
-        setIsPlaying(false);
-        setIsReconnecting(false);
-      });
-    }
-  };
+  const retryConnection = useCallback(() => {
+    if (!audioRef.current || !station) return
+    setIsReconnecting(true)
+    setHasError(false)
+    audioRef.current.load()
+    audioRef.current.play()
+      .then(() => { setIsPlaying(true); setIsReconnecting(false) })
+      .catch(() => { setHasError(true); setIsPlaying(false); setIsReconnecting(false) })
+  }, [station])
 
   useEffect(() => {
-    if (station && audioRef.current) {
-      setHasError(false)
-      setIsReconnecting(false)
-      audioRef.current.load()
-      audioRef.current.play().catch(() => {
+    if (!sleepTimer) { setTimeLeft(null); return }
+    const end = Date.now() + sleepTimer * 60_000
+    setTimeLeft(sleepTimer * 60)
+    const id = setInterval(() => {
+      const remaining = Math.max(0, Math.ceil((end - Date.now()) / 1000))
+      setTimeLeft(remaining)
+      if (remaining <= 0) {
+        audioRef.current?.pause()
         setIsPlaying(false)
-        setHasError(true)
-      })
-      setIsPlaying(true)
-
-      // --- Media Session API ---
-      if ('mediaSession' in navigator) {
-        const artworkUrl = getArtworkUrl(station);
-          
-        navigator.mediaSession.metadata = new MediaMetadata({
-          title: station.name,
-          artist: station.country || 'Live Radio',
-          album: 'Rxdio PWA',
-          artwork: [
-            { src: artworkUrl, sizes: '96x96', type: 'image/png' },
-            { src: artworkUrl, sizes: '128x128', type: 'image/png' },
-            { src: artworkUrl, sizes: '192x192', type: 'image/png' },
-            { src: artworkUrl, sizes: '256x256', type: 'image/png' },
-            { src: artworkUrl, sizes: '384x384', type: 'image/png' },
-            { src: artworkUrl, sizes: '512x512', type: 'image/png' },
-          ]
-        });
-
-        navigator.mediaSession.setActionHandler('play', () => {
-          audioRef.current?.play();
-          setIsPlaying(true);
-        });
-        navigator.mediaSession.setActionHandler('pause', () => {
-          audioRef.current?.pause();
-          setIsPlaying(false);
-        });
-        navigator.mediaSession.setActionHandler('stop', () => {
-          audioRef.current?.pause();
-          setIsPlaying(false);
-        });
+        setSleepTimer(null)
+        setTimeLeft(null)
+        clearInterval(id)
       }
+    }, 1000)
+    return () => clearInterval(id)
+  }, [sleepTimer])
+
+  useEffect(() => {
+    if (!station || !audioRef.current) return
+    setHasError(false)
+    setIsReconnecting(false)
+    audioRef.current.load()
+    audioRef.current.play().catch(() => { setIsPlaying(false); setHasError(true) })
+    setIsPlaying(true)
+
+    if ('mediaSession' in navigator) {
+      const art = getArtworkUrl(station)
+      const sizes = ['96x96', '128x128', '192x192', '256x256', '384x384', '512x512'] as const
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: station.name,
+        artist: station.country || 'Live Radio',
+        album: 'Rxdio PWA',
+        artwork: sizes.map(s => ({ src: art, sizes: s, type: 'image/png' })),
+      })
+      navigator.mediaSession.setActionHandler('play', () => { audioRef.current?.play(); setIsPlaying(true) })
+      navigator.mediaSession.setActionHandler('pause', () => { audioRef.current?.pause(); setIsPlaying(false) })
+      navigator.mediaSession.setActionHandler('stop', () => { audioRef.current?.pause(); setIsPlaying(false) })
     }
   }, [station, getArtworkUrl])
 
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
+    const close = (e: MouseEvent) => {
       if (timerRef.current && !timerRef.current.contains(e.target as Node)) setIsTimerMenuOpen(false)
       if (playlistMenuRef.current && !playlistMenuRef.current.contains(e.target as Node)) setIsPlaylistMenuOpen(false)
     }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
+    document.addEventListener('mousedown', close)
+    return () => document.removeEventListener('mousedown', close)
   }, [])
 
   useEffect(() => {
-    let timeout: ReturnType<typeof setTimeout>;
-    if (hasError) timeout = setTimeout(() => retryConnection(), 5000);
-    return () => clearTimeout(timeout);
-  }, [hasError]);
+    if (!hasError) return
+    const t = setTimeout(retryConnection, 5000)
+    return () => clearTimeout(t)
+  }, [hasError, retryConnection])
 
   useEffect(() => {
-    const handleOnline = () => { if (hasError || isReconnecting) retryConnection() };
-    window.addEventListener('online', handleOnline);
-    return () => window.removeEventListener('online', handleOnline);
-  }, [hasError, isReconnecting]);
+    const onOnline = () => { if (hasError || isReconnecting) retryConnection() }
+    window.addEventListener('online', onOnline)
+    return () => window.removeEventListener('online', onOnline)
+  }, [hasError, isReconnecting, retryConnection])
 
   useEffect(() => {
     if (audioRef.current) audioRef.current.volume = volume
   }, [volume])
 
-  // ================= RENDER PART =================
+  const togglePlay = (e?: React.MouseEvent) => {
+    e?.stopPropagation()
+    if (!audioRef.current || hasError) return
+    if (isPlaying) audioRef.current.pause()
+    else audioRef.current.play()
+    setIsPlaying(!isPlaying)
+  }
 
-  // Reusable action buttons renderers
-  const renderPlayPause = (size: 'small' | 'large' = 'small') => {
-    const dim = size === 'large' ? '64px' : '44px'
-    const fz = size === 'large' ? '1.4rem' : '0.85rem'
-    return (
+  const playBtnClass = (large?: boolean) => cn(
+    'flex shrink-0 items-center justify-center rounded-full border transition-all',
+    large ? 'size-16 text-2xl' : 'size-11 text-sm',
+    hasError && 'cursor-not-allowed opacity-40',
+    isPlaying
+      ? 'border-accent bg-foreground text-surface'
+      : 'border-border bg-transparent text-foreground hover:border-accent',
+  )
+
+  const StatusTag = () => {
+    if (isReconnecting) {
+      return (
+        <span className="flex items-center gap-1 rounded bg-surface-muted px-1.5 py-0.5 text-[0.6rem] font-semibold text-foreground">
+          <IconReconnect /> RECONNECTING
+        </span>
+      )
+    }
+    if (hasError) {
+      return (
+        <span className="rounded bg-red-500/10 px-1.5 py-0.5 text-[0.6rem] font-bold text-red-500">
+          STREAM FAILED
+        </span>
+      )
+    }
+    return null
+  }
+
+  const TimerMenu = ({ align = 'left' }: { align?: 'left' | 'center' | 'top' }) => (
+    <div ref={timerRef} className="relative flex items-center">
       <button
-        disabled={hasError}
-        onClick={(e) => {
-          e.stopPropagation()
-          if (!audioRef.current || hasError) return
-          isPlaying ? audioRef.current.pause() : audioRef.current.play()
-          setIsPlaying(!isPlaying)
-        }}
-        style={{
-          width: dim, height: dim,
-          background: isPlaying ? text : 'transparent',
-          color: isPlaying ? bg : text,
-          border: `1px solid ${isPlaying ? accent : t.isDark ? '#333' : t.isPink ? ribbonBunny.border : '#ddd'}`,
-          borderRadius: '50%', cursor: hasError ? 'not-allowed' : 'pointer', 
-          fontSize: fz, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          flexShrink: 0, transition: 'all 0.2s', opacity: hasError ? 0.4 : 1
-        }}
+        type="button"
+        onClick={e => { e.stopPropagation(); setIsTimerMenuOpen(v => !v) }}
+        title="Sleep Timer"
+        className={cn(
+          'flex h-11 min-w-11 shrink-0 cursor-pointer items-center justify-center text-xs font-semibold transition-all',
+          sleepTimer ? 'rounded-full border border-accent bg-foreground px-3 text-surface' : 'rounded-full border border-border',
+        )}
       >
-        {isPlaying ? '■' : '▶'}
+        {timeLeft !== null
+          ? timeLeft < 60 ? '<1m' : `${Math.ceil(timeLeft / 60)}m`
+          : <IconClock />}
       </button>
-    )
-  }
-
-  const renderTimerMenu = (menuAlign: 'left' | 'right' | 'center' | 'top') => {
-    const alignStyles = menuAlign === 'right' ? { right: '0px', bottom: 'calc(100% + 12px)' }
-      : menuAlign === 'center' ? { left: '50%', transform: 'translateX(-50%)', bottom: 'calc(100% + 12px)' }
-      : menuAlign === 'top' ? { left: '0', bottom: 'calc(100% + 12px)' } 
-      : { left: '0', bottom: 'calc(100% + 12px)' }
-
-    return (
-      <div ref={timerRef} style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-        <button
-          onClick={(e) => { e.stopPropagation(); setIsTimerMenuOpen(!isTimerMenuOpen) }}
-          style={{
-            background: sleepTimer ? text : 'transparent', color: sleepTimer ? bg : text,
-            border: `1px solid ${t.isDark ? '#333' : '#ddd'}`,
-            borderRadius: sleepTimer ? '22px' : '50%',
-            width: sleepTimer ? 'auto' : '44px', minWidth: '44px', height: '44px',
-            padding: sleepTimer ? '0 12px' : '0',
-            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            transition: 'all 0.2s', fontSize: '0.75rem', fontWeight: 600, flexShrink: 0
-          }}
-          title="Sleep Timer"
+      {isTimerMenuOpen && (
+        <div
+          onClick={e => e.stopPropagation()}
+          className={cn(dropdown, align === 'center' && 'bottom-[calc(100%+12px)] left-1/2 -translate-x-1/2', align === 'top' && 'bottom-[calc(100%+12px)] left-0', align === 'left' && 'bottom-[calc(100%+12px)] left-0')}
         >
-          {timeLeft !== null ? (timeLeft < 60 ? '<1m' : `${Math.ceil(timeLeft / 60)}m`) : (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
-            </svg>
-          )}
-        </button>
+          <p className="px-4 pb-2 pt-1 text-[0.7rem] font-semibold uppercase tracking-wider text-foreground-muted">Sleep Timer</p>
+          {[15, 30, 45, 60].map(mins => (
+            <button
+              key={mins}
+              type="button"
+              onClick={() => { setSleepTimer(mins); setIsTimerMenuOpen(false) }}
+              className={cn('w-full px-4 py-2.5 text-left text-[0.85rem] hover:bg-surface-muted', sleepTimer === mins ? 'font-semibold text-amber-500' : 'text-foreground')}
+            >
+              {mins} minutes
+            </button>
+          ))}
+          <hr className="my-1 border-border" />
+          <form
+            onSubmit={e => {
+              e.preventDefault()
+              const v = parseInt(customTimerInput, 10)
+              if (!isNaN(v) && v > 0) { setSleepTimer(v); setIsTimerMenuOpen(false); setCustomTimerInput('') }
+            }}
+            className="flex items-center gap-2 px-4 py-1.5"
+          >
+            <input
+              type="number"
+              min={1}
+              placeholder="Mins"
+              value={customTimerInput}
+              onChange={e => setCustomTimerInput(e.target.value)}
+              className="min-w-0 flex-1 rounded-md border border-border bg-surface-raised px-2 py-1.5 text-[0.8rem] text-foreground outline-none"
+            />
+            <button type="submit" className="rounded-md bg-foreground px-3 py-1.5 text-[0.75rem] font-semibold text-surface">Set</button>
+          </form>
+          <hr className="my-1 border-border" />
+          <button type="button" onClick={() => { setSleepTimer(null); setIsTimerMenuOpen(false) }} className="w-full px-4 py-2.5 text-left text-[0.85rem] text-red-400 hover:bg-surface-muted">
+            Turn Off
+          </button>
+        </div>
+      )}
+    </div>
+  )
 
-        {isTimerMenuOpen && (
-          <div onClick={e => e.stopPropagation()} style={{
-            position: 'absolute', ...alignStyles,
-            background: t.isDark ? '#1a1a1a' : '#faf9f7',
-            border: `1px solid ${border}`, borderRadius: '12px',
-            boxShadow: t.isDark ? '0 12px 40px rgba(0,0,0,0.9)' : '0 12px 40px rgba(0,0,0,0.06)',
-            padding: '8px 0', minWidth: '140px', zIndex: 1100, display: 'flex', flexDirection: 'column'
-          }}>
-            <div style={{ padding: '4px 16px 8px', fontSize: '0.7rem', color: muted, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Sleep Timer</div>
-            {[15, 30, 45, 60].map(mins => (
-              <button
-                key={mins} onClick={() => { setSleepTimer(mins); setIsTimerMenuOpen(false); }}
-                style={{
-                  width: '100%', padding: '10px 16px', background: 'transparent', border: 'none', color: sleepTimer === mins ? '#f59e0b' : text,
-                  textAlign: 'left', cursor: 'pointer', fontSize: '0.85rem', fontFamily: 'inherit', fontWeight: sleepTimer === mins ? 600 : 400
-                }}
-              >{mins} minutes</button>
-            ))}
-            <div style={{ height: '1px', background: border, margin: '4px 0' }} />
-            <form onSubmit={handleCustomTimer} style={{ padding: '6px 16px', display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <input type="number" min="1" placeholder="Mins" value={customTimerInput} onChange={e => setCustomTimerInput(e.target.value)}
-                style={{ flex: 1, width: '0', padding: '6px 8px', borderRadius: '6px', border: `1px solid ${border}`, background: t.isDark ? '#111' : t.isPink ? ribbonBunny.headerBg : '#fff', color: text, fontSize: '0.8rem', outline: 'none' }} />
-              <button type="submit" style={{ padding: '6px 12px', background: text, color: bg, border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600 }}>Set</button>
-            </form>
-            <div style={{ height: '1px', background: border, margin: '4px 0' }} />
-            <button onClick={() => { setSleepTimer(null); setIsTimerMenuOpen(false); }}
-              style={{ width: '100%', padding: '10px 16px', background: 'transparent', border: 'none', color: '#f87171', textAlign: 'left', cursor: 'pointer', fontSize: '0.85rem' }}
-            >Turn Off</button>
-          </div>
-        )}
-      </div>
-    )
-  }
-
-  const renderPlaylistMenu = (menuAlign: 'left' | 'right' | 'center' = 'left') => {
-    if (!station) return null;
-    const alignStyles = menuAlign === 'center' ? { left: '50%', transform: 'translateX(-50%)' }
-      : menuAlign === 'right' ? { right: 0 } : { left: 0 }
-
+  const PlaylistMenu = ({ align = 'left' }: { align?: 'left' | 'center' }) => {
+    if (!station) return null
     return (
-      <div ref={playlistMenuRef} style={{ position: 'relative' }}>
+      <div ref={playlistMenuRef} className="relative">
         <button
-          onClick={e => { e.stopPropagation(); setIsPlaylistMenuOpen(!isPlaylistMenuOpen) }}
-          style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.2rem', color: muted, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.8, minWidth: '44px', minHeight: '44px' }}
-        >+</button>
+          type="button"
+          onClick={e => { e.stopPropagation(); setIsPlaylistMenuOpen(v => !v) }}
+          className="flex min-h-11 min-w-11 cursor-pointer items-center justify-center text-xl text-foreground-muted opacity-80 hover:opacity-100"
+        >
+          +
+        </button>
         {isPlaylistMenuOpen && (
-          <div onClick={e => e.stopPropagation()} style={{
-            position: 'absolute', bottom: 'calc(100% + 10px)', ...alignStyles,
-            background: t.isDark ? '#1a1a1a' : '#faf9f7', border: `1px solid ${border}`, borderRadius: '12px',
-            boxShadow: t.isDark ? '0 12px 40px rgba(0,0,0,0.9)' : '0 12px 40px rgba(0,0,0,0.06)', padding: '8px 0', minWidth: '160px', zIndex: 1100
-          }}>
-            <div style={{ padding: '4px 16px 8px', fontSize: '0.7rem', color: muted, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Add to Playlist</div>
+          <div
+            onClick={e => e.stopPropagation()}
+            className={cn(dropdown, 'bottom-[calc(100%+10px)] min-w-[160px]', align === 'center' ? 'left-1/2 -translate-x-1/2' : 'left-0')}
+          >
+            <p className="px-4 pb-2 pt-1 text-[0.7rem] font-semibold uppercase tracking-wider text-foreground-muted">Add to Playlist</p>
             {playlists.length === 0 ? (
-              <div style={{ padding: '8px 16px', fontSize: '0.75rem', color: muted }}>Use + tab to create one.</div>
-            ) : (
-              playlists.map(pl => {
-                const isAdded = pl.stations.some(s => s.stationuuid === station.stationuuid)
-                return (
-                  <button
-                    key={pl.id}
-                    onClick={(e) => { e.stopPropagation(); if (toggleStationInPlaylist) toggleStationInPlaylist(pl.id, station); }}
-                    style={{
-                      width: '100%', padding: '10px 16px', background: 'transparent', border: 'none', color: isAdded ? '#f59e0b' : text,
-                      textAlign: 'left', cursor: 'pointer', fontSize: '0.85rem', fontFamily: 'inherit', fontWeight: isAdded ? 600 : 400,
-                      display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-                    }}
-                  >
-                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '120px' }}>{pl.name}</span>
-                    {isAdded && <span>✓</span>}
-                  </button>
-                )
-              })
-            )}
+              <p className="px-4 py-2 text-[0.75rem] text-foreground-muted">Use + tab to create one.</p>
+            ) : playlists.map(pl => {
+              const added = pl.stations.some(s => s.stationuuid === station.stationuuid)
+              return (
+                <button
+                  key={pl.id}
+                  type="button"
+                  onClick={e => { e.stopPropagation(); toggleStationInPlaylist?.(pl.id, station) }}
+                  className={cn('flex w-full items-center justify-between px-4 py-2.5 text-left text-[0.85rem] hover:bg-surface-muted', added ? 'font-semibold text-amber-500' : 'text-foreground')}
+                >
+                  <span className="max-w-[120px] truncate">{pl.name}</span>
+                  {added && <span>✓</span>}
+                </button>
+              )
+            })}
           </div>
         )}
       </div>
     )
-  }
-
-  const tagIndicator = isReconnecting ? (
-    <span style={{ fontSize: '0.6rem', background: subtle, color: text, padding: '2px 6px', borderRadius: '4px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'spin 1.5s linear infinite' }}>
-        <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"></path><polyline points="21 3 21 8 16 8"></polyline>
-      </svg>
-      RECONNECTING
-    </span>
-  ) : hasError ? (
-    <span style={{ fontSize: '0.6rem', background: t.isDark ? '#330000' : t.isPink ? ribbonBunny.selectedBg : '#ffebee', color: '#ff4444', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>STREAM FAILED</span>
-  ) : null;
-
-
-  // Base player styling wrappers
-  const glassmorphism = {
-    backgroundColor: t.isDark ? '#111111' : t.isPink ? ribbonBunny.panelBg : '#ffffff',
-    opacity: 1,
-    boxShadow: t.isDark ? '0 -4px 30px rgba(0,0,0,0.8)' : t.isPink ? `0 -4px 30px ${ribbonBunny.glow}` : '0 -4px 30px rgba(0,0,0,0.1)',
   }
 
   const renderPlayer = () => {
     if (!station) {
       return (
-        <div className="audio-player empty-player" style={{
-          position: 'fixed', bottom: 0, left: 0, right: 0, height: 'calc(64px + env(safe-area-inset-bottom))', 
-          ...glassmorphism, borderTop: `1px solid ${border}`, display: 'flex', alignItems: 'center', 
-          padding: '0 32px', paddingBottom: 'env(safe-area-inset-bottom)', zIndex: 1000
-        }}>
-          <span style={{ fontSize: '0.75rem', color: muted, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Select a station to begin</span>
+        <div className={cn(playerBar, 'empty-player px-8 max-md:gap-3 max-md:px-4')}>
+          <span className="text-[0.75rem] uppercase tracking-widest text-foreground-muted">Select a station to begin</span>
         </div>
       )
     }
 
     const isFav = favorites.some(s => s.stationuuid === station.stationuuid)
-    const artworkUrl = getArtworkUrl(station);
+    const art = getArtworkUrl(station)
 
     if (isMobile && !isExpanded) {
-      // MINI PLAYER (MOBILE)
       return (
-        <div className="audio-player mini-player" onClick={() => setIsExpanded(true)} style={{
-          position: 'fixed', bottom: 0, left: 0, right: 0, height: 'calc(64px + env(safe-area-inset-bottom))', 
-          ...glassmorphism, borderTop: `1px solid ${border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '0 20px', paddingBottom: 'env(safe-area-inset-bottom)', zIndex: 1000, cursor: 'pointer', gap: '16px',
-          boxShadow: '0 -4px 30px rgba(0,0,0,0.3)'
-        }}>
-          <img src={artworkUrl} alt="" style={{ width: '42px', height: '42px', borderRadius: '6px', objectFit: 'contain', background: subtle, flexShrink: 0 }} />
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
-            <div style={{ fontSize: '0.9rem', fontWeight: 600, color: text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{station.name}</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
-              <span style={{ fontSize: '0.7rem', color: muted, textTransform: 'uppercase' }}>{station.country}</span>
-              {tagIndicator}
+        <div className={cn(playerBar, 'mini-player cursor-pointer justify-between gap-4 px-5')} onClick={() => setIsExpanded(true)}>
+          <img src={art} alt="" className="size-[42px] shrink-0 rounded-md bg-surface-muted object-contain" />
+          <div className="min-w-0 flex-1 overflow-hidden">
+            <p className="truncate text-[0.9rem] font-semibold text-foreground">{station.name}</p>
+            <div className="mt-0.5 flex items-center gap-2">
+              <span className="text-[0.7rem] uppercase text-foreground-muted">{station.country}</span>
+              <StatusTag />
             </div>
           </div>
-          {renderPlayPause('small')}
+          <button type="button" className={playBtnClass()} disabled={hasError} onClick={togglePlay}>
+            {isPlaying ? '■' : '▶'}
+          </button>
         </div>
       )
     }
 
     if (isMobile && isExpanded) {
-      // FULL-SCREEN PLAYER (MOBILE)
       return (
-        <div className="audio-player full-player" style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: t.isDark ? '#111111' : t.isPink ? ribbonBunny.headerBg : '#ffffff',
-          opacity: 1,
-          zIndex: 9999, display: 'flex', flexDirection: 'column',
-          padding: 'env(safe-area-inset-top) 24px calc(32px + env(safe-area-inset-bottom))',
-          animation: 'slideUp 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)'
-        }}>
-          <style>{`
-            @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-          `}</style>
-          
-          <button onClick={() => setIsExpanded(false)} style={{ background: 'transparent', border: 'none', color: text, width: '100%', padding: '16px 0', cursor: 'pointer', display: 'flex', justifyContent: 'center' }}>
-            <div style={{ width: '40px', height: '5px', background: t.isDark ? '#444' : '#ccc', borderRadius: '3px' }} />
+        <div className="audio-player full-player fixed inset-0 z-[9999] flex animate-slide-up flex-col bg-surface-muted px-6 pb-[calc(32px+env(safe-area-inset-bottom))] pt-[env(safe-area-inset-top)]">
+          <button type="button" onClick={() => setIsExpanded(false)} className="flex w-full cursor-pointer justify-center py-4">
+            <div className="h-1.5 w-10 rounded-full bg-foreground/30" />
           </button>
-
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', margin: '2vh 0 4vh' }}>
-            <img src={artworkUrl} alt="" style={{ width: '100%', maxWidth: '300px', aspectRatio: '1/1', borderRadius: '12px', objectFit: 'contain', background: subtle, boxShadow: t.isDark ? '0 20px 50px rgba(0,0,0,0.8)' : '0 20px 50px rgba(0,0,0,0.1)' }} />
+          <div className="my-[2vh] flex flex-1 flex-col items-center justify-center">
+            <img src={art} alt="" className="aspect-square w-full max-w-[300px] rounded-xl bg-surface-muted object-contain shadow-panel" />
           </div>
-
-          <div style={{ marginBottom: '24px', textAlign: 'center' }}>
-            <h2 style={{ margin: '0 0 4px', fontSize: '1.4rem', fontWeight: 700, color: text }}>{station.name}</h2>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-              <p style={{ margin: 0, fontSize: '0.9rem', color: muted, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{station.country}</p>
-              {tagIndicator}
+          <div className="mb-6 text-center">
+            <h2 className="mb-1 text-2xl font-bold text-foreground">{station.name}</h2>
+            <div className="flex items-center justify-center gap-2">
+              <p className="text-[0.9rem] uppercase tracking-wide text-foreground-muted">{station.country}</p>
+              <StatusTag />
             </div>
           </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '24px', marginBottom: '32px' }}>
-            <button onClick={() => toggleFavorite(station)} style={{ background: 'transparent', border: 'none', color: isFav ? '#f59e0b' : muted, fontSize: '1.6rem', cursor: 'pointer' }}>
+          <div className="mb-8 flex items-center justify-center gap-6">
+            <button type="button" onClick={() => toggleFavorite(station)} className={cn('cursor-pointer border-none bg-transparent text-2xl', isFav ? 'text-amber-500' : 'text-foreground-muted')}>
               {isFav ? '★' : '☆'}
             </button>
-            {renderPlayPause('large')}
-            {renderPlaylistMenu('center')}
+            <button type="button" className={playBtnClass(true)} disabled={hasError} onClick={togglePlay}>{isPlaying ? '■' : '▶'}</button>
+            <PlaylistMenu align="center" />
           </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px' }}>
-            {renderTimerMenu('top')}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ fontSize: '0.7rem', color: muted }}>VOL</span>
-              <input type="range" min="0" max="1" step="0.01" value={volume} onChange={e => setVolume(parseFloat(e.target.value))} style={{ width: '120px', accentColor: text }} />
+          <div className="flex items-center justify-between px-4">
+            <TimerMenu align="top" />
+            <div className="flex items-center gap-2.5">
+              <span className="text-[0.7rem] text-foreground-muted">VOL</span>
+              <input type="range" min={0} max={1} step={0.01} value={volume} onChange={e => setVolume(+e.target.value)} className="w-[120px] accent-foreground" />
             </div>
           </div>
         </div>
       )
     }
 
-    // DESKTOP PLAYER (DEFAULT)
     return (
-      <div className="audio-player desktop-player" style={{
-        position: 'fixed', bottom: 0, left: 0, right: 0, height: 'calc(64px + env(safe-area-inset-bottom))', 
-        ...glassmorphism, borderTop: `1px solid ${border}`,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', gap: '16px', zIndex: 1000,
-        boxShadow: t.isDark ? '0 -4px 30px rgba(0,0,0,0.5)' : '0 -4px 30px rgba(0,0,0,0.04)',
-        minWidth: 0
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1, minWidth: 0, maxWidth: '300px' }}>
-          <img src={artworkUrl} alt="" style={{ width: '48px', height: '48px', borderRadius: '6px', objectFit: 'contain', background: subtle, flexShrink: 0 }} />
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
-            <div style={{ fontSize: '0.95rem', fontWeight: 600, color: text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{station.name}</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
-              <span style={{ fontSize: '0.75rem', color: muted, textTransform: 'uppercase' }}>{station.country}</span>
-              {tagIndicator}
+      <div className={cn(playerBar, 'desktop-player justify-between gap-4 px-6 max-md:gap-3 max-md:px-4')}>
+        <div className="flex min-w-0 max-w-[300px] flex-1 items-center gap-3.5">
+          <img src={art} alt="" className="size-12 shrink-0 rounded-md bg-surface-muted object-contain" />
+          <div className="min-w-0 flex-1 overflow-hidden">
+            <p className="truncate text-[0.95rem] font-semibold text-foreground">{station.name}</p>
+            <div className="mt-0.5 flex items-center gap-2">
+              <span className="text-[0.75rem] uppercase text-foreground-muted">{station.country}</span>
+              <StatusTag />
             </div>
           </div>
         </div>
-        
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '20px', flex: 1 }}>
-          {renderPlayPause('small')}
+        <div className="flex flex-1 items-center justify-center gap-5">
+          <button type="button" className={playBtnClass()} disabled={hasError} onClick={togglePlay}>{isPlaying ? '■' : '▶'}</button>
         </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '16px', flex: 1, flexShrink: 0 }}>
-          <button onClick={() => toggleFavorite(station)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1.2rem', color: isFav ? '#f59e0b' : muted }}>
+        <div className="flex flex-1 shrink-0 items-center justify-end gap-4">
+          <button type="button" onClick={() => toggleFavorite(station)} className={cn('cursor-pointer border-none bg-transparent text-xl', isFav ? 'text-amber-500' : 'text-foreground-muted')}>
             {isFav ? '★' : '☆'}
           </button>
-          {renderPlaylistMenu('center')}
-          {renderTimerMenu('center')}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '0.7rem', color: muted, textTransform: 'uppercase' }}>Vol</span>
-            <input type="range" min="0" max="1" step="0.01" value={volume} onChange={e => setVolume(parseFloat(e.target.value))} style={{ width: '80px', accentColor: text, cursor: 'pointer' }} />
+          <PlaylistMenu align="center" />
+          <TimerMenu align="center" />
+          <div className="flex items-center gap-2">
+            <span className="text-[0.7rem] uppercase text-foreground-muted">Vol</span>
+            <input type="range" min={0} max={1} step={0.01} value={volume} onChange={e => setVolume(+e.target.value)} className="w-20 cursor-pointer accent-foreground" />
           </div>
         </div>
       </div>
@@ -466,14 +359,11 @@ export function AudioPlayer({ station, themeMode = 'dark', favorites, toggleFavo
       <audio
         ref={audioRef}
         src={station?.url_resolved || ''}
-        onPlay={() => { setIsPlaying(true); setIsReconnecting(false); setHasError(false); }}
+        onPlay={() => { setIsPlaying(true); setIsReconnecting(false); setHasError(false) }}
         onPause={() => setIsPlaying(false)}
         onWaiting={() => setIsReconnecting(true)}
         onPlaying={() => setIsReconnecting(false)}
-        onError={() => {
-          setHasError(true)
-          setIsPlaying(false)
-        }}
+        onError={() => { setHasError(true); setIsPlaying(false) }}
       />
       {renderPlayer()}
     </>

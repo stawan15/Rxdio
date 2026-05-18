@@ -3,7 +3,7 @@ import { useFrame, useLoader } from '@react-three/fiber'
 import { OrbitControls, Sphere, Html, Stars } from '@react-three/drei'
 import * as THREE from 'three'
 import { RadioStation } from '../services/radioApi'
-import { ribbonBunny, type ThemeMode } from '../theme'
+import { accentHex, bunny, type ThemeMode } from '../theme'
 
 const COUNTRY_NODES = [
   { name: 'Thailand', lat: 15.87, lon: 100.99 },
@@ -30,93 +30,85 @@ const COUNTRY_NODES = [
   { name: 'New Zealand', lat: -40.90, lon: 174.88 },
 ]
 
-// Calculate normal vector for rotation
-const getNormal = (pos: THREE.Vector3) => {
-  return pos.clone().normalize()
-}
+const getNormal = (pos: THREE.Vector3) => pos.clone().normalize()
 
-// สูตรคำนวณพิกัด 3D ให้ตรงกับ Texture ของ Three.js
 const convertTo3D = (lat: number, lon: number, radius: number) => {
   const phi = (90 - lat) * (Math.PI / 180)
   const theta = (lon + 180) * (Math.PI / 180)
   return new THREE.Vector3(
     -radius * Math.sin(phi) * Math.cos(theta),
     radius * Math.cos(phi),
-    radius * Math.sin(phi) * Math.sin(theta)
+    radius * Math.sin(phi) * Math.sin(theta),
   )
 }
 
-export function Globe({ onSelectCountry, themeMode = 'dark', selectedStation }: { 
-  onSelectCountry: (name: string) => void, 
-  themeMode?: ThemeMode,
+type Props = {
+  onSelectCountry: (name: string) => void
+  themeMode: ThemeMode
   selectedStation: RadioStation | null
-}) {
+}
+
+export function Globe({ onSelectCountry, themeMode, selectedStation }: Props) {
   const worldRef = useRef<THREE.Group>(null!)
   const cloudsRef = useRef<THREE.Mesh>(null!)
   const [hovered, setHovered] = useState<string | null>(null)
-  const isDarkMode = themeMode === 'dark'
-  const isPinkMode = themeMode === 'pink'
-  const markerColor = isPinkMode ? ribbonBunny.accent : '#00ff88'
+
+  const isDark = themeMode === 'dark'
+  const isPink = themeMode === 'pink'
+  const markerColor = accentHex(themeMode)
 
   const [colorMap, bumpMap, specularMap] = useLoader(THREE.TextureLoader, [
     'https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_atmos_2048.jpg',
     'https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_normal_2048.jpg',
-    'https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_specular_2048.jpg'
+    'https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_specular_2048.jpg',
   ])
 
-  // Animation loop
   useFrame((state) => {
     const time = state.clock.elapsedTime
     if (worldRef.current) worldRef.current.rotation.y += 0.0006
     if (cloudsRef.current) cloudsRef.current.rotation.y += 0.0008
-    
+
     state.scene.traverse((obj) => {
       if ((obj.name === 'country-beam' || obj.name === 'country-tip') && obj instanceof THREE.Mesh) {
-        const isSelected = obj.userData.selected
+        const selected = obj.userData.selected
         if (obj.material instanceof THREE.MeshBasicMaterial) {
-          obj.material.opacity = isSelected ? 0.9 : 0.3 + Math.sin(time * 3) * 0.1
+          obj.material.opacity = selected ? 0.9 : 0.3 + Math.sin(time * 3) * 0.1
         }
       }
       if (obj.name === 'country-core') {
-        const isSelected = obj.userData.selected
-        const baseScale = isSelected ? 1.4 : 1
-        obj.scale.setScalar(baseScale + Math.sin(time * 5) * 0.08)
+        const selected = obj.userData.selected
+        const base = selected ? 1.4 : 1
+        obj.scale.setScalar(base + Math.sin(time * 5) * 0.08)
       }
     })
   })
 
-  const markers = useMemo(() => {
-    return COUNTRY_NODES.map(node => {
+  const markers = useMemo(() =>
+    COUNTRY_NODES.map(node => {
       const position = convertTo3D(node.lat, node.lon, 2.01)
-      const normal = getNormal(position)
-      
-      // Create a quaternion to rotate the cylinder to face outward
       const quaternion = new THREE.Quaternion()
-      const up = new THREE.Vector3(0, 1, 0)
-      quaternion.setFromUnitVectors(up, normal)
-
-      return {
-        ...node,
-        position,
-        quaternion
-      }
-    })
-  }, [])
+      quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), getNormal(position))
+      return { ...node, position, quaternion }
+    }), [])
 
   return (
     <>
-      <ambientLight intensity={isDarkMode ? 0.3 : isPinkMode ? 0.72 : 1} />
-      <directionalLight position={[10, 10, 5]} intensity={isDarkMode ? 1.5 : isPinkMode ? 1.9 : 2.5} color={isPinkMode ? ribbonBunny.light : '#ffffff'} />
-      
-      {(isDarkMode || isPinkMode) && <Stars radius={150} depth={50} count={5000} factor={4} saturation={isPinkMode ? 0.35 : 0} fade speed={1} />}
-      
-      {/* กลุ่มของโลกที่หมุนไปพร้อมกัน */}
+      <ambientLight intensity={isDark ? 0.3 : isPink ? 0.72 : 1} />
+      <directionalLight
+        position={[10, 10, 5]}
+        intensity={isDark ? 1.5 : isPink ? 1.9 : 2.5}
+        color={isPink ? bunny.pink : '#ffffff'}
+      />
+
+      {(isDark || isPink) && (
+        <Stars radius={150} depth={50} count={5000} factor={4} saturation={isPink ? 0.35 : 0} fade speed={1} />
+      )}
+
       <group ref={worldRef}>
-        {/* Earth Body */}
         <Sphere args={[1, 64, 64]} scale={2}>
-          <meshPhongMaterial 
-            map={colorMap} 
-            bumpMap={bumpMap} 
+          <meshPhongMaterial
+            map={colorMap}
+            bumpMap={bumpMap}
             bumpScale={0.05}
             specularMap={specularMap}
             specular={new THREE.Color('grey')}
@@ -124,113 +116,68 @@ export function Globe({ onSelectCountry, themeMode = 'dark', selectedStation }: 
           />
         </Sphere>
 
-        {/* Clouds */}
         <Sphere ref={cloudsRef} args={[1.005, 64, 64]} scale={2.02}>
-          <meshPhongMaterial
-            color="#ffffff"
-            transparent={true}
-            opacity={0.15}
-            side={THREE.DoubleSide}
-          />
+          <meshPhongMaterial color="#ffffff" transparent opacity={0.15} side={THREE.DoubleSide} />
         </Sphere>
 
-        {/* Markers inside the same rotating group */}
-        {markers.map((marker) => (
-          <group 
-            key={marker.name} 
-            position={marker.position}
-            quaternion={marker.quaternion}
-            onClick={(e) => {
-              e.stopPropagation()
-              onSelectCountry(marker.name)
-            }}
-            onPointerOver={() => setHovered(marker.name)}
-            onPointerOut={() => setHovered(null)}
-          >
-            {/* Base Core Dot */}
-            <mesh 
-              name="country-core" 
-              userData={{ selected: selectedStation?.country === marker.name }}
+        {markers.map(marker => {
+          const isSelected = selectedStation?.country === marker.name
+          return (
+            <group
+              key={marker.name}
+              position={marker.position}
+              quaternion={marker.quaternion}
+              onClick={e => { e.stopPropagation(); onSelectCountry(marker.name) }}
+              onPointerOver={() => setHovered(marker.name)}
+              onPointerOut={() => setHovered(null)}
             >
-              <sphereGeometry args={[0.015, 16, 16]} />
-              <meshBasicMaterial color={selectedStation?.country === marker.name ? "#fff" : markerColor} />
-            </mesh>
+              <mesh name="country-core" userData={{ selected: isSelected }}>
+                <sphereGeometry args={[0.015, 16, 16]} />
+                <meshBasicMaterial color={isSelected ? '#fff' : markerColor} />
+              </mesh>
+              <mesh name="country-beam" position={[0, 0.08, 0]} userData={{ selected: isSelected }}>
+                <cylinderGeometry args={[0.002, 0.002, 0.16, 8]} />
+                <meshBasicMaterial color={markerColor} transparent opacity={0.3} />
+              </mesh>
+              <mesh name="country-tip" position={[0, 0.16, 0]} userData={{ selected: isSelected }}>
+                <sphereGeometry args={[0.008, 16, 16]} />
+                <meshBasicMaterial color={isSelected ? '#fff' : markerColor} transparent opacity={0.6} />
+              </mesh>
 
-            {/* Transmission Beam */}
-            <mesh 
-              name="country-beam"
-              position={[0, 0.08, 0]} // Shift up half height
-              userData={{ selected: selectedStation?.country === marker.name }}
-            >
-              <cylinderGeometry args={[0.002, 0.002, 0.16, 8]} />
-              <meshBasicMaterial color={markerColor} transparent={true} opacity={0.3} />
-            </mesh>
-
-            {/* Antenna Tip */}
-            <mesh 
-              name="country-tip"
-              position={[0, 0.16, 0]} // Shift to top of beam
-              userData={{ selected: selectedStation?.country === marker.name }}
-            >
-              <sphereGeometry args={[0.008, 16, 16]} />
-              <meshBasicMaterial color={selectedStation?.country === marker.name ? "#fff" : markerColor} transparent={true} opacity={0.6} />
-            </mesh>
-            
-            {hovered === marker.name && (
-              <Html distanceFactor={10}>
-                <div style={{
-                  background: isPinkMode ? ribbonBunny.panelBg : 'rgba(0,0,0,0.95)',
-                  color: isPinkMode ? ribbonBunny.text : '#fff',
-                  padding: '12px 16px',
-                  borderRadius: '2px', // Sharp corners for formal look
-                  fontSize: '11px',
-                  fontWeight: '500',
-                  border: `1px solid ${isPinkMode ? ribbonBunny.border : 'rgba(255,255,255,0.1)'}`,
-                  boxShadow: isPinkMode ? `0 20px 40px ${ribbonBunny.glow}` : '0 20px 40px rgba(0,0,0,0.4)',
-                  transform: 'translate(-50%, -140%)',
-                  whiteSpace: 'nowrap',
-                  pointerEvents: 'none',
-                  display: 'flex', flexDirection: 'column', gap: '8px'
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '20px' }}>
-                    <span style={{ 
-                      fontSize: '9px', letterSpacing: '0.15em', opacity: 0.4, 
-                      textTransform: 'uppercase', fontFamily: '"Space Grotesk", sans-serif' 
-                    }}>Location</span>
-                    {selectedStation?.country === marker.name && (
-                      <span style={{ 
-                        fontSize: '9px', color: markerColor, letterSpacing: '0.1em', 
-                        fontWeight: 700, textTransform: 'uppercase'
-                      }}>● Online</span>
+              {hovered === marker.name && (
+                <Html distanceFactor={10}>
+                  <div
+                    className="pointer-events-none flex -translate-x-1/2 -translate-y-[140%] flex-col gap-2 whitespace-nowrap rounded-sm border px-4 py-3 text-[11px] font-medium shadow-panel"
+                    style={{
+                      background: isPink ? bunny.light : 'rgba(0,0,0,0.95)',
+                      color: isPink ? bunny.dark : '#fff',
+                      borderColor: isPink ? bunny.pink : 'rgba(255,255,255,0.1)',
+                    }}
+                  >
+                    <div className="flex items-center justify-between gap-5">
+                      <span className="font-sans text-[9px] uppercase tracking-[0.15em] opacity-40">Location</span>
+                      {isSelected && (
+                        <span className="text-[9px] font-bold uppercase tracking-widest" style={{ color: markerColor }}>
+                          ● Online
+                        </span>
+                      )}
+                    </div>
+                    <span className="font-sans text-sm font-semibold tracking-wide">{marker.name}</span>
+                    {isSelected && selectedStation && (
+                      <div className="flex flex-col gap-0.5 border-t border-black/5 pt-2">
+                        <span className="text-[9px] uppercase tracking-widest opacity-30">Broadcasting</span>
+                        <span className="text-[11px] font-medium" style={{ color: markerColor }}>{selectedStation.name}</span>
+                      </div>
                     )}
                   </div>
-                  <div style={{ 
-                    fontSize: '14px', letterSpacing: '0.02em', fontWeight: 600,
-                    fontFamily: '"Space Grotesk", sans-serif'
-                  }}>{marker.name}</div>
-                  
-                  {selectedStation?.country === marker.name && (
-                    <div style={{ 
-                      display: 'flex', flexDirection: 'column', gap: '2px',
-                      borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '8px'
-                    }}>
-                      <span style={{ fontSize: '9px', opacity: 0.3, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Broadcasting</span>
-                      <span style={{ color: markerColor, fontSize: '11px', fontWeight: 500 }}>{selectedStation.name}</span>
-                    </div>
-                  )}
-                </div>
-              </Html>
-            )}
-          </group>
-        ))}
+                </Html>
+              )}
+            </group>
+          )
+        })}
       </group>
 
-      <OrbitControls 
-        enablePan={false} 
-        enableZoom={true} 
-        minDistance={3} 
-        maxDistance={10} 
-      />
+      <OrbitControls enablePan={false} enableZoom minDistance={3} maxDistance={10} />
     </>
   )
 }

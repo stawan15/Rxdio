@@ -1,0 +1,128 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Space Grotesk", "Nunito", system-ui, sans-serif;
+
+  --color-surface: var(--c-surface);
+  --color-surface-raised: var(--c-surface-raised);
+  --color-surface-muted: var(--c-surface-muted);
+  --color-surface-panel: var(--c-surface-panel);
+  --color-foreground: var(--c-foreground);
+  --color-foreground-muted: var(--c-foreground-muted);
+  --color-border: var(--c-border);
+  --color-accent: var(--c-accent);
+  --color-accent-fg: var(--c-accent-fg);
+  --color-selected: var(--c-selected);
+
+  --shadow-dropdown: var(--c-shadow-dropdown);
+  --shadow-panel: var(--c-shadow-panel);
+  --shadow-player: var(--c-shadow-player);
+}
+
+/* Light (default) */
+:root,
+[data-theme="light"] {
+  --c-surface: #faf9f7;
+  --c-surface-raised: #faf9f7;
+  --c-surface-muted: #f3f1ee;
+  --c-surface-panel: rgb(255 255 255 / 0.92);
+  --c-foreground: #1a1a1a;
+  --c-foreground-muted: #9a9590;
+  --c-border: #e8e5e0;
+  --c-accent: #2f6fdb;
+  --c-accent-fg: #ffffff;
+  --c-selected: #efecea;
+  --c-shadow-dropdown: 0 12px 40px rgb(0 0 0 / 0.06);
+  --c-shadow-panel: 0 20px 50px rgb(0 0 0 / 0.08);
+  --c-shadow-player: 0 -4px 30px rgb(0 0 0 / 0.1);
+}
+
+[data-theme="dark"] {
+  --c-surface: #000000;
+  --c-surface-raised: #000000;
+  --c-surface-muted: #111111;
+  --c-surface-panel: rgb(0 0 0 / 0.85);
+  --c-foreground: #ffffff;
+  --c-foreground-muted: #444444;
+  --c-border: #1a1a1a;
+  --c-accent: #00ff88;
+  --c-accent-fg: #000000;
+  --c-selected: #111111;
+  --c-shadow-dropdown: 0 12px 40px rgb(0 0 0 / 0.9);
+  --c-shadow-panel: 0 20px 50px rgb(0 0 0 / 0.5);
+  --c-shadow-player: 0 -4px 30px rgb(0 0 0 / 0.8);
+}
+
+/* Esther Bunny Ribbon Bunny */
+[data-theme="pink"] {
+  --c-surface: #f8c8d3;
+  --c-surface-raised: #fee6eb;
+  --c-surface-muted: #fee6eb;
+  --c-surface-panel: rgb(254 230 235 / 0.92);
+  --c-foreground: #000000;
+  --c-foreground-muted: rgb(0 0 0 / 0.45);
+  --c-border: rgb(0 0 0 / 0.12);
+  --c-accent: #e98cb5;
+  --c-accent-fg: #ffffff;
+  --c-selected: #fee6eb;
+  --c-shadow-dropdown: 0 12px 40px rgb(233 140 181 / 0.25);
+  --c-shadow-panel: 0 20px 50px rgb(233 140 181 / 0.28);
+  --c-shadow-player: 0 -4px 30px rgb(233 140 181 / 0.22);
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    @apply m-0 h-full overflow-hidden bg-surface text-foreground font-sans antialiased;
+    scrollbar-width: none;
+  }
+
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar {
+    display: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  [data-theme="pink"] body {
+    font-family: "Nunito", "Space Grotesk", system-ui, sans-serif;
+  }
+}
+
+@layer utilities {
+  .scrollbar-hide {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin 1.5s linear infinite;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}

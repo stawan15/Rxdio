@@ -7,22 +7,25 @@ import { AudioPlayer } from './components/AudioPlayer'
 import { supabase } from './services/supabaseClient'
 import { Auth } from './components/Auth'
 import { Session } from '@supabase/supabase-js'
-import { getTheme, type ThemeMode } from './theme'
+import { isThemeMode, THEME_STORAGE_KEY, type ThemeMode } from './theme'
+import { useThemeDocument } from './hooks/useThemeDocument'
+import { cn } from './lib/cn'
+import { IconMenu, IconSearch } from './components/icons'
 
 export interface Playlist {
-  id: string;
-  name: string;
-  stations: RadioStation[];
+  id: string
+  name: string
+  stations: RadioStation[]
 }
 
 const ASIA = new Set(['afghanistan', 'armenia', 'azerbaijan', 'bahrain', 'bangladesh', 'bhutan', 'brunei', 'cambodia', 'china', 'cyprus', 'georgia', 'india', 'indonesia', 'iran', 'iraq', 'israel', 'japan', 'jordan', 'kazakhstan', 'kuwait', 'kyrgyzstan', 'laos', 'lebanon', 'malaysia', 'maldives', 'mongolia', 'myanmar', 'nepal', 'north korea', 'oman', 'pakistan', 'palestine', 'philippines', 'qatar', 'saudi arabia', 'singapore', 'south korea', 'sri lanka', 'syria', 'taiwan', 'tajikistan', 'thailand', 'timor-leste', 'turkey', 'turkmenistan', 'united arab emirates', 'uzbekistan', 'vietnam', 'yemen'])
 const EUROPE = new Set(['albania', 'andorra', 'austria', 'belarus', 'belgium', 'bosnia and herzegovina', 'bulgaria', 'croatia', 'czech republic', 'denmark', 'estonia', 'finland', 'france', 'germany', 'greece', 'hungary', 'iceland', 'ireland', 'italy', 'kosovo', 'latvia', 'liechtenstein', 'lithuania', 'luxembourg', 'malta', 'moldova', 'monaco', 'montenegro', 'netherlands', 'north macedonia', 'norway', 'poland', 'portugal', 'romania', 'russia', 'san marino', 'serbia', 'slovakia', 'slovenia', 'spain', 'sweden', 'switzerland', 'ukraine', 'united kingdom', 'vatican city'])
 
 function getContinent(name: string) {
-  const n = name.toLowerCase();
-  if (ASIA.has(n)) return 'Asia';
-  if (EUROPE.has(n)) return 'Europe';
-  return 'Other';
+  const n = name.toLowerCase()
+  if (ASIA.has(n)) return 'Asia'
+  if (EUROPE.has(n)) return 'Europe'
+  return 'Other'
 }
 
 function App() {
@@ -34,148 +37,118 @@ function App() {
   const [isManagingPlaylists, setIsManagingPlaylists] = useState(false)
   const [selectedStation, setSelectedStation] = useState<RadioStation | null>(null)
   const [themeMode, setThemeMode] = useState<ThemeMode>('dark')
-  const theme = getTheme(themeMode)
-  const isDarkMode = theme.isDark
   const [searchQuery, setSearchQuery] = useState('')
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false)
   const [isNavMenuOpen, setIsNavMenuOpen] = useState(false)
   const searchRef = useRef<HTMLDivElement>(null)
-
   const [favorites, setFavorites] = useState<RadioStation[]>([])
   const [recents, setRecents] = useState<RadioStation[]>([])
   const [playlists, setPlaylists] = useState<Playlist[]>([])
 
+  useThemeDocument(themeMode)
+
   useEffect(() => {
-    if (!session) return;
+    if (!session) return
     const fetchPlaylists = async () => {
-      const { data: playlistsData, error: pError } = await supabase.from('playlists').select('*').eq('user_id', session.user.id);
-      if (pError) { console.error('Failed to load playlists:', pError); return; }
+      const { data: playlistsData, error: pError } = await supabase.from('playlists').select('*').eq('user_id', session.user.id)
+      if (pError) { console.error('Failed to load playlists:', pError); return }
 
-      const { data: stationsData, error: sError } = await supabase.from('playlist_stations').select('*').eq('user_id', session.user.id);
-      if (sError) { console.error('Failed to load playlist_stations:', sError); return; }
+      const { data: stationsData, error: sError } = await supabase.from('playlist_stations').select('*').eq('user_id', session.user.id)
+      if (sError) { console.error('Failed to load playlist_stations:', sError); return }
 
-      const stGrouped: Record<string, string[]> = {};
-      stationsData.forEach((row: any) => {
-        if (!stGrouped[row.playlist_id]) stGrouped[row.playlist_id] = [];
-        stGrouped[row.playlist_id].push(row.station_id);
-      });
+      const stGrouped: Record<string, string[]> = {}
+      stationsData.forEach((row: { playlist_id: string; station_id: string }) => {
+        if (!stGrouped[row.playlist_id]) stGrouped[row.playlist_id] = []
+        stGrouped[row.playlist_id].push(row.station_id)
+      })
 
-      const uniqueUuids = Array.from(new Set(stationsData.map((row: any) => row.station_id)));
-      let allStations: RadioStation[] = [];
-      if (uniqueUuids.length > 0) {
-        allStations = await radioApi.getStationsByUuids(uniqueUuids as string[]);
-      }
+      const uniqueUuids = Array.from(new Set(stationsData.map((row: { station_id: string }) => row.station_id)))
+      const allStations = uniqueUuids.length > 0 ? await radioApi.getStationsByUuids(uniqueUuids) : []
 
-      const formattedPlaylists: Playlist[] = playlistsData.map((pl: any) => {
-        const pUuids = stGrouped[pl.id] || [];
-        const plStations = allStations.filter(s => pUuids.includes(s.stationuuid));
-        return { id: pl.id, name: pl.name, stations: plStations };
-      });
-      setPlaylists(formattedPlaylists);
-    };
-    fetchPlaylists();
+      setPlaylists(playlistsData.map((pl: { id: string; name: string }) => {
+        const uuids = stGrouped[pl.id] ?? []
+        return { id: pl.id, name: pl.name, stations: allStations.filter(s => uuids.includes(s.stationuuid)) }
+      }))
+    }
+    fetchPlaylists()
   }, [session])
 
   const createPlaylist = async (name: string) => {
-    if (!session) return;
-    const tempId = `temp-${Date.now()}`;
-    const newPl: Playlist = { id: tempId, name, stations: [] };
-    setPlaylists(prev => [...prev, newPl]); // Optimistic update
-
-    const { data, error } = await supabase.from('playlists').insert({ user_id: session.user.id, name }).select().single();
+    if (!session) return
+    const tempId = `temp-${Date.now()}`
+    setPlaylists(prev => [...prev, { id: tempId, name, stations: [] }])
+    const { data, error } = await supabase.from('playlists').insert({ user_id: session.user.id, name }).select().single()
     if (error) {
-      console.error('Failed to save playlist:', error);
-      setPlaylists(prev => prev.filter(p => p.id !== tempId));
+      console.error('Failed to save playlist:', error)
+      setPlaylists(prev => prev.filter(p => p.id !== tempId))
     } else {
-      setPlaylists(prev => prev.map(p => p.id === tempId ? { ...p, id: data.id } : p));
+      setPlaylists(prev => prev.map(p => p.id === tempId ? { ...p, id: data.id } : p))
     }
   }
 
   const toggleStationInPlaylist = async (playlistId: string, station: RadioStation) => {
-    if (!session) return;
-    const pl = playlists.find(p => p.id === playlistId);
-    if (!pl) return;
+    if (!session) return
+    const pl = playlists.find(p => p.id === playlistId)
+    if (!pl) return
+    const exists = pl.stations.some(s => s.stationuuid === station.stationuuid)
 
-    const exists = pl.stations.some(s => s.stationuuid === station.stationuuid);
-
-    // Optimistic UI update
     setPlaylists(prev => prev.map(p => {
-      if (p.id === playlistId) {
-        if (exists) return { ...p, stations: p.stations.filter(s => s.stationuuid !== station.stationuuid) };
-        else return { ...p, stations: [...p.stations, station] };
-      }
-      return p;
-    }));
+      if (p.id !== playlistId) return p
+      return exists
+        ? { ...p, stations: p.stations.filter(s => s.stationuuid !== station.stationuuid) }
+        : { ...p, stations: [...p.stations, station] }
+    }))
 
     if (exists) {
       const { error } = await supabase.from('playlist_stations').delete()
-        .eq('playlist_id', playlistId)
-        .eq('station_id', station.stationuuid)
-        .eq('user_id', session.user.id);
-      if (error) console.error('Failed to remove station from playlist:', error);
+        .eq('playlist_id', playlistId).eq('station_id', station.stationuuid).eq('user_id', session.user.id)
+      if (error) console.error('Failed to remove station from playlist:', error)
     } else {
       const { error } = await supabase.from('playlist_stations').insert({
-        playlist_id: playlistId,
-        user_id: session.user.id,
-        station_id: station.stationuuid
-      });
-      if (error) console.error('Failed to add station to playlist:', error);
+        playlist_id: playlistId, user_id: session.user.id, station_id: station.stationuuid,
+      })
+      if (error) console.error('Failed to add station to playlist:', error)
     }
   }
 
   const renamePlaylist = async (id: string, newName: string) => {
-    if (!session) return;
-    setPlaylists(prev => prev.map(p => p.id === id ? { ...p, name: newName } : p));
-    const { error } = await supabase.from('playlists').update({ name: newName }).eq('id', id).eq('user_id', session.user.id);
-    if (error) console.error('Failed to rename playlist', error);
+    if (!session) return
+    setPlaylists(prev => prev.map(p => p.id === id ? { ...p, name: newName } : p))
+    const { error } = await supabase.from('playlists').update({ name: newName }).eq('id', id).eq('user_id', session.user.id)
+    if (error) console.error('Failed to rename playlist', error)
   }
 
   const deletePlaylist = async (id: string) => {
-    if (!session) return;
-    setPlaylists(prev => prev.filter(p => p.id !== id));
-    const { error } = await supabase.from('playlists').delete().eq('id', id).eq('user_id', session.user.id);
-    if (error) console.error('Failed to delete playlist', error);
+    if (!session) return
+    setPlaylists(prev => prev.filter(p => p.id !== id))
+    const { error } = await supabase.from('playlists').delete().eq('id', id).eq('user_id', session.user.id)
+    if (error) console.error('Failed to delete playlist', error)
   }
 
-  // Load recents
   useEffect(() => {
     try {
       const stored = localStorage.getItem('rxdio_recents')
       if (stored) setRecents(JSON.parse(stored))
-    } catch (e) {
-      console.error('Failed to load recents', e)
-    }
+    } catch (e) { console.error('Failed to load recents', e) }
   }, [])
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }) => setSession(session))
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
+      if (!session) setFavorites([])
     })
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session)
-      if (!session) setFavorites([]) // clear on logout
-    })
-
     return () => subscription.unsubscribe()
   }, [])
 
-  // Load favorites from Supabase when session is ready
   useEffect(() => {
     if (!session) return
     const loadFavorites = async () => {
-      const { data, error } = await supabase
-        .from('favorites')
-        .select('station_id')
-        .eq('user_id', session.user.id)
+      const { data, error } = await supabase.from('favorites').select('station_id').eq('user_id', session.user.id)
       if (error) { console.error('Failed to load favorites:', error); return }
-      if (!data || data.length === 0) { setFavorites([]); return }
-      const uuids = data.map((row: { station_id: string }) => row.station_id)
-      const stations = await radioApi.getStationsByUuids(uuids)
-      setFavorites(stations)
+      if (!data?.length) { setFavorites([]); return }
+      setFavorites(await radioApi.getStationsByUuids(data.map(r => r.station_id)))
     }
     loadFavorites()
   }, [session])
@@ -183,69 +156,45 @@ function App() {
   const toggleFavorite = useCallback(async (station: RadioStation) => {
     if (!session) return
     const isFav = favorites.some(s => s.stationuuid === station.stationuuid)
-
-    // Optimistic local update first — always show visual response immediately
     if (isFav) {
       setFavorites(prev => prev.filter(s => s.stationuuid !== station.stationuuid))
-      supabase.from('favorites').delete()
-        .eq('user_id', session.user.id)
-        .eq('station_id', station.stationuuid)
-        .then(({ error }) => {
-          if (error) console.error('Failed to remove favorite:', error)
-        })
+      supabase.from('favorites').delete().eq('user_id', session.user.id).eq('station_id', station.stationuuid)
+        .then(({ error }) => { if (error) console.error('Failed to remove favorite:', error) })
     } else {
       setFavorites(prev => [...prev, station])
-      supabase.from('favorites')
-        .insert({ user_id: session.user.id, station_id: station.stationuuid, station_name: station.name })
-        .then(({ error }) => {
-          if (error) console.error('Failed to add favorite:', error)
-        })
+      supabase.from('favorites').insert({ user_id: session.user.id, station_id: station.stationuuid, station_name: station.name })
+        .then(({ error }) => { if (error) console.error('Failed to add favorite:', error) })
     }
   }, [session, favorites])
 
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
-        setIsDropdownOpen(false)
-      }
-      // Assuming naive handling for nav menu if click is outside (this can be improved but doing broad close)
-      const target = event.target as Element
-      if (!target.closest('.nav-menu-container')) {
-        setIsNavMenuOpen(false)
-      }
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) setIsDropdownOpen(false)
+      if (!(event.target as Element).closest('.nav-menu-container')) setIsNavMenuOpen(false)
     }
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
   useEffect(() => {
-    document.title = selectedStation ? `Rxdio - ${selectedStation.name}` : `Rxdio`
-
-    // Add to recents when selected
+    document.title = selectedStation ? `Rxdio - ${selectedStation.name}` : 'Rxdio'
     if (selectedStation) {
       setRecents(prev => {
-        const filtered = prev.filter(s => s.stationuuid !== selectedStation.stationuuid)
-        const updated = [selectedStation, ...filtered].slice(0, 20)
-        try { localStorage.setItem('rxdio_recents', JSON.stringify(updated)) } catch (e) { }
+        const updated = [selectedStation, ...prev.filter(s => s.stationuuid !== selectedStation.stationuuid)].slice(0, 20)
+        try { localStorage.setItem('rxdio_recents', JSON.stringify(updated)) } catch { /* ignore */ }
         return updated
       })
     }
   }, [selectedStation])
 
-  useEffect(() => {
-    radioApi.getCountries().then(setCountries)
-  }, [])
+  useEffect(() => { radioApi.getCountries().then(setCountries) }, [])
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem('rxdio_theme')
-    if (savedTheme === 'light' || savedTheme === 'dark' || savedTheme === 'pink') {
-      setThemeMode(savedTheme)
-    }
+    const saved = localStorage.getItem(THEME_STORAGE_KEY)
+    if (isThemeMode(saved)) setThemeMode(saved)
   }, [])
 
-  useEffect(() => {
-    localStorage.setItem('rxdio_theme', themeMode)
-  }, [themeMode])
+  useEffect(() => { localStorage.setItem(THEME_STORAGE_KEY, themeMode) }, [themeMode])
 
   useEffect(() => {
     if (!session) return
@@ -259,229 +208,116 @@ function App() {
   const handleSurprise = async () => {
     setLoading(true)
     const s = await radioApi.getRandomStation()
-    if (s) {
-      setSelectedCountry(s.country)
-      setSelectedStation(s)
-    }
+    if (s) { setSelectedCountry(s.country); setSelectedStation(s) }
     setLoading(false)
   }
 
-  if (!session) {
-    return <Auth />
+  const filteredCountries = countries
+    .filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    .sort((a, b) => a.name.localeCompare(b.name))
+
+  const groupedCountries = {
+    Asia: filteredCountries.filter(c => getContinent(c.name) === 'Asia'),
+    Europe: filteredCountries.filter(c => getContinent(c.name) === 'Europe'),
+    Other: filteredCountries.filter(c => getContinent(c.name) === 'Other'),
   }
 
+  if (!session) return <Auth />
+
+  const themeBtn = (mode: ThemeMode, label: string) => (
+    <button
+      type="button"
+      onClick={() => { setThemeMode(mode); setIsNavMenuOpen(false) }}
+      className={cn(
+        'w-full border-b border-border px-4 py-3 text-left text-[0.8rem] transition-colors hover:bg-surface-muted',
+        themeMode === mode ? 'font-bold text-foreground' : 'font-medium text-foreground',
+      )}
+    >
+      {label}
+    </button>
+  )
+
   return (
-    <div className="app-container" style={{
-      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      background: theme.bg, color: theme.text,
-      fontFamily: "'Space Grotesk', 'Inter', system-ui, sans-serif",
-      overflow: 'hidden', display: 'flex', flexDirection: 'column',
-      paddingBottom: 'calc(64px + env(safe-area-inset-bottom))',
-    }}>
-      {/* ══ Header ══ */}
-      <header style={{
-        height: 'calc(56px + env(safe-area-inset-top))',
-        padding: 'env(safe-area-inset-top) 28px 0',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        borderBottom: `1px solid ${theme.border}`,
-        background: theme.headerBg, zIndex: 100, flexShrink: 0,
-      }}>
-        {/* Brand */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{
-            width: '28px', height: '28px', background: theme.text,
-            borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: theme.bg, fontWeight: 700, fontSize: '0.72rem', letterSpacing: '-0.3px',
-          }}>Rx</div>
-          <span style={{ fontWeight: 600, fontSize: '0.95rem', letterSpacing: '-0.2px' }}>Rxdio</span>
+    <div className="app-container fixed inset-0 flex flex-col overflow-hidden bg-surface pb-[calc(64px+env(safe-area-inset-bottom))] text-foreground">
+      <header className="z-[100] flex h-[calc(56px+env(safe-area-inset-top))] shrink-0 items-center justify-between border-b border-border bg-surface-raised px-7 pt-[env(safe-area-inset-top)]">
+        <div className="flex items-center gap-2.5">
+          <div className="flex size-7 items-center justify-center rounded-md bg-foreground text-[0.72rem] font-bold tracking-tight text-surface">Rx</div>
+          <span className="text-[0.95rem] font-semibold tracking-tight">Rxdio</span>
         </div>
 
-        {/* Nav actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {/* Country search */}
-          <div className="search-bar" ref={searchRef} style={{ position: 'relative' }}>
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: '6px',
-              background: theme.inputBg, padding: '6px 14px',
-              borderRadius: '6px', border: `1px solid ${theme.border}`, transition: 'all 0.2s',
-            }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={theme.muted} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="11" cy="11" r="8" />
-                <line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
+        <div className="flex items-center gap-2">
+          <div className="search-bar relative hidden md:block" ref={searchRef}>
+            <div className="flex items-center gap-1.5 rounded-md border border-border bg-surface-muted px-3.5 py-1.5 transition-colors">
+              <IconSearch className="text-foreground-muted" size={12} />
               <input
                 type="text"
                 placeholder={selectedCountry}
                 value={searchQuery}
                 onFocus={() => setIsDropdownOpen(true)}
                 onChange={e => { setSearchQuery(e.target.value); setIsDropdownOpen(true) }}
-                style={{
-                  background: 'transparent', color: theme.text,
-                  border: 'none', outline: 'none',
-                  fontSize: '0.8rem', width: '120px', fontFamily: 'inherit',
-                }}
+                className="w-[120px] border-none bg-transparent text-[0.8rem] text-foreground outline-none"
               />
             </div>
-
             {isDropdownOpen && (
-              <div style={{
-                position: 'absolute', top: 'calc(100% + 6px)', right: 0, width: '220px',
-                background: theme.headerBg, border: `1px solid ${theme.border}`,
-                borderRadius: '10px',
-                boxShadow: isDarkMode ? '0 12px 40px rgba(0,0,0,0.9)' : theme.isPink ? `0 12px 40px ${theme.accent}22` : '0 12px 40px rgba(0,0,0,0.06)',
-                maxHeight: '300px', overflowY: 'auto', zIndex: 1000,
-              }}>
-                {(() => {
-                  const filtered = countries
-                    .filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()))
-                    .sort((a, b) => a.name.localeCompare(b.name));
-                  if (filtered.length === 0) return (
-                    <div style={{ padding: '16px', fontSize: '0.8rem', color: theme.muted, textAlign: 'center' }}>No results</div>
-                  );
-                  const grouped = {
-                    Asia: filtered.filter(c => getContinent(c.name) === 'Asia'),
-                    Europe: filtered.filter(c => getContinent(c.name) === 'Europe'),
-                    Other: filtered.filter(c => getContinent(c.name) === 'Other'),
-                  }
-                  return Object.entries(grouped).map(([continent, items]) => {
-                    if (items.length === 0) return null;
-                    return (
-                      <div key={continent}>
-                        <div style={{
-                          padding: '8px 14px 4px',
-                          fontSize: '0.6rem', fontWeight: 600,
-                          color: theme.muted, letterSpacing: '0.1em', textTransform: 'uppercase',
-                        }}>{continent}</div>
-                        {items.map(c => (
-                          <div
-                            key={c.name}
-                            onClick={() => { setSelectedCountry(c.name); setSearchQuery(''); setIsDropdownOpen(false) }}
-                            style={{
-                              padding: '9px 14px', cursor: 'pointer', fontSize: '0.82rem',
-                              borderBottom: `1px solid ${theme.border}`,
-                              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                              transition: 'background 0.1s',
-                            }}
-                            onMouseEnter={e => e.currentTarget.style.background = theme.inputBg}
-                            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                          >
-                            <span>{c.name}</span>
-                            <span style={{ fontSize: '0.65rem', color: theme.muted }}>{c.stationcount}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )
-                  })
-                })()}
+              <div className="absolute right-0 top-[calc(100%+6px)] z-[1000] max-h-[300px] w-[220px] overflow-y-auto rounded-[10px] border border-border bg-surface-raised shadow-dropdown">
+                {filteredCountries.length === 0 ? (
+                  <p className="p-4 text-center text-[0.8rem] text-foreground-muted">No results</p>
+                ) : Object.entries(groupedCountries).map(([continent, items]) => {
+                  if (!items.length) return null
+                  return (
+                    <div key={continent}>
+                      <p className="px-3.5 pb-1 pt-2 text-[0.6rem] font-semibold uppercase tracking-widest text-foreground-muted">{continent}</p>
+                      {items.map(c => (
+                        <button
+                          key={c.name}
+                          type="button"
+                          onClick={() => { setSelectedCountry(c.name); setSearchQuery(''); setIsDropdownOpen(false) }}
+                          className="flex w-full cursor-pointer items-center justify-between border-b border-border px-3.5 py-2 text-[0.82rem] transition-colors hover:bg-surface-muted"
+                        >
+                          <span>{c.name}</span>
+                          <span className="text-[0.65rem] text-foreground-muted">{c.stationcount}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )
+                })}
               </div>
             )}
           </div>
 
-          {/* Mobile Search Toggle */}
           <button
-            className="mobile-search-toggle"
+            type="button"
+            className="mobile-search-toggle flex cursor-pointer items-center justify-center rounded-md border border-border p-1.5 text-foreground md:hidden"
             onClick={() => setIsMobileSearchOpen(true)}
-            style={{
-              background: 'transparent', border: `1px solid ${theme.border}`,
-              color: theme.text, padding: '6px 10px',
-              borderRadius: '6px', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center'
-            }}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
+            <IconSearch size={14} />
           </button>
 
-          {/* Surprise */}
           <button
+            type="button"
             onClick={handleSurprise}
-            style={{
-              background: theme.text, color: theme.bg,
-              border: 'none', padding: '6px 14px',
-              borderRadius: '6px', fontWeight: 500, cursor: 'pointer',
-              fontFamily: 'inherit', fontSize: '0.78rem',
-              letterSpacing: '0.04em', transition: 'opacity 0.2s',
-            }}
-            onMouseEnter={e => e.currentTarget.style.opacity = '0.75'}
-            onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+            className="cursor-pointer rounded-md border-none bg-foreground px-3.5 py-1.5 text-[0.78rem] font-medium tracking-wide text-surface transition-opacity hover:opacity-75"
           >
             Shuffle
           </button>
 
-          {/* Hamburger Menu (Theme & Sign Out) */}
-          <div className="nav-menu-container" style={{ position: 'relative' }}>
+          <div className="nav-menu-container relative">
             <button
-              onClick={() => setIsNavMenuOpen(!isNavMenuOpen)}
-              style={{
-                background: 'transparent', border: `1px solid ${theme.border}`,
-                color: theme.muted, padding: '6px 10px',
-                borderRadius: '6px', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                transition: 'all 0.2s'
-              }}
-              onMouseEnter={e => { e.currentTarget.style.color = theme.text; e.currentTarget.style.borderColor = theme.text }}
-              onMouseLeave={e => { e.currentTarget.style.color = theme.muted; e.currentTarget.style.borderColor = theme.border }}
+              type="button"
+              onClick={() => setIsNavMenuOpen(v => !v)}
+              className="flex cursor-pointer items-center justify-center rounded-md border border-border p-1.5 text-foreground-muted transition-colors hover:border-foreground hover:text-foreground"
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="3" y1="12" x2="21" y2="12"></line>
-                <line x1="3" y1="6" x2="21" y2="6"></line>
-                <line x1="3" y1="18" x2="21" y2="18"></line>
-              </svg>
+              <IconMenu />
             </button>
-
             {isNavMenuOpen && (
-              <div style={{
-                position: 'absolute', top: 'calc(100% + 6px)', right: 0, width: '160px',
-                background: theme.headerBg, border: `1px solid ${theme.border}`,
-                borderRadius: '8px',
-                boxShadow: isDarkMode ? '0 12px 40px rgba(0,0,0,0.9)' : theme.isPink ? `0 12px 40px ${theme.accent}22` : '0 12px 40px rgba(0,0,0,0.06)',
-                zIndex: 1000, overflow: 'hidden'
-              }}>
+              <div className="absolute right-0 top-[calc(100%+6px)] z-[1000] w-40 overflow-hidden rounded-lg border border-border bg-surface-raised shadow-dropdown">
+                {themeBtn('dark', 'Dark Mode')}
+                {themeBtn('light', 'Light Mode')}
+                {themeBtn('pink', 'Ribbon Bunny Mode')}
                 <button
-                  onClick={() => { setThemeMode('dark'); setIsNavMenuOpen(false); }}
-                  style={{
-                    width: '100%', padding: '12px 16px', background: 'transparent', border: `1px solid ${theme.border}`,
-                    textAlign: 'left', outline: 'none', color: theme.text, fontSize: '0.8rem', cursor: 'pointer', fontFamily: 'inherit',
-                    fontWeight: themeMode === 'dark' ? 700 : 500
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.background = theme.inputBg}
-                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                >
-                  Dark Mode
-                </button>
-                <button
-                  onClick={() => { setThemeMode('light'); setIsNavMenuOpen(false); }}
-                  style={{
-                    width: '100%', padding: '12px 16px', background: 'transparent', border: `1px solid ${theme.border}`,
-                    textAlign: 'left', outline: 'none', color: theme.text, fontSize: '0.8rem', cursor: 'pointer', fontFamily: 'inherit',
-                    fontWeight: themeMode === 'light' ? 700 : 500
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.background = theme.inputBg}
-                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                >
-                  Light Mode
-                </button>
-                <button
-                  onClick={() => { setThemeMode('pink'); setIsNavMenuOpen(false); }}
-                  style={{
-                    width: '100%', padding: '12px 16px', background: 'transparent', border: `1px solid ${theme.border}`,
-                    textAlign: 'left', outline: 'none', color: theme.text, fontSize: '0.8rem', cursor: 'pointer', fontFamily: 'inherit',
-                    fontWeight: themeMode === 'pink' ? 700 : 500
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.background = theme.inputBg}
-                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                >
-                  Ribbon Bunny Mode
-                </button>
-                <button
+                  type="button"
                   onClick={() => supabase.auth.signOut()}
-                  style={{
-                    width: '100%', padding: '12px 16px', background: 'transparent', border: 'none', outline: 'none',
-                    textAlign: 'left', color: '#ff4444', fontSize: '0.8rem', cursor: 'pointer', fontFamily: 'inherit'
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.background = isDarkMode ? '#330000' : theme.isPink ? theme.selectedBg : '#ffebee'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  className="w-full px-4 py-3 text-left text-[0.8rem] text-red-500 transition-colors hover:bg-red-500/10 data-[theme=pink]:hover:bg-surface-muted"
                 >
                   Sign Out
                 </button>
@@ -491,76 +327,30 @@ function App() {
         </div>
       </header>
 
-      {/* ══ Main ══ */}
-      <div className="main-content" style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-        {/* Globe */}
-        <div className="globe-container" style={{ flex: 1, position: 'relative', background: theme.bg }}>
+      <div className="main-content flex flex-1 overflow-hidden max-md:flex-col">
+        <div className="globe-container relative flex-1 bg-surface max-md:h-[55%]">
           <Canvas camera={{ position: [0, 0, 6], fov: 45 }}>
             <Globe onSelectCountry={setSelectedCountry} themeMode={themeMode} selectedStation={selectedStation} />
           </Canvas>
 
-          {/* Modern Minimal Playing Banner */}
           {selectedStation && (
-            <div style={{
-              position: 'absolute', top: '24px', left: '24px',
-              padding: '14px 22px',
-              background: theme.panelBg,
-              backdropFilter: 'blur(12px)',
-              borderLeft: `2px solid ${theme.accent}`,
-              borderTop: `1px solid ${theme.border}`,
-              borderBottom: `1px solid ${theme.border}`,
-              borderRight: `1px solid ${theme.border}`,
-              borderRadius: '16px',
-              display: 'flex', flexDirection: 'column', gap: '2px',
-              boxShadow: isDarkMode ? '0 20px 50px rgba(0,0,0,0.5)' : theme.isPink ? `0 20px 50px ${theme.accent}26` : '0 20px 50px rgba(0,0,0,0.08)',
-              zIndex: 5,
-              pointerEvents: 'none',
-              maxWidth: '320px'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                <span style={{
-                  fontSize: '9px', fontWeight: 600, letterSpacing: '0.15em',
-                  textTransform: 'uppercase', color: theme.accent, opacity: 0.8
-                }}>
-                  ● Live Data
-                </span>
-              </div>
-              <div style={{
-                fontSize: '15px', fontWeight: 600, color: theme.text,
-                letterSpacing: '-0.2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
-              }}>
-                {selectedStation.name}
-              </div>
-              <div style={{
-                fontSize: '10px', color: theme.muted,
-                letterSpacing: '0.05em', textTransform: 'uppercase', marginTop: '2px'
-              }}>
+            <div className="pointer-events-none absolute left-6 top-6 z-[5] flex max-w-[320px] flex-col gap-0.5 rounded-2xl border border-border border-l-2 border-l-accent bg-surface-panel p-3.5 pl-[22px] shadow-panel backdrop-blur-md">
+              <span className="mb-1 text-[9px] font-semibold uppercase tracking-[0.15em] text-accent opacity-80">● Live Data</span>
+              <p className="truncate text-[15px] font-semibold tracking-tight text-foreground">{selectedStation.name}</p>
+              <p className="mt-0.5 text-[10px] uppercase tracking-wide text-foreground-muted">
                 {selectedStation.country} / {selectedStation.codec || 'MP3'}
-              </div>
+              </p>
             </div>
           )}
 
-          {/* Country label */}
-          <div style={{ position: 'absolute', bottom: '36px', left: '36px', pointerEvents: 'none' }}>
-            <div style={{
-              fontSize: 'clamp(2rem, 4vw, 3.5rem)',
-              fontWeight: 700, color: theme.text,
-              letterSpacing: '-0.03em', lineHeight: 1,
-            }}>
-              {selectedCountry}
-            </div>
+          <div className="pointer-events-none absolute bottom-9 left-9">
+            <h1 className="text-[clamp(2rem,4vw,3.5rem)] font-bold leading-none tracking-tight text-foreground">{selectedCountry}</h1>
             {!loading && stations.length > 0 && (
-              <div style={{
-                marginTop: '8px', fontSize: '0.72rem', color: theme.muted,
-                letterSpacing: '0.08em', textTransform: 'uppercase', fontVariantNumeric: 'tabular-nums',
-              }}>
-                {stations.length} stations
-              </div>
+              <p className="mt-2 text-[0.72rem] uppercase tracking-widest text-foreground-muted tabular-nums">{stations.length} stations</p>
             )}
           </div>
         </div>
 
-        {/* Station list */}
         <StationList
           stations={stations}
           loading={loading}
@@ -577,44 +367,33 @@ function App() {
       </div>
 
       {isManagingPlaylists && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: theme.bg,
-          zIndex: 99999, overflowY: 'auto', padding: 'env(safe-area-inset-top) 24px 80px'
-        }}>
-          <div style={{ maxWidth: '600px', margin: '0 auto', paddingTop: '24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>
-              <h2 style={{ fontSize: '1.8rem', fontWeight: 800, color: theme.text, margin: 0 }}>Manage Playlists</h2>
-              <button
-                onClick={() => setIsManagingPlaylists(false)}
-                style={{ background: 'transparent', border: 'none', color: theme.muted, fontSize: '1.2rem', cursor: 'pointer', padding: '8px' }}
-              >
-                ✕
-              </button>
+        <div className="fixed inset-0 z-[99999] overflow-y-auto bg-surface px-6 pb-20 pt-[env(safe-area-inset-top)]">
+          <div className="mx-auto max-w-[600px] pt-6">
+            <div className="mb-8 flex items-center justify-between">
+              <h2 className="m-0 text-3xl font-extrabold text-foreground">Manage Playlists</h2>
+              <button type="button" onClick={() => setIsManagingPlaylists(false)} className="cursor-pointer border-none bg-transparent p-2 text-xl text-foreground-muted">✕</button>
             </div>
-
             {playlists.length === 0 ? (
-              <p style={{ color: theme.muted, textAlign: 'center', marginTop: '40px' }}>No playlists to manage.</p>
+              <p className="mt-10 text-center text-foreground-muted">No playlists to manage.</p>
             ) : playlists.map(pl => (
-              <div key={pl.id} style={{
-                background: theme.isDark ? '#1a1a1a' : theme.isPink ? theme.headerBg : '#fff',
-                border: `1px solid ${theme.border}`, borderRadius: '16px', padding: '24px',
-                marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '16px',
-                boxShadow: isDarkMode ? '0 8px 30px rgba(0,0,0,0.4)' : theme.isPink ? `0 8px 30px ${theme.accent}1a` : '0 8px 30px rgba(0,0,0,0.05)'
-              }}>
-                <h3 style={{ fontSize: '1.4rem', fontWeight: 600, color: theme.text, margin: 0 }}>{pl.name}</h3>
-                <div style={{ display: 'flex', gap: '12px' }}>
-                  <button onClick={() => {
-                    const newName = window.prompt('Rename playlist:', pl.name);
-                    if (newName && newName.trim()) renamePlaylist(pl.id, newName.trim());
-                  }} style={{ flex: 1, background: 'transparent', border: `1px solid ${theme.text}`, color: theme.text, padding: '16px', borderRadius: '12px', fontWeight: 700, fontSize: '1rem', cursor: 'pointer' }}>
+              <div key={pl.id} className="mb-4 flex flex-col gap-4 rounded-2xl border border-border bg-surface-raised p-6 shadow-panel">
+                <h3 className="m-0 text-2xl font-semibold text-foreground">{pl.name}</h3>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const name = window.prompt('Rename playlist:', pl.name)
+                      if (name?.trim()) renamePlaylist(pl.id, name.trim())
+                    }}
+                    className="flex-1 cursor-pointer rounded-xl border border-foreground bg-transparent px-4 py-4 text-base font-bold text-foreground"
+                  >
                     RENAME
                   </button>
-                  <button onClick={() => {
-                    if (window.confirm('Delete playlist?')) {
-                      deletePlaylist(pl.id);
-                    }
-                  }} style={{ flex: 1, background: '#ef4444', border: 'none', color: '#fff', padding: '16px', borderRadius: '12px', fontWeight: 700, fontSize: '1rem', cursor: 'pointer' }}>
+                  <button
+                    type="button"
+                    onClick={() => { if (window.confirm('Delete playlist?')) deletePlaylist(pl.id) }}
+                    className="flex-1 cursor-pointer rounded-xl border-none bg-red-500 px-4 py-4 text-base font-bold text-white"
+                  >
                     DELETE
                   </button>
                 </div>
@@ -624,7 +403,6 @@ function App() {
         </div>
       )}
 
-      {/* ══ Player ══ */}
       <AudioPlayer
         station={selectedStation}
         themeMode={themeMode}
@@ -634,95 +412,35 @@ function App() {
         toggleStationInPlaylist={toggleStationInPlaylist}
       />
 
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
-        html, body {
-          margin: 0;
-          padding: 0;
-          overflow: hidden;
-          background: ${theme.bg};
-          color: ${theme.text};
-        }
-        ::-webkit-scrollbar { display: none; }
-        * { box-sizing: border-box; scrollbar-width: none; }
-        
-        @media (max-width: 768px) {
-          .main-content {
-            flex-direction: column !important;
-          }
-          .station-list {
-            width: 100% !important;
-            height: 45% !important;
-            border-left: none !important;
-            border-top: 1px solid ${theme.border} !important;
-          }
-          .globe-container {
-            height: 55% !important;
-          }
-          .search-bar {
-            display: none !important;
-          }
-          .mobile-search-toggle {
-            display: flex !important;
-          }
-          .audio-player:not(.full-player) {
-            padding: 0 16px !important;
-            gap: 12px !important;
-            height: calc(60px + env(safe-area-inset-bottom)) !important;
-          }
-          .hide-on-mobile {
-            display: none !important;
-          }
-        }
-        .mobile-search-toggle {
-          display: none;
-        }
-      `}</style>
-
-      {/* Mobile Search Overlay */}
       {isMobileSearchOpen && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: theme.bg, zIndex: 9999,
-          padding: 'calc(16px + env(safe-area-inset-top)) 16px 16px',
-          display: 'flex', flexDirection: 'column'
-        }}>
-          <div style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
-            <div style={{
-              flex: 1, display: 'flex', alignItems: 'center', background: theme.inputBg,
-              padding: '10px 14px', borderRadius: '8px', border: `1px solid ${theme.border}`
-            }}>
+        <div className="fixed inset-0 z-[9999] flex flex-col bg-surface p-4 pt-[calc(16px+env(safe-area-inset-top))]">
+          <div className="mb-4 flex gap-2.5">
+            <div className="flex flex-1 items-center rounded-lg border border-border bg-surface-muted px-3.5 py-2.5">
               <input
                 autoFocus
                 type="text"
                 placeholder="Search country..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                style={{ background: 'transparent', color: theme.text, border: 'none', outline: 'none', width: '100%', fontSize: '1rem', fontFamily: 'inherit' }}
+                className="w-full border-none bg-transparent text-base text-foreground outline-none"
               />
             </div>
-            <button
-              onClick={() => setIsMobileSearchOpen(false)}
-              style={{ background: 'transparent', color: theme.text, border: 'none', padding: '10px', fontSize: '1rem', fontWeight: 600 }}
-            >
-              Close
-            </button>
+            <button type="button" onClick={() => setIsMobileSearchOpen(false)} className="px-2.5 py-2.5 text-base font-semibold text-foreground">Close</button>
           </div>
-
-          <div style={{ flex: 1, overflowY: 'auto' }}>
-            {(() => {
-              const filtered = countries.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase())).sort((a, b) => a.name.localeCompare(b.name));
-              if (filtered.length === 0) return <div style={{ padding: '20px', textAlign: 'center', color: theme.muted }}>No countries found</div>;
-              return filtered.map(c => (
-                <div
-                  key={c.name}
-                  onClick={() => { setSelectedCountry(c.name); setIsMobileSearchOpen(false); setSearchQuery(''); }}
-                  style={{ padding: '16px', borderBottom: `1px solid ${theme.border}`, display: 'flex', justifyContent: 'space-between', color: theme.text, fontSize: '1rem' }}
-                >
-                  {c.name} <span style={{ color: theme.muted, fontSize: '0.8rem' }}>{c.stationcount} stn</span>
-                </div>
-              ));
-            })()}
+          <div className="scrollbar-hide flex-1 overflow-y-auto">
+            {filteredCountries.length === 0 ? (
+              <p className="p-5 text-center text-foreground-muted">No countries found</p>
+            ) : filteredCountries.map(c => (
+              <button
+                key={c.name}
+                type="button"
+                onClick={() => { setSelectedCountry(c.name); setIsMobileSearchOpen(false); setSearchQuery('') }}
+                className="flex w-full items-center justify-between border-b border-border px-4 py-4 text-left text-base text-foreground"
+              >
+                {c.name}
+                <span className="text-[0.8rem] text-foreground-muted">{c.stationcount} stn</span>
+              </button>
+            ))}
           </div>
         </div>
       )}

@@ -1,67 +1,61 @@
 import { useState } from 'react'
 import { RadioStation } from '../services/radioApi'
-import { getTheme, ribbonBunny, type ThemeMode } from '../theme'
+import { avatarUrl, type ThemeMode } from '../theme'
+import { cn } from '../lib/cn'
+import type { Playlist } from '../App'
 
-export function StationList({ stations, onSelect, loading, selectedStation, themeMode = 'dark', favorites, toggleFavorite, recents, playlists, createPlaylist, onManagePlaylists }: { 
-  stations: RadioStation[], 
-  onSelect: (s: RadioStation) => void, 
-  loading: boolean,
-  selectedStation: RadioStation | null,
-  themeMode?: ThemeMode,
-  favorites: RadioStation[],
-  toggleFavorite: (s: RadioStation) => void | Promise<void>,
-  recents: RadioStation[],
-  playlists: import('../App').Playlist[],
-  createPlaylist: (name: string) => void,
+type Props = {
+  stations: RadioStation[]
+  onSelect: (s: RadioStation) => void
+  loading: boolean
+  selectedStation: RadioStation | null
+  themeMode: ThemeMode
+  favorites: RadioStation[]
+  toggleFavorite: (s: RadioStation) => void | Promise<void>
+  recents: RadioStation[]
+  playlists: Playlist[]
+  createPlaylist: (name: string) => void
   onManagePlaylists?: () => void
-}) {
-  const [activeTab, setActiveTab] = useState<string>('all')
-  const displayStations: RadioStation[] = activeTab === 'all' ? stations 
-    : activeTab === 'favs' ? favorites 
-    : activeTab === 'recent' ? recents 
-    : playlists.find(p => p.id === activeTab)?.stations || [];
-  const t = getTheme(themeMode)
+}
 
-  const getPlaceholder = (name: string) => {
-    const char = name.charAt(0).toUpperCase()
-    const bg = t.isDark ? '111' : t.isPink ? ribbonBunny.avatarBg : 'f3f1ee'
-    const color = t.isDark ? 'fff' : t.isPink ? ribbonBunny.text.replace('#', '') : '1a1a1a'
-    return `https://ui-avatars.com/api/?name=${char}&background=${bg}&color=${color}&bold=true&format=svg`
-  }
+export function StationList({
+  stations, onSelect, loading, selectedStation, themeMode,
+  favorites, toggleFavorite, recents, playlists, createPlaylist, onManagePlaylists,
+}: Props) {
+  const [activeTab, setActiveTab] = useState('all')
+
+  const displayStations: RadioStation[] =
+    activeTab === 'all' ? stations
+    : activeTab === 'favs' ? favorites
+    : activeTab === 'recent' ? recents
+    : playlists.find(p => p.id === activeTab)?.stations ?? []
+
+  const tabs = ['all', 'favs', 'recent', ...playlists.map(p => p.id)] as const
 
   return (
-    <div className="station-list" style={{
-      height: '100%', display: 'flex', flexDirection: 'column',
-      background: t.bg, borderLeft: `1px solid ${t.border}`,
-      width: '340px', fontFamily: 'inherit',
-      position: 'relative', zIndex: 10
-    }}>
-      {/* Header */}
-      <div style={{ padding: '24px 24px 0' }}>
-        <div style={{ display: 'flex', alignItems: 'center', borderBottom: `1px solid ${t.border}` }}>
-          
-          <div style={{ flex: 1, display: 'flex', gap: '20px', overflowX: 'auto', whiteSpace: 'nowrap', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
-            {(['all', 'favs', 'recent', ...playlists.map(p => p.id)]).map(tab => {
-              const isPl = tab !== 'all' && tab !== 'favs' && tab !== 'recent';
-              const plData = isPl ? playlists.find(p => p.id === tab) : null;
-              
+    <aside className="station-list relative z-10 flex h-full w-[340px] shrink-0 flex-col border-l border-border bg-surface max-md:h-[45%] max-md:w-full max-md:border-l-0 max-md:border-t">
+      <header className="px-6 pt-6">
+        <div className="flex items-center border-b border-border">
+          <div className="scrollbar-hide flex flex-1 gap-5 overflow-x-auto whitespace-nowrap">
+            {tabs.map(tab => {
+              const isPl = tab !== 'all' && tab !== 'favs' && tab !== 'recent'
+              const plData = isPl ? playlists.find(p => p.id === tab) : null
+              const active = activeTab === tab
               return (
-                <div key={tab} style={{ 
-                  position: 'relative', display: 'flex', alignItems: 'center', gap: '8px',
-                  paddingBottom: '14px', marginBottom: '-1px',
-                  borderBottom: activeTab === tab ? `2px solid ${t.text}` : '2px solid transparent',
-                  transition: 'border-color 0.2s'
-                }}>
+                <div
+                  key={tab}
+                  className={cn(
+                    '-mb-px flex items-center gap-2 border-b-2 pb-3.5 transition-colors',
+                    active ? 'border-foreground' : 'border-transparent',
+                  )}
+                >
                   <button
+                    type="button"
                     onClick={() => setActiveTab(tab)}
-                    style={{
-                      background: 'transparent', border: 'none', padding: '0',
-                      fontFamily: 'inherit', fontWeight: activeTab === tab ? 700 : 500,
-                      fontSize: '0.78rem', letterSpacing: '0.08em', textTransform: 'uppercase',
-                      color: activeTab === tab ? t.text : t.muted,
-                      cursor: 'pointer', transition: 'color 0.2s',
-                      display: 'flex', alignItems: 'center'
-                    }}
+                    className={cn(
+                      'cursor-pointer text-[0.78rem] font-medium uppercase tracking-widest transition-colors',
+                      active ? 'font-bold text-foreground' : 'text-foreground-muted',
+                    )}
                   >
                     {tab === 'all' ? 'Stations' : tab === 'favs' ? 'Saved' : tab === 'recent' ? 'Recent' : plData?.name}
                   </button>
@@ -70,117 +64,103 @@ export function StationList({ stations, onSelect, loading, selectedStation, them
             })}
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingLeft: '16px', paddingBottom: '14px', flexShrink: 0 }}>
+          <div className="flex shrink-0 items-center gap-3 border-b border-transparent pb-3.5 pl-4">
             {playlists.length > 0 && (
-              <button 
+              <button
+                type="button"
                 onClick={onManagePlaylists}
-                style={{ background: 'transparent', border: 'none', padding: 0, fontFamily: 'inherit', fontWeight: 600, fontSize: '0.8rem', color: t.text, cursor: 'pointer', transition: 'color 0.2s', minWidth: '44px', minHeight: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                className="flex min-h-11 min-w-11 cursor-pointer items-center justify-center text-[0.8rem] font-semibold text-foreground transition-colors hover:opacity-80"
               >
                 MANAGE
               </button>
             )}
             <button
+              type="button"
               onClick={() => {
-                const name = window.prompt("Enter playlist name:");
-                if (name && name.trim()) createPlaylist(name.trim());
+                const name = window.prompt('Enter playlist name:')
+                if (name?.trim()) createPlaylist(name.trim())
               }}
-              style={{ background: 'transparent', border: 'none', padding: 0, fontFamily: 'inherit', fontWeight: 700, fontSize: '1.2rem', color: t.text, cursor: 'pointer', opacity: 0.8, minWidth: '44px', minHeight: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              className="flex min-h-11 min-w-11 cursor-pointer items-center justify-center text-xl font-bold text-foreground opacity-80 transition-opacity hover:opacity-100"
             >
               +
             </button>
           </div>
         </div>
-        <div style={{ padding: '12px 0', fontSize: '0.72rem', color: t.muted, letterSpacing: '0.04em', fontVariantNumeric: 'tabular-nums' }}>
-          {activeTab === 'all' ? (loading ? 'Scanning...' : `${stations.length} active`) 
-            : displayStations.length > 0 ? `${displayStations.length} stations` : 'Empty playlist'}
-        </div>
-      </div>
 
-      {/* List */}
-      <div style={{ flex: 1, overflowY: 'auto' }}>
+        <p className="py-3 text-[0.72rem] tracking-wide text-foreground-muted tabular-nums">
+          {activeTab === 'all'
+            ? loading ? 'Scanning...' : `${stations.length} active`
+            : displayStations.length > 0 ? `${displayStations.length} stations` : 'Empty playlist'}
+        </p>
+      </header>
+
+      <ul className="scrollbar-hide flex-1 overflow-y-auto">
         {loading ? (
-          <div style={{ padding: '40px 24px', color: t.muted, fontSize: '0.8rem', letterSpacing: '0.04em' }}>
-            Loading...
-          </div>
+          <li className="px-6 py-10 text-[0.8rem] tracking-wide text-foreground-muted">Loading...</li>
         ) : displayStations.length === 0 ? (
-          <div style={{ padding: '40px 24px', color: t.muted, fontSize: '0.8rem' }}>
+          <li className="px-6 py-10 text-[0.8rem] text-foreground-muted">
             {activeTab === 'favs' ? 'Star a station to save it.' : 'No stations found.'}
-          </div>
+          </li>
         ) : (
           displayStations.map((station, i) => {
-            const isSelected = selectedStation?.stationuuid === station.stationuuid
+            const selected = selectedStation?.stationuuid === station.stationuuid
             const isFav = favorites.some(s => s.stationuuid === station.stationuuid)
+            const offline = station.lastcheckok === 0
+            const img = station.favicon?.startsWith('http') ? station.favicon : avatarUrl(themeMode, station.name)
+
             return (
-              <div
-                key={station.stationuuid}
-                onClick={() => onSelect(station)}
-                style={{
-                  padding: '14px 24px',
-                  cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', gap: '14px',
-                  background: isSelected ? t.selectedBg : 'transparent',
-                  borderBottom: `1px solid ${t.border}`,
-                  transition: 'background 0.1s',
-                }}
-                onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = t.subtle }}
-                onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent' }}
-              >
-                {/* Index number */}
-                <span style={{ fontSize: '0.7rem', color: t.muted, width: '18px', textAlign: 'right', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
-                  {(i + 1).toString().padStart(2, '0')}
-                </span>
-
-                {/* Favicon */}
-                <img
-                  src={station.favicon && station.favicon.startsWith('http') ? station.favicon : getPlaceholder(station.name)}
-                  alt=""
-                  style={{ width: '36px', height: '36px', borderRadius: '6px', objectFit: 'contain', background: t.subtle, flexShrink: 0 }}
-                  onError={e => (e.currentTarget.src = getPlaceholder(station.name))}
-                />
-
-                {/* Name + meta */}
-                <div style={{ flex: 1, overflow: 'hidden' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <div style={{ 
-                      fontSize: '0.88rem', fontWeight: 500, color: station.lastcheckok === 0 ? t.muted : t.text, 
-                      whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                      textDecoration: station.lastcheckok === 0 ? 'line-through' : 'none'
-                    }}>
-                      {station.name}
-                    </div>
-                    {station.lastcheckok === 0 && (
-                      <span style={{ 
-                        fontSize: '0.55rem', background: t.isDark ? '#330000' : t.isPink ? ribbonBunny.selectedBg : '#ffebee', color: '#ff4444', 
-                        padding: '2px 4px', borderRadius: '4px', fontWeight: 700, letterSpacing: '0.05em' 
-                      }}>OFFLINE</span>
-                    )}
-                  </div>
-                  <div style={{ fontSize: '0.7rem', color: t.muted, marginTop: '2px', letterSpacing: '0.03em', fontVariantNumeric: 'tabular-nums' }}>
-                    {station.codec || 'LIVE'} · {station.bitrate ? `${station.bitrate}k` : '—'}
-                  </div>
-                </div>
-
-                {/* Star */}
+              <li key={station.stationuuid}>
                 <button
-                  onClick={e => { e.stopPropagation(); e.preventDefault(); toggleFavorite(station) }}
-                  style={{
-                    flexShrink: 0, background: 'transparent', border: 'none',
-                    cursor: 'pointer', fontSize: '1rem',
-                    color: isFav ? '#f59e0b' : t.muted,
-                    opacity: isFav ? 1 : 0.6,
-                    padding: '6px', pointerEvents: 'all',
-                    position: 'relative', zIndex: 20,
-                    transition: 'color 0.15s, opacity 0.15s',
-                    lineHeight: 1, display: 'flex', alignItems: 'center'
-                  }}
+                  type="button"
+                  onClick={() => onSelect(station)}
+                  className={cn(
+                    'flex w-full cursor-pointer items-center gap-3.5 border-b border-border px-6 py-3.5 text-left transition-colors',
+                    selected ? 'bg-selected' : 'bg-transparent hover:bg-surface-muted',
+                  )}
                 >
-                  {isFav ? '★' : '☆'}
+                  <span className="w-[18px] shrink-0 text-right text-[0.7rem] tabular-nums text-foreground-muted">
+                    {(i + 1).toString().padStart(2, '0')}
+                  </span>
+                  <img
+                    src={img}
+                    alt=""
+                    className="size-9 shrink-0 rounded-md bg-surface-muted object-contain"
+                    onError={e => { e.currentTarget.src = avatarUrl(themeMode, station.name) }}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className={cn(
+                        'truncate text-[0.88rem] font-medium',
+                        offline ? 'text-foreground-muted line-through' : 'text-foreground',
+                      )}>
+                        {station.name}
+                      </span>
+                      {offline && (
+                        <span className="shrink-0 rounded bg-red-500/10 px-1 py-0.5 text-[0.55rem] font-bold tracking-wide text-red-500">
+                          OFFLINE
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-0.5 text-[0.7rem] tracking-wide text-foreground-muted tabular-nums">
+                      {station.codec || 'LIVE'} · {station.bitrate ? `${station.bitrate}k` : '—'}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={e => { e.stopPropagation(); toggleFavorite(station) }}
+                    className={cn(
+                      'relative z-20 shrink-0 cursor-pointer p-1.5 text-base leading-none transition-colors',
+                      isFav ? 'text-amber-500 opacity-100' : 'text-foreground-muted opacity-60 hover:opacity-100',
+                    )}
+                  >
+                    {isFav ? '★' : '☆'}
+                  </button>
                 </button>
-              </div>
+              </li>
             )
           })
         )}
-      </div>
-    </div>
+      </ul>
+    </aside>
   )
 }
