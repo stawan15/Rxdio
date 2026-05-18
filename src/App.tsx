@@ -1,7 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Globe } from './components/Globe'
-import { BunnyGlobeDecor } from './components/BunnyGlobeDecor'
 import { radioApi, RadioStation } from './services/radioApi'
 import { StationList } from './components/StationList'
 import { AudioPlayer } from './components/AudioPlayer'
@@ -347,13 +346,9 @@ function App() {
 
       <div className="main-content flex flex-1 overflow-hidden max-md:flex-col">
         <div className={cn('globe-container bunny-scene relative flex min-h-0 flex-1 flex-col max-md:h-[55%]', !isPink && 'bg-surface')}>
-          {isPink ? (
-            <BunnyGlobeDecor selectedCountry={selectedCountry} onSelectCountry={setSelectedCountry} />
-          ) : (
-            <Canvas className="globe-canvas absolute inset-0" camera={{ position: [0, 0, 6], fov: 45 }}>
-              <Globe onSelectCountry={setSelectedCountry} themeMode={themeMode} selectedStation={selectedStation} />
-            </Canvas>
-          )}
+          <Canvas className="globe-canvas absolute inset-0" camera={{ position: [0, 0, 6], fov: 45 }}>
+            <Globe onSelectCountry={setSelectedCountry} themeMode={themeMode} selectedStation={selectedStation} />
+          </Canvas>
 
           {selectedStation && (
             <div className={cn('pointer-events-none absolute left-6 top-6 z-[5] flex max-w-[320px] flex-col gap-0.5 border border-border border-l-4 border-l-accent bg-surface-panel p-3.5 pl-[22px] shadow-panel backdrop-blur-md', isPink ? 'bunny-live-card' : 'rounded-2xl')}>
