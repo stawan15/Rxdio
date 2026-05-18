@@ -3,7 +3,6 @@ services:
   radio-web:
     build:
       context: .
-      # ไม่ระบุ target = ใช้ final stage (nginx) ตาม Dockerfile
     ports:
       - "80:80"
     restart: unless-stopped

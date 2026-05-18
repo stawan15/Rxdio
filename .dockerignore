@@ -1,5 +1,30 @@
+# Node and build artifacts
 node_modules
 dist
+build
+
+# Git and environment
 .git
+.gitignore
+.env
+.env.*
+
+# Local and OS files
 .DS_Store
+Thumbs.db
+
+# Logs and editor files
 *.log
+*.tmp
+*.swp
+.vscode
+.idea
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+coverage
+
+# Misc
+*.tgz
+.cache

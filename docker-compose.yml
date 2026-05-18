@@ -2,12 +2,13 @@ services:
   radio-web:
     build:
       context: .
-      target: build # ใช้ stage build สำหรับ development
+      target: build
+    working_dir: /app
     volumes:
       - .:/app
-      - /app/node_modules # ป้องกันไม่ให้ node_modules ในเครื่องไปทับใน container
+      - /app/node_modules
     ports:
       - "3000:3000"
-    command: npm run dev -- --host
+    command: npm run dev -- --host 0.0.0.0
     environment:
       - NODE_ENV=development
