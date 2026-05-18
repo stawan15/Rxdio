@@ -133,7 +133,7 @@ export function StationList({
         )}
       </header>
 
-      <ul className="scrollbar-hide flex-1 overflow-y-auto pb-3">
+      <ul className="scrollbar-hide flex-1 overflow-y-auto pb-[calc(94px+env(safe-area-inset-bottom))] md:pb-3">
         {loading ? (
           <li className="px-6 py-10 text-[0.8rem] text-foreground-muted">{isPink ? 'Loading...' : 'Loading...'}</li>
         ) : displayStations.length === 0 ? (

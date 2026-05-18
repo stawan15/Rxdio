@@ -79,6 +79,8 @@
   body,
   #root {
     @apply m-0 h-full overflow-hidden bg-surface text-foreground font-sans antialiased;
+    min-height: 100svh;
+    min-height: 100vh;
     scrollbar-width: none;
   }
 
@@ -148,6 +150,15 @@
   [data-theme="pink"] .bunny-scene .globe-canvas {
     position: relative;
     z-index: 2;
+  }
+
+  .app-container {
+    min-height: 100svh;
+    min-height: 100vh;
+  }
+
+  .station-list ul {
+    padding-bottom: calc(94px + env(safe-area-inset-bottom));
   }
 
   [data-theme="pink"] .bunny-live-card {
