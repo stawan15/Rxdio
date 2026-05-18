@@ -55,7 +55,6 @@ export function Globe({ onSelectCountry, isDarkMode, themeMode, selectedStation 
   const cloudsRef = useRef<THREE.Mesh>(null!)
   const [hovered, setHovered] = useState<string | null>(null)
   const isPinkMode = themeMode === 'pink'
-  const isPinkMode = themeMode === 'pink'
 
   const [colorMap, bumpMap, specularMap] = useLoader(THREE.TextureLoader, [
     'https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_atmos_2048.jpg',
