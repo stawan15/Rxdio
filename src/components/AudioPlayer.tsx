@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { RadioStation } from '../services/radioApi'
+import { getTheme, ribbonBunny, type ThemeMode } from '../theme'
 
-export function AudioPlayer({ station, isDarkMode, themeMode, favorites, toggleFavorite, playlists = [], toggleStationInPlaylist }: { 
+export function AudioPlayer({ station, themeMode = 'dark', favorites, toggleFavorite, playlists = [], toggleStationInPlaylist }: { 
   station: RadioStation | null, 
-  isDarkMode?: boolean,
-  themeMode?: 'dark' | 'light' | 'pink',
+  themeMode?: ThemeMode,
   favorites: RadioStation[],
   toggleFavorite: (s: RadioStation) => void | Promise<void>,
   playlists?: import('../App').Playlist[],
@@ -70,18 +70,20 @@ export function AudioPlayer({ station, isDarkMode, themeMode, favorites, toggleF
     };
   }, [sleepTimer]);
 
-  const isPinkMode = themeMode === 'pink'
-  const bg = isDarkMode ? '#0a0a0a' : isPinkMode ? '#fff0f7' : '#faf9f7'
-  const border = isDarkMode ? '#1a1a1a' : isPinkMode ? '#f0c1dc' : '#e8e5e0'
-  const text = isDarkMode ? '#fff' : isPinkMode ? '#381842' : '#1a1a1a'
-  const muted = isDarkMode ? '#555' : isPinkMode ? '#8a5a7c' : '#9a9590'
-  const subtle = isDarkMode ? '#111' : isPinkMode ? '#ffe8f4' : '#f3f1ee'
-  const accent = isDarkMode ? '#00ff88' : isPinkMode ? '#ff6fb4' : '#2f6fdb'
+  const t = getTheme(themeMode)
+  const bg = t.isDark ? '#0a0a0a' : t.bg
+  const border = t.border
+  const text = t.text
+  const muted = t.isDark ? '#555' : t.muted
+  const subtle = t.subtle
+  const accent = t.accent
 
   const getPlaceholder = useCallback((name: string) => {
     const char = name.charAt(0).toUpperCase()
-    return `https://ui-avatars.com/api/?name=${char}&background=${isDarkMode ? '111' : isPinkMode ? 'ffc1de' : 'f3f1ee'}&color=${isDarkMode ? 'fff' : isPinkMode ? '381842' : '1a1a1a'}&bold=true&format=png`
-  }, [isDarkMode, isPinkMode])
+    const avBg = t.isDark ? '111' : t.isPink ? ribbonBunny.avatarBg : 'f3f1ee'
+    const avColor = t.isDark ? 'fff' : t.isPink ? ribbonBunny.text.replace('#', '') : '1a1a1a'
+    return `https://ui-avatars.com/api/?name=${char}&background=${avBg}&color=${avColor}&bold=true&format=png`
+  }, [t.isDark, t.isPink])
 
   const getArtworkUrl = useCallback((s: RadioStation) => {
     if (!s) return '';
@@ -195,7 +197,7 @@ export function AudioPlayer({ station, isDarkMode, themeMode, favorites, toggleF
           width: dim, height: dim,
           background: isPlaying ? text : 'transparent',
           color: isPlaying ? bg : text,
-          border: `1px solid ${isPlaying ? accent : isDarkMode ? '#333' : isPinkMode ? '#ffbfd4' : '#ddd'}`,
+          border: `1px solid ${isPlaying ? accent : t.isDark ? '#333' : t.isPink ? ribbonBunny.border : '#ddd'}`,
           borderRadius: '50%', cursor: hasError ? 'not-allowed' : 'pointer', 
           fontSize: fz, display: 'flex', alignItems: 'center', justifyContent: 'center',
           flexShrink: 0, transition: 'all 0.2s', opacity: hasError ? 0.4 : 1
@@ -218,7 +220,7 @@ export function AudioPlayer({ station, isDarkMode, themeMode, favorites, toggleF
           onClick={(e) => { e.stopPropagation(); setIsTimerMenuOpen(!isTimerMenuOpen) }}
           style={{
             background: sleepTimer ? text : 'transparent', color: sleepTimer ? bg : text,
-            border: `1px solid ${isDarkMode ? '#333' : '#ddd'}`,
+            border: `1px solid ${t.isDark ? '#333' : '#ddd'}`,
             borderRadius: sleepTimer ? '22px' : '50%',
             width: sleepTimer ? 'auto' : '44px', minWidth: '44px', height: '44px',
             padding: sleepTimer ? '0 12px' : '0',
@@ -237,9 +239,9 @@ export function AudioPlayer({ station, isDarkMode, themeMode, favorites, toggleF
         {isTimerMenuOpen && (
           <div onClick={e => e.stopPropagation()} style={{
             position: 'absolute', ...alignStyles,
-            background: isDarkMode ? '#1a1a1a' : '#faf9f7',
+            background: t.isDark ? '#1a1a1a' : '#faf9f7',
             border: `1px solid ${border}`, borderRadius: '12px',
-            boxShadow: isDarkMode ? '0 12px 40px rgba(0,0,0,0.9)' : '0 12px 40px rgba(0,0,0,0.06)',
+            boxShadow: t.isDark ? '0 12px 40px rgba(0,0,0,0.9)' : '0 12px 40px rgba(0,0,0,0.06)',
             padding: '8px 0', minWidth: '140px', zIndex: 1100, display: 'flex', flexDirection: 'column'
           }}>
             <div style={{ padding: '4px 16px 8px', fontSize: '0.7rem', color: muted, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Sleep Timer</div>
@@ -255,7 +257,7 @@ export function AudioPlayer({ station, isDarkMode, themeMode, favorites, toggleF
             <div style={{ height: '1px', background: border, margin: '4px 0' }} />
             <form onSubmit={handleCustomTimer} style={{ padding: '6px 16px', display: 'flex', gap: '8px', alignItems: 'center' }}>
               <input type="number" min="1" placeholder="Mins" value={customTimerInput} onChange={e => setCustomTimerInput(e.target.value)}
-                style={{ flex: 1, width: '0', padding: '6px 8px', borderRadius: '6px', border: `1px solid ${border}`, background: isDarkMode ? '#111' : isPinkMode ? '#fff1f9' : '#fff', color: text, fontSize: '0.8rem', outline: 'none' }} />
+                style={{ flex: 1, width: '0', padding: '6px 8px', borderRadius: '6px', border: `1px solid ${border}`, background: t.isDark ? '#111' : t.isPink ? ribbonBunny.headerBg : '#fff', color: text, fontSize: '0.8rem', outline: 'none' }} />
               <button type="submit" style={{ padding: '6px 12px', background: text, color: bg, border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600 }}>Set</button>
             </form>
             <div style={{ height: '1px', background: border, margin: '4px 0' }} />
@@ -282,8 +284,8 @@ export function AudioPlayer({ station, isDarkMode, themeMode, favorites, toggleF
         {isPlaylistMenuOpen && (
           <div onClick={e => e.stopPropagation()} style={{
             position: 'absolute', bottom: 'calc(100% + 10px)', ...alignStyles,
-            background: isDarkMode ? '#1a1a1a' : '#faf9f7', border: `1px solid ${border}`, borderRadius: '12px',
-            boxShadow: isDarkMode ? '0 12px 40px rgba(0,0,0,0.9)' : '0 12px 40px rgba(0,0,0,0.06)', padding: '8px 0', minWidth: '160px', zIndex: 1100
+            background: t.isDark ? '#1a1a1a' : '#faf9f7', border: `1px solid ${border}`, borderRadius: '12px',
+            boxShadow: t.isDark ? '0 12px 40px rgba(0,0,0,0.9)' : '0 12px 40px rgba(0,0,0,0.06)', padding: '8px 0', minWidth: '160px', zIndex: 1100
           }}>
             <div style={{ padding: '4px 16px 8px', fontSize: '0.7rem', color: muted, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Add to Playlist</div>
             {playlists.length === 0 ? (
@@ -321,15 +323,15 @@ export function AudioPlayer({ station, isDarkMode, themeMode, favorites, toggleF
       RECONNECTING
     </span>
   ) : hasError ? (
-    <span style={{ fontSize: '0.6rem', background: isDarkMode ? '#330000' : isPinkMode ? '#ffe5ee' : '#ffebee', color: '#ff4444', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>STREAM FAILED</span>
+    <span style={{ fontSize: '0.6rem', background: t.isDark ? '#330000' : t.isPink ? ribbonBunny.selectedBg : '#ffebee', color: '#ff4444', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>STREAM FAILED</span>
   ) : null;
 
 
   // Base player styling wrappers
   const glassmorphism = {
-    backgroundColor: isDarkMode ? '#111111' : isPinkMode ? 'rgba(255,240,247,0.95)' : '#ffffff',
+    backgroundColor: t.isDark ? '#111111' : t.isPink ? ribbonBunny.panelBg : '#ffffff',
     opacity: 1,
-    boxShadow: isDarkMode ? '0 -4px 30px rgba(0,0,0,0.8)' : isPinkMode ? '0 -4px 30px rgba(255, 157, 212, 0.22)' : '0 -4px 30px rgba(0,0,0,0.1)',
+    boxShadow: t.isDark ? '0 -4px 30px rgba(0,0,0,0.8)' : t.isPink ? `0 -4px 30px ${ribbonBunny.glow}` : '0 -4px 30px rgba(0,0,0,0.1)',
   }
 
   const renderPlayer = () => {
@@ -375,7 +377,7 @@ export function AudioPlayer({ station, isDarkMode, themeMode, favorites, toggleF
       return (
         <div className="audio-player full-player" style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: isDarkMode ? '#111111' : isPinkMode ? '#fff2f8' : '#ffffff',
+          backgroundColor: t.isDark ? '#111111' : t.isPink ? ribbonBunny.headerBg : '#ffffff',
           opacity: 1,
           zIndex: 9999, display: 'flex', flexDirection: 'column',
           padding: 'env(safe-area-inset-top) 24px calc(32px + env(safe-area-inset-bottom))',
@@ -386,11 +388,11 @@ export function AudioPlayer({ station, isDarkMode, themeMode, favorites, toggleF
           `}</style>
           
           <button onClick={() => setIsExpanded(false)} style={{ background: 'transparent', border: 'none', color: text, width: '100%', padding: '16px 0', cursor: 'pointer', display: 'flex', justifyContent: 'center' }}>
-            <div style={{ width: '40px', height: '5px', background: isDarkMode ? '#444' : '#ccc', borderRadius: '3px' }} />
+            <div style={{ width: '40px', height: '5px', background: t.isDark ? '#444' : '#ccc', borderRadius: '3px' }} />
           </button>
 
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', margin: '2vh 0 4vh' }}>
-            <img src={artworkUrl} alt="" style={{ width: '100%', maxWidth: '300px', aspectRatio: '1/1', borderRadius: '12px', objectFit: 'contain', background: subtle, boxShadow: isDarkMode ? '0 20px 50px rgba(0,0,0,0.8)' : '0 20px 50px rgba(0,0,0,0.1)' }} />
+            <img src={artworkUrl} alt="" style={{ width: '100%', maxWidth: '300px', aspectRatio: '1/1', borderRadius: '12px', objectFit: 'contain', background: subtle, boxShadow: t.isDark ? '0 20px 50px rgba(0,0,0,0.8)' : '0 20px 50px rgba(0,0,0,0.1)' }} />
           </div>
 
           <div style={{ marginBottom: '24px', textAlign: 'center' }}>
@@ -426,7 +428,7 @@ export function AudioPlayer({ station, isDarkMode, themeMode, favorites, toggleF
         position: 'fixed', bottom: 0, left: 0, right: 0, height: 'calc(64px + env(safe-area-inset-bottom))', 
         ...glassmorphism, borderTop: `1px solid ${border}`,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', gap: '16px', zIndex: 1000,
-        boxShadow: isDarkMode ? '0 -4px 30px rgba(0,0,0,0.5)' : '0 -4px 30px rgba(0,0,0,0.04)',
+        boxShadow: t.isDark ? '0 -4px 30px rgba(0,0,0,0.5)' : '0 -4px 30px rgba(0,0,0,0.04)',
         minWidth: 0
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1, minWidth: 0, maxWidth: '300px' }}>

@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { RadioStation } from '../services/radioApi'
+import { getTheme, ribbonBunny, type ThemeMode } from '../theme'
 
-export function StationList({ stations, onSelect, loading, selectedStation, isDarkMode, themeMode, favorites, toggleFavorite, recents, playlists, createPlaylist, onManagePlaylists }: { 
+export function StationList({ stations, onSelect, loading, selectedStation, themeMode = 'dark', favorites, toggleFavorite, recents, playlists, createPlaylist, onManagePlaylists }: { 
   stations: RadioStation[], 
   onSelect: (s: RadioStation) => void, 
   loading: boolean,
   selectedStation: RadioStation | null,
-  isDarkMode?: boolean,
-  themeMode?: 'dark' | 'light' | 'pink',
+  themeMode?: ThemeMode,
   favorites: RadioStation[],
   toggleFavorite: (s: RadioStation) => void | Promise<void>,
   recents: RadioStation[],
@@ -20,30 +20,25 @@ export function StationList({ stations, onSelect, loading, selectedStation, isDa
     : activeTab === 'favs' ? favorites 
     : activeTab === 'recent' ? recents 
     : playlists.find(p => p.id === activeTab)?.stations || [];
-  const isPinkMode = themeMode === 'pink'
-
-  const bg = isDarkMode ? '#000' : isPinkMode ? '#ffeef7' : '#faf9f7'
-  const border = isDarkMode ? '#1a1a1a' : isPinkMode ? '#f0c1dc' : '#e8e5e0'
-  const text = isDarkMode ? '#fff' : isPinkMode ? '#381842' : '#1a1a1a'
-  const muted = isDarkMode ? '#444' : isPinkMode ? '#8a5a7c' : '#9a9590'
-  const subtle = isDarkMode ? '#222' : isPinkMode ? '#ffe8f4' : '#f3f1ee'
-  const selectedBg = isDarkMode ? '#111' : isPinkMode ? '#ffdeea' : '#efecea'
+  const t = getTheme(themeMode)
 
   const getPlaceholder = (name: string) => {
     const char = name.charAt(0).toUpperCase()
-    return `https://ui-avatars.com/api/?name=${char}&background=${isDarkMode ? '111' : isPinkMode ? 'ffc1de' : 'f3f1ee'}&color=${isDarkMode ? 'fff' : isPinkMode ? '381842' : '1a1a1a'}&bold=true&format=svg`
+    const bg = t.isDark ? '111' : t.isPink ? ribbonBunny.avatarBg : 'f3f1ee'
+    const color = t.isDark ? 'fff' : t.isPink ? ribbonBunny.text.replace('#', '') : '1a1a1a'
+    return `https://ui-avatars.com/api/?name=${char}&background=${bg}&color=${color}&bold=true&format=svg`
   }
 
   return (
     <div className="station-list" style={{
       height: '100%', display: 'flex', flexDirection: 'column',
-      background: bg, borderLeft: `1px solid ${border}`,
+      background: t.bg, borderLeft: `1px solid ${t.border}`,
       width: '340px', fontFamily: 'inherit',
       position: 'relative', zIndex: 10
     }}>
       {/* Header */}
       <div style={{ padding: '24px 24px 0' }}>
-        <div style={{ display: 'flex', alignItems: 'center', borderBottom: `1px solid ${border}` }}>
+        <div style={{ display: 'flex', alignItems: 'center', borderBottom: `1px solid ${t.border}` }}>
           
           <div style={{ flex: 1, display: 'flex', gap: '20px', overflowX: 'auto', whiteSpace: 'nowrap', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
             {(['all', 'favs', 'recent', ...playlists.map(p => p.id)]).map(tab => {
@@ -54,7 +49,7 @@ export function StationList({ stations, onSelect, loading, selectedStation, isDa
                 <div key={tab} style={{ 
                   position: 'relative', display: 'flex', alignItems: 'center', gap: '8px',
                   paddingBottom: '14px', marginBottom: '-1px',
-                  borderBottom: activeTab === tab ? `2px solid ${text}` : '2px solid transparent',
+                  borderBottom: activeTab === tab ? `2px solid ${t.text}` : '2px solid transparent',
                   transition: 'border-color 0.2s'
                 }}>
                   <button
@@ -63,7 +58,7 @@ export function StationList({ stations, onSelect, loading, selectedStation, isDa
                       background: 'transparent', border: 'none', padding: '0',
                       fontFamily: 'inherit', fontWeight: activeTab === tab ? 700 : 500,
                       fontSize: '0.78rem', letterSpacing: '0.08em', textTransform: 'uppercase',
-                      color: activeTab === tab ? text : muted,
+                      color: activeTab === tab ? t.text : t.muted,
                       cursor: 'pointer', transition: 'color 0.2s',
                       display: 'flex', alignItems: 'center'
                     }}
@@ -79,7 +74,7 @@ export function StationList({ stations, onSelect, loading, selectedStation, isDa
             {playlists.length > 0 && (
               <button 
                 onClick={onManagePlaylists}
-                style={{ background: 'transparent', border: 'none', padding: 0, fontFamily: 'inherit', fontWeight: 600, fontSize: '0.8rem', color: text, cursor: 'pointer', transition: 'color 0.2s', minWidth: '44px', minHeight: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                style={{ background: 'transparent', border: 'none', padding: 0, fontFamily: 'inherit', fontWeight: 600, fontSize: '0.8rem', color: t.text, cursor: 'pointer', transition: 'color 0.2s', minWidth: '44px', minHeight: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               >
                 MANAGE
               </button>
@@ -89,13 +84,13 @@ export function StationList({ stations, onSelect, loading, selectedStation, isDa
                 const name = window.prompt("Enter playlist name:");
                 if (name && name.trim()) createPlaylist(name.trim());
               }}
-              style={{ background: 'transparent', border: 'none', padding: 0, fontFamily: 'inherit', fontWeight: 700, fontSize: '1.2rem', color: text, cursor: 'pointer', opacity: 0.8, minWidth: '44px', minHeight: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              style={{ background: 'transparent', border: 'none', padding: 0, fontFamily: 'inherit', fontWeight: 700, fontSize: '1.2rem', color: t.text, cursor: 'pointer', opacity: 0.8, minWidth: '44px', minHeight: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
               +
             </button>
           </div>
         </div>
-        <div style={{ padding: '12px 0', fontSize: '0.72rem', color: muted, letterSpacing: '0.04em', fontVariantNumeric: 'tabular-nums' }}>
+        <div style={{ padding: '12px 0', fontSize: '0.72rem', color: t.muted, letterSpacing: '0.04em', fontVariantNumeric: 'tabular-nums' }}>
           {activeTab === 'all' ? (loading ? 'Scanning...' : `${stations.length} active`) 
             : displayStations.length > 0 ? `${displayStations.length} stations` : 'Empty playlist'}
         </div>
@@ -104,11 +99,11 @@ export function StationList({ stations, onSelect, loading, selectedStation, isDa
       {/* List */}
       <div style={{ flex: 1, overflowY: 'auto' }}>
         {loading ? (
-          <div style={{ padding: '40px 24px', color: muted, fontSize: '0.8rem', letterSpacing: '0.04em' }}>
+          <div style={{ padding: '40px 24px', color: t.muted, fontSize: '0.8rem', letterSpacing: '0.04em' }}>
             Loading...
           </div>
         ) : displayStations.length === 0 ? (
-          <div style={{ padding: '40px 24px', color: muted, fontSize: '0.8rem' }}>
+          <div style={{ padding: '40px 24px', color: t.muted, fontSize: '0.8rem' }}>
             {activeTab === 'favs' ? 'Star a station to save it.' : 'No stations found.'}
           </div>
         ) : (
@@ -123,15 +118,15 @@ export function StationList({ stations, onSelect, loading, selectedStation, isDa
                   padding: '14px 24px',
                   cursor: 'pointer',
                   display: 'flex', alignItems: 'center', gap: '14px',
-                  background: isSelected ? selectedBg : 'transparent',
-                  borderBottom: `1px solid ${border}`,
+                  background: isSelected ? t.selectedBg : 'transparent',
+                  borderBottom: `1px solid ${t.border}`,
                   transition: 'background 0.1s',
                 }}
-                onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = subtle }}
+                onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = t.subtle }}
                 onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent' }}
               >
                 {/* Index number */}
-                <span style={{ fontSize: '0.7rem', color: muted, width: '18px', textAlign: 'right', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
+                <span style={{ fontSize: '0.7rem', color: t.muted, width: '18px', textAlign: 'right', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
                   {(i + 1).toString().padStart(2, '0')}
                 </span>
 
@@ -139,7 +134,7 @@ export function StationList({ stations, onSelect, loading, selectedStation, isDa
                 <img
                   src={station.favicon && station.favicon.startsWith('http') ? station.favicon : getPlaceholder(station.name)}
                   alt=""
-                  style={{ width: '36px', height: '36px', borderRadius: '6px', objectFit: 'contain', background: subtle, flexShrink: 0 }}
+                  style={{ width: '36px', height: '36px', borderRadius: '6px', objectFit: 'contain', background: t.subtle, flexShrink: 0 }}
                   onError={e => (e.currentTarget.src = getPlaceholder(station.name))}
                 />
 
@@ -147,7 +142,7 @@ export function StationList({ stations, onSelect, loading, selectedStation, isDa
                 <div style={{ flex: 1, overflow: 'hidden' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <div style={{ 
-                      fontSize: '0.88rem', fontWeight: 500, color: station.lastcheckok === 0 ? muted : text, 
+                      fontSize: '0.88rem', fontWeight: 500, color: station.lastcheckok === 0 ? t.muted : t.text, 
                       whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                       textDecoration: station.lastcheckok === 0 ? 'line-through' : 'none'
                     }}>
@@ -155,12 +150,12 @@ export function StationList({ stations, onSelect, loading, selectedStation, isDa
                     </div>
                     {station.lastcheckok === 0 && (
                       <span style={{ 
-                        fontSize: '0.55rem', background: isDarkMode ? '#330000' : isPinkMode ? '#ffdde6' : '#ffebee', color: '#ff4444', 
+                        fontSize: '0.55rem', background: t.isDark ? '#330000' : t.isPink ? ribbonBunny.selectedBg : '#ffebee', color: '#ff4444', 
                         padding: '2px 4px', borderRadius: '4px', fontWeight: 700, letterSpacing: '0.05em' 
                       }}>OFFLINE</span>
                     )}
                   </div>
-                  <div style={{ fontSize: '0.7rem', color: muted, marginTop: '2px', letterSpacing: '0.03em', fontVariantNumeric: 'tabular-nums' }}>
+                  <div style={{ fontSize: '0.7rem', color: t.muted, marginTop: '2px', letterSpacing: '0.03em', fontVariantNumeric: 'tabular-nums' }}>
                     {station.codec || 'LIVE'} · {station.bitrate ? `${station.bitrate}k` : '—'}
                   </div>
                 </div>
@@ -171,7 +166,7 @@ export function StationList({ stations, onSelect, loading, selectedStation, isDa
                   style={{
                     flexShrink: 0, background: 'transparent', border: 'none',
                     cursor: 'pointer', fontSize: '1rem',
-                    color: isFav ? '#f59e0b' : muted,
+                    color: isFav ? '#f59e0b' : t.muted,
                     opacity: isFav ? 1 : 0.6,
                     padding: '6px', pointerEvents: 'all',
                     position: 'relative', zIndex: 20,

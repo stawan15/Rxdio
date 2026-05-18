@@ -7,6 +7,7 @@ import { AudioPlayer } from './components/AudioPlayer'
 import { supabase } from './services/supabaseClient'
 import { Auth } from './components/Auth'
 import { Session } from '@supabase/supabase-js'
+import { getTheme, type ThemeMode } from './theme'
 
 export interface Playlist {
   id: string;
@@ -32,8 +33,9 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [isManagingPlaylists, setIsManagingPlaylists] = useState(false)
   const [selectedStation, setSelectedStation] = useState<RadioStation | null>(null)
-  const [themeMode, setThemeMode] = useState<'dark' | 'light' | 'pink'>('dark')
-  const isDarkMode = themeMode === 'dark'
+  const [themeMode, setThemeMode] = useState<ThemeMode>('dark')
+  const theme = getTheme(themeMode)
+  const isDarkMode = theme.isDark
   const [searchQuery, setSearchQuery] = useState('')
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false)
@@ -230,17 +232,6 @@ function App() {
     }
   }, [selectedStation])
 
-  const theme = {
-    bg: themeMode === 'dark' ? '#000' : themeMode === 'pink' ? '#ffeef7' : '#faf9f7',
-    text: themeMode === 'dark' ? '#fff' : themeMode === 'pink' ? '#381842' : '#1a1a1a',
-    border: themeMode === 'dark' ? '#1a1a1a' : themeMode === 'pink' ? '#f0c1dc' : '#e8e5e0',
-    muted: themeMode === 'dark' ? '#444' : themeMode === 'pink' ? '#8a5a7c' : '#9a9590',
-    inputBg: themeMode === 'dark' ? '#111' : themeMode === 'pink' ? '#ffe8f4' : '#f3f1ee',
-    headerBg: themeMode === 'dark' ? '#000' : themeMode === 'pink' ? '#fff0f7' : '#faf9f7',
-    accent: themeMode === 'dark' ? '#00ff88' : themeMode === 'pink' ? '#ff6fb4' : '#2f6fdb',
-    panelBg: themeMode === 'dark' ? 'rgba(0,0,0,0.85)' : themeMode === 'pink' ? 'rgba(255,239,250,0.88)' : 'rgba(255,255,255,0.92)',
-  }
-
   useEffect(() => {
     radioApi.getCountries().then(setCountries)
   }, [])
@@ -337,7 +328,7 @@ function App() {
                 position: 'absolute', top: 'calc(100% + 6px)', right: 0, width: '220px',
                 background: theme.headerBg, border: `1px solid ${theme.border}`,
                 borderRadius: '10px',
-                boxShadow: isDarkMode ? '0 12px 40px rgba(0,0,0,0.9)' : '0 12px 40px rgba(0,0,0,0.06)',
+                boxShadow: isDarkMode ? '0 12px 40px rgba(0,0,0,0.9)' : theme.isPink ? `0 12px 40px ${theme.accent}22` : '0 12px 40px rgba(0,0,0,0.06)',
                 maxHeight: '300px', overflowY: 'auto', zIndex: 1000,
               }}>
                 {(() => {
@@ -444,7 +435,7 @@ function App() {
                 position: 'absolute', top: 'calc(100% + 6px)', right: 0, width: '160px',
                 background: theme.headerBg, border: `1px solid ${theme.border}`,
                 borderRadius: '8px',
-                boxShadow: isDarkMode ? '0 12px 40px rgba(0,0,0,0.9)' : '0 12px 40px rgba(0,0,0,0.06)',
+                boxShadow: isDarkMode ? '0 12px 40px rgba(0,0,0,0.9)' : theme.isPink ? `0 12px 40px ${theme.accent}22` : '0 12px 40px rgba(0,0,0,0.06)',
                 zIndex: 1000, overflow: 'hidden'
               }}>
                 <button
@@ -481,7 +472,7 @@ function App() {
                   onMouseEnter={e => e.currentTarget.style.background = theme.inputBg}
                   onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                 >
-                  Pink Cute Mode
+                  Ribbon Bunny Mode
                 </button>
                 <button
                   onClick={() => supabase.auth.signOut()}
@@ -489,7 +480,7 @@ function App() {
                     width: '100%', padding: '12px 16px', background: 'transparent', border: 'none', outline: 'none',
                     textAlign: 'left', color: '#ff4444', fontSize: '0.8rem', cursor: 'pointer', fontFamily: 'inherit'
                   }}
-                  onMouseEnter={e => e.currentTarget.style.background = isDarkMode ? '#330000' : '#ffebee'}
+                  onMouseEnter={e => e.currentTarget.style.background = isDarkMode ? '#330000' : theme.isPink ? theme.selectedBg : '#ffebee'}
                   onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                 >
                   Sign Out
@@ -521,7 +512,7 @@ function App() {
               borderRight: `1px solid ${theme.border}`,
               borderRadius: '16px',
               display: 'flex', flexDirection: 'column', gap: '2px',
-              boxShadow: isDarkMode ? '0 20px 50px rgba(0,0,0,0.5)' : '0 20px 50px rgba(255, 152, 211, 0.15)',
+              boxShadow: isDarkMode ? '0 20px 50px rgba(0,0,0,0.5)' : theme.isPink ? `0 20px 50px ${theme.accent}26` : '0 20px 50px rgba(0,0,0,0.08)',
               zIndex: 5,
               pointerEvents: 'none',
               maxWidth: '320px'
@@ -529,19 +520,19 @@ function App() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                 <span style={{
                   fontSize: '9px', fontWeight: 600, letterSpacing: '0.15em',
-                  textTransform: 'uppercase', color: '#00ff88', opacity: 0.8
+                  textTransform: 'uppercase', color: theme.accent, opacity: 0.8
                 }}>
                   ● Live Data
                 </span>
               </div>
               <div style={{
-                fontSize: '15px', fontWeight: 600, color: '#fff',
+                fontSize: '15px', fontWeight: 600, color: theme.text,
                 letterSpacing: '-0.2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
               }}>
                 {selectedStation.name}
               </div>
               <div style={{
-                fontSize: '10px', color: 'rgba(255,255,255,0.4)',
+                fontSize: '10px', color: theme.muted,
                 letterSpacing: '0.05em', textTransform: 'uppercase', marginTop: '2px'
               }}>
                 {selectedStation.country} / {selectedStation.codec || 'MP3'}
@@ -588,7 +579,7 @@ function App() {
       {isManagingPlaylists && (
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          background: isDarkMode ? '#0a0a0a' : '#faf9f7',
+          background: theme.bg,
           zIndex: 99999, overflowY: 'auto', padding: 'env(safe-area-inset-top) 24px 80px'
         }}>
           <div style={{ maxWidth: '600px', margin: '0 auto', paddingTop: '24px' }}>
@@ -606,10 +597,10 @@ function App() {
               <p style={{ color: theme.muted, textAlign: 'center', marginTop: '40px' }}>No playlists to manage.</p>
             ) : playlists.map(pl => (
               <div key={pl.id} style={{
-                background: isDarkMode ? '#1a1a1a' : '#fff',
+                background: theme.isDark ? '#1a1a1a' : theme.isPink ? theme.headerBg : '#fff',
                 border: `1px solid ${theme.border}`, borderRadius: '16px', padding: '24px',
                 marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '16px',
-                boxShadow: isDarkMode ? '0 8px 30px rgba(0,0,0,0.4)' : '0 8px 30px rgba(0,0,0,0.05)'
+                boxShadow: isDarkMode ? '0 8px 30px rgba(0,0,0,0.4)' : theme.isPink ? `0 8px 30px ${theme.accent}1a` : '0 8px 30px rgba(0,0,0,0.05)'
               }}>
                 <h3 style={{ fontSize: '1.4rem', fontWeight: 600, color: theme.text, margin: 0 }}>{pl.name}</h3>
                 <div style={{ display: 'flex', gap: '12px' }}>

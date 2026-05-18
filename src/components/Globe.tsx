@@ -3,6 +3,7 @@ import { useFrame, useLoader } from '@react-three/fiber'
 import { OrbitControls, Sphere, Html, Stars } from '@react-three/drei'
 import * as THREE from 'three'
 import { RadioStation } from '../services/radioApi'
+import { ribbonBunny, type ThemeMode } from '../theme'
 
 const COUNTRY_NODES = [
   { name: 'Thailand', lat: 15.87, lon: 100.99 },
@@ -45,16 +46,17 @@ const convertTo3D = (lat: number, lon: number, radius: number) => {
   )
 }
 
-export function Globe({ onSelectCountry, isDarkMode, themeMode, selectedStation }: { 
+export function Globe({ onSelectCountry, themeMode = 'dark', selectedStation }: { 
   onSelectCountry: (name: string) => void, 
-  isDarkMode?: boolean,
-  themeMode?: 'dark' | 'light' | 'pink',
+  themeMode?: ThemeMode,
   selectedStation: RadioStation | null
 }) {
   const worldRef = useRef<THREE.Group>(null!)
   const cloudsRef = useRef<THREE.Mesh>(null!)
   const [hovered, setHovered] = useState<string | null>(null)
+  const isDarkMode = themeMode === 'dark'
   const isPinkMode = themeMode === 'pink'
+  const markerColor = isPinkMode ? ribbonBunny.accent : '#00ff88'
 
   const [colorMap, bumpMap, specularMap] = useLoader(THREE.TextureLoader, [
     'https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_atmos_2048.jpg',
@@ -104,9 +106,9 @@ export function Globe({ onSelectCountry, isDarkMode, themeMode, selectedStation 
   return (
     <>
       <ambientLight intensity={isDarkMode ? 0.3 : isPinkMode ? 0.72 : 1} />
-      <directionalLight position={[10, 10, 5]} intensity={isDarkMode ? 1.5 : isPinkMode ? 1.9 : 2.5} color={isPinkMode ? '#ff8fc2' : '#ffffff'} />
+      <directionalLight position={[10, 10, 5]} intensity={isDarkMode ? 1.5 : isPinkMode ? 1.9 : 2.5} color={isPinkMode ? ribbonBunny.light : '#ffffff'} />
       
-      {(isDarkMode || isPinkMode) && <Stars radius={150} depth={50} count={5000} factor={4} saturation={isPinkMode ? 0.8 : 0} fade speed={1} />}
+      {(isDarkMode || isPinkMode) && <Stars radius={150} depth={50} count={5000} factor={4} saturation={isPinkMode ? 0.35 : 0} fade speed={1} />}
       
       {/* กลุ่มของโลกที่หมุนไปพร้อมกัน */}
       <group ref={worldRef}>
@@ -151,7 +153,7 @@ export function Globe({ onSelectCountry, isDarkMode, themeMode, selectedStation 
               userData={{ selected: selectedStation?.country === marker.name }}
             >
               <sphereGeometry args={[0.015, 16, 16]} />
-              <meshBasicMaterial color={selectedStation?.country === marker.name ? "#fff" : "#00ff88"} />
+              <meshBasicMaterial color={selectedStation?.country === marker.name ? "#fff" : markerColor} />
             </mesh>
 
             {/* Transmission Beam */}
@@ -161,7 +163,7 @@ export function Globe({ onSelectCountry, isDarkMode, themeMode, selectedStation 
               userData={{ selected: selectedStation?.country === marker.name }}
             >
               <cylinderGeometry args={[0.002, 0.002, 0.16, 8]} />
-              <meshBasicMaterial color="#00ff88" transparent={true} opacity={0.3} />
+              <meshBasicMaterial color={markerColor} transparent={true} opacity={0.3} />
             </mesh>
 
             {/* Antenna Tip */}
@@ -171,20 +173,20 @@ export function Globe({ onSelectCountry, isDarkMode, themeMode, selectedStation 
               userData={{ selected: selectedStation?.country === marker.name }}
             >
               <sphereGeometry args={[0.008, 16, 16]} />
-              <meshBasicMaterial color={selectedStation?.country === marker.name ? "#fff" : "#00ff88"} transparent={true} opacity={0.6} />
+              <meshBasicMaterial color={selectedStation?.country === marker.name ? "#fff" : markerColor} transparent={true} opacity={0.6} />
             </mesh>
             
             {hovered === marker.name && (
               <Html distanceFactor={10}>
                 <div style={{
-                  background: 'rgba(0,0,0,0.95)',
-                  color: '#fff',
+                  background: isPinkMode ? ribbonBunny.panelBg : 'rgba(0,0,0,0.95)',
+                  color: isPinkMode ? ribbonBunny.text : '#fff',
                   padding: '12px 16px',
                   borderRadius: '2px', // Sharp corners for formal look
                   fontSize: '11px',
                   fontWeight: '500',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
+                  border: `1px solid ${isPinkMode ? ribbonBunny.border : 'rgba(255,255,255,0.1)'}`,
+                  boxShadow: isPinkMode ? `0 20px 40px ${ribbonBunny.glow}` : '0 20px 40px rgba(0,0,0,0.4)',
                   transform: 'translate(-50%, -140%)',
                   whiteSpace: 'nowrap',
                   pointerEvents: 'none',
@@ -197,7 +199,7 @@ export function Globe({ onSelectCountry, isDarkMode, themeMode, selectedStation 
                     }}>Location</span>
                     {selectedStation?.country === marker.name && (
                       <span style={{ 
-                        fontSize: '9px', color: '#00ff88', letterSpacing: '0.1em', 
+                        fontSize: '9px', color: markerColor, letterSpacing: '0.1em', 
                         fontWeight: 700, textTransform: 'uppercase'
                       }}>● Online</span>
                     )}
@@ -213,7 +215,7 @@ export function Globe({ onSelectCountry, isDarkMode, themeMode, selectedStation 
                       borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '8px'
                     }}>
                       <span style={{ fontSize: '9px', opacity: 0.3, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Broadcasting</span>
-                      <span style={{ color: '#00ff88', fontSize: '11px', fontWeight: 500 }}>{selectedStation.name}</span>
+                      <span style={{ color: markerColor, fontSize: '11px', fontWeight: 500 }}>{selectedStation.name}</span>
                     </div>
                   )}
                 </div>
