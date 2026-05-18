@@ -224,6 +224,8 @@ function App() {
 
   if (!session) return <Auth />
 
+  const isPink = themeMode === 'pink'
+
   const themeBtn = (mode: ThemeMode, label: string) => (
     <button
       type="button"
@@ -239,15 +241,16 @@ function App() {
 
   return (
     <div className="app-container fixed inset-0 flex flex-col overflow-hidden bg-surface pb-[calc(64px+env(safe-area-inset-bottom))] text-foreground">
-      <header className="z-[100] flex h-[calc(56px+env(safe-area-inset-top))] shrink-0 items-center justify-between border-b border-border bg-surface-raised px-7 pt-[env(safe-area-inset-top)]">
+      <header className={cn('bunny-header z-[100] flex h-[calc(56px+env(safe-area-inset-top))] shrink-0 items-center justify-between border-b border-border bg-surface-raised px-7 pt-[env(safe-area-inset-top)]')}>
         <div className="flex items-center gap-2.5">
-          <div className="flex size-7 items-center justify-center rounded-md bg-foreground text-[0.72rem] font-bold tracking-tight text-surface">Rx</div>
-          <span className="text-[0.95rem] font-semibold tracking-tight">Rxdio</span>
+          <div className={cn('flex size-8 items-center justify-center text-[0.72rem] font-bold tracking-tight', isPink ? 'bunny-logo' : 'rounded-md bg-foreground text-surface')}>Rx</div>
+          <span className={cn('text-[0.95rem] font-semibold tracking-tight', isPink && 'bunny-brand')}>Rxdio</span>
+          {isPink && <span className="text-lg" aria-hidden>🎀</span>}
         </div>
 
         <div className="flex items-center gap-2">
           <div className="search-bar relative hidden md:block" ref={searchRef}>
-            <div className="flex items-center gap-1.5 rounded-md border border-border bg-surface-muted px-3.5 py-1.5 transition-colors">
+            <div className={cn('flex items-center gap-1.5 border border-border bg-surface-muted px-3.5 py-1.5 transition-colors', isPink ? 'rounded-2xl' : 'rounded-md')}>
               <IconSearch className="text-foreground-muted" size={12} />
               <input
                 type="text"
@@ -259,7 +262,7 @@ function App() {
               />
             </div>
             {isDropdownOpen && (
-              <div className="absolute right-0 top-[calc(100%+6px)] z-[1000] max-h-[300px] w-[220px] overflow-y-auto rounded-[10px] border border-border bg-surface-raised shadow-dropdown">
+              <div className={cn('absolute right-0 top-[calc(100%+6px)] z-[1000] max-h-[300px] w-[220px] overflow-y-auto border border-border bg-surface-raised shadow-dropdown', isPink ? 'bunny-dropdown' : 'rounded-[10px]')}>
                 {filteredCountries.length === 0 ? (
                   <p className="p-4 text-center text-[0.8rem] text-foreground-muted">No results</p>
                 ) : Object.entries(groupedCountries).map(([continent, items]) => {
@@ -287,7 +290,7 @@ function App() {
 
           <button
             type="button"
-            className="mobile-search-toggle flex cursor-pointer items-center justify-center rounded-md border border-border p-1.5 text-foreground md:hidden"
+            className={cn('mobile-search-toggle flex cursor-pointer items-center justify-center border border-border p-1.5 text-foreground md:hidden', isPink ? 'bunny-btn-ghost' : 'rounded-md')}
             onClick={() => setIsMobileSearchOpen(true)}
           >
             <IconSearch size={14} />
@@ -296,21 +299,21 @@ function App() {
           <button
             type="button"
             onClick={handleSurprise}
-            className="cursor-pointer rounded-md border-none bg-foreground px-3.5 py-1.5 text-[0.78rem] font-medium tracking-wide text-surface transition-opacity hover:opacity-75"
+            className={cn('cursor-pointer border-none px-3.5 py-1.5 text-[0.78rem] font-medium tracking-wide transition-opacity', isPink ? 'bunny-btn-primary' : 'rounded-md bg-foreground text-surface hover:opacity-75')}
           >
-            Shuffle
+            {isPink ? '♡ Shuffle' : 'Shuffle'}
           </button>
 
           <div className="nav-menu-container relative">
             <button
               type="button"
               onClick={() => setIsNavMenuOpen(v => !v)}
-              className="flex cursor-pointer items-center justify-center rounded-md border border-border p-1.5 text-foreground-muted transition-colors hover:border-foreground hover:text-foreground"
+              className={cn('flex cursor-pointer items-center justify-center border border-border p-1.5 text-foreground-muted transition-colors hover:border-foreground hover:text-foreground', isPink ? 'bunny-btn-ghost' : 'rounded-md')}
             >
               <IconMenu />
             </button>
             {isNavMenuOpen && (
-              <div className="absolute right-0 top-[calc(100%+6px)] z-[1000] w-40 overflow-hidden rounded-lg border border-border bg-surface-raised shadow-dropdown">
+              <div className={cn('absolute right-0 top-[calc(100%+6px)] z-[1000] w-44 overflow-hidden border border-border bg-surface-raised shadow-dropdown', isPink ? 'bunny-dropdown' : 'rounded-lg')}>
                 {themeBtn('dark', 'Dark Mode')}
                 {themeBtn('light', 'Light Mode')}
                 {themeBtn('pink', 'Ribbon Bunny Mode')}
@@ -328,14 +331,14 @@ function App() {
       </header>
 
       <div className="main-content flex flex-1 overflow-hidden max-md:flex-col">
-        <div className="globe-container relative flex-1 bg-surface max-md:h-[55%]">
-          <Canvas camera={{ position: [0, 0, 6], fov: 45 }}>
+        <div className={cn('globe-container bunny-scene relative flex-1 max-md:h-[55%]', !isPink && 'bg-surface')}>
+          <Canvas className="globe-canvas absolute inset-0" camera={{ position: [0, 0, 6], fov: 45 }}>
             <Globe onSelectCountry={setSelectedCountry} themeMode={themeMode} selectedStation={selectedStation} />
           </Canvas>
 
           {selectedStation && (
-            <div className="pointer-events-none absolute left-6 top-6 z-[5] flex max-w-[320px] flex-col gap-0.5 rounded-2xl border border-border border-l-2 border-l-accent bg-surface-panel p-3.5 pl-[22px] shadow-panel backdrop-blur-md">
-              <span className="mb-1 text-[9px] font-semibold uppercase tracking-[0.15em] text-accent opacity-80">● Live Data</span>
+            <div className={cn('pointer-events-none absolute left-6 top-6 z-[5] flex max-w-[320px] flex-col gap-0.5 border border-border border-l-4 border-l-accent bg-surface-panel p-3.5 pl-[22px] shadow-panel backdrop-blur-md', isPink ? 'bunny-live-card' : 'rounded-2xl')}>
+              <span className="mb-1 text-[9px] font-semibold uppercase tracking-[0.15em] text-accent opacity-80">{isPink ? '♡ Now Playing' : '● Live Data'}</span>
               <p className="truncate text-[15px] font-semibold tracking-tight text-foreground">{selectedStation.name}</p>
               <p className="mt-0.5 text-[10px] uppercase tracking-wide text-foreground-muted">
                 {selectedStation.country} / {selectedStation.codec || 'MP3'}
@@ -343,10 +346,12 @@ function App() {
             </div>
           )}
 
-          <div className="pointer-events-none absolute bottom-9 left-9">
-            <h1 className="text-[clamp(2rem,4vw,3.5rem)] font-bold leading-none tracking-tight text-foreground">{selectedCountry}</h1>
+          <div className="pointer-events-none absolute bottom-9 left-9 z-[3]">
+            <h1 className={cn('text-[clamp(2rem,4vw,3.5rem)] font-bold leading-none tracking-tight', isPink ? 'bunny-country-title' : 'text-foreground')}>{selectedCountry}</h1>
             {!loading && stations.length > 0 && (
-              <p className="mt-2 text-[0.72rem] uppercase tracking-widest text-foreground-muted tabular-nums">{stations.length} stations</p>
+              <p className={cn('mt-2 tabular-nums', isPink ? 'bunny-country-meta' : 'text-[0.72rem] uppercase tracking-widest text-foreground-muted')}>
+                {isPink ? `♡ ${stations.length} stations` : `${stations.length} stations`}
+              </p>
             )}
           </div>
         </div>

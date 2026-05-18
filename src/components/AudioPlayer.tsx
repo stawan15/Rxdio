@@ -19,7 +19,7 @@ const playerBar = cn(
   'h-[calc(64px+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)]',
 )
 
-const dropdown = 'absolute z-[1100] min-w-[140px] rounded-xl border border-border bg-surface-raised py-2 shadow-dropdown'
+const dropdown = 'bunny-dropdown absolute z-[1100] min-w-[140px] rounded-2xl border border-border bg-surface-raised py-2 shadow-dropdown'
 
 export function AudioPlayer({
   station, themeMode, favorites, toggleFavorite,
@@ -307,8 +307,8 @@ export function AudioPlayer({
             </div>
           </div>
           <div className="mb-8 flex items-center justify-center gap-6">
-            <button type="button" onClick={() => toggleFavorite(station)} className={cn('cursor-pointer border-none bg-transparent text-2xl', isFav ? 'text-amber-500' : 'text-foreground-muted')}>
-              {isFav ? '★' : '☆'}
+            <button type="button" onClick={() => toggleFavorite(station)} className={cn('cursor-pointer border-none bg-transparent text-2xl', isFav ? 'text-heart' : 'text-foreground-muted')}>
+              {isFav ? '♥' : '♡'}
             </button>
             <button type="button" className={playBtnClass(true)} disabled={hasError} onClick={togglePlay}>{isPlaying ? '■' : '▶'}</button>
             <PlaylistMenu align="center" />
@@ -340,8 +340,8 @@ export function AudioPlayer({
           <button type="button" className={playBtnClass()} disabled={hasError} onClick={togglePlay}>{isPlaying ? '■' : '▶'}</button>
         </div>
         <div className="flex flex-1 shrink-0 items-center justify-end gap-4">
-          <button type="button" onClick={() => toggleFavorite(station)} className={cn('cursor-pointer border-none bg-transparent text-xl', isFav ? 'text-amber-500' : 'text-foreground-muted')}>
-            {isFav ? '★' : '☆'}
+          <button type="button" onClick={() => toggleFavorite(station)} className={cn('cursor-pointer border-none bg-transparent text-xl', isFav ? 'text-heart' : 'text-foreground-muted')}>
+            {isFav ? '♥' : '♡'}
           </button>
           <PlaylistMenu align="center" />
           <TimerMenu align="center" />

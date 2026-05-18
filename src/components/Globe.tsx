@@ -4,6 +4,7 @@ import { OrbitControls, Sphere, Html, Stars } from '@react-three/drei'
 import * as THREE from 'three'
 import { RadioStation } from '../services/radioApi'
 import { accentHex, bunny, type ThemeMode } from '../theme'
+import { cn } from '../lib/cn'
 
 const COUNTRY_NODES = [
   { name: 'Thailand', lat: 15.87, lon: 100.99 },
@@ -65,20 +66,20 @@ export function Globe({ onSelectCountry, themeMode, selectedStation }: Props) {
 
   useFrame((state) => {
     const time = state.clock.elapsedTime
-    if (worldRef.current) worldRef.current.rotation.y += 0.0006
+    if (worldRef.current) worldRef.current.rotation.y += isPink ? 0.0004 : 0.0006
     if (cloudsRef.current) cloudsRef.current.rotation.y += 0.0008
 
     state.scene.traverse((obj) => {
       if ((obj.name === 'country-beam' || obj.name === 'country-tip') && obj instanceof THREE.Mesh) {
         const selected = obj.userData.selected
         if (obj.material instanceof THREE.MeshBasicMaterial) {
-          obj.material.opacity = selected ? 0.9 : 0.3 + Math.sin(time * 3) * 0.1
+          obj.material.opacity = selected ? 0.9 : 0.35 + Math.sin(time * 3) * 0.12
         }
       }
       if (obj.name === 'country-core') {
         const selected = obj.userData.selected
-        const base = selected ? 1.4 : 1
-        obj.scale.setScalar(base + Math.sin(time * 5) * 0.08)
+        const base = selected ? 1.5 : 1
+        obj.scale.setScalar(base + Math.sin(time * 5) * 0.1)
       }
     })
   })
@@ -93,35 +94,56 @@ export function Globe({ onSelectCountry, themeMode, selectedStation }: Props) {
 
   return (
     <>
-      <ambientLight intensity={isDark ? 0.3 : isPink ? 0.72 : 1} />
-      <directionalLight
-        position={[10, 10, 5]}
-        intensity={isDark ? 1.5 : isPink ? 1.9 : 2.5}
-        color={isPink ? bunny.pink : '#ffffff'}
-      />
+      <ambientLight intensity={isDark ? 0.3 : isPink ? 1.1 : 1} />
+      <directionalLight position={[10, 10, 5]} intensity={isDark ? 1.5 : isPink ? 1.2 : 2.5} color={isPink ? '#fff5f9' : '#ffffff'} />
+      {isPink && (
+        <>
+          <pointLight position={[-8, 4, 6]} intensity={0.8} color={bunny.pink} />
+          <pointLight position={[6, -2, 8]} intensity={0.5} color="#ffffff" />
+          <hemisphereLight args={['#fff8fb', bunny.bg, 0.6]} />
+        </>
+      )}
 
-      {(isDark || isPink) && (
-        <Stars radius={150} depth={50} count={5000} factor={4} saturation={isPink ? 0.35 : 0} fade speed={1} />
+      {isDark && (
+        <Stars radius={150} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
+      )}
+      {isPink && (
+        <Stars radius={120} depth={40} count={1200} factor={2.5} saturation={0.95} fade speed={0.4} />
       )}
 
       <group ref={worldRef}>
+        {isPink && (
+          <Sphere args={[1, 32, 32]} scale={2.08}>
+            <meshBasicMaterial color={bunny.pink} transparent opacity={0.12} />
+          </Sphere>
+        )}
+
         <Sphere args={[1, 64, 64]} scale={2}>
           <meshPhongMaterial
             map={colorMap}
             bumpMap={bumpMap}
-            bumpScale={0.05}
-            specularMap={specularMap}
-            specular={new THREE.Color('grey')}
-            shininess={10}
+            bumpScale={isPink ? 0.02 : 0.05}
+            specularMap={isPink ? undefined : specularMap}
+            color={isPink ? '#ffd4e4' : '#ffffff'}
+            emissive={isPink ? new THREE.Color('#ffb8d4') : new THREE.Color('#000000')}
+            emissiveIntensity={isPink ? 0.12 : 0}
+            specular={new THREE.Color(isPink ? '#ffc4dd' : 'grey')}
+            shininess={isPink ? 18 : 10}
           />
         </Sphere>
 
         <Sphere ref={cloudsRef} args={[1.005, 64, 64]} scale={2.02}>
-          <meshPhongMaterial color="#ffffff" transparent opacity={0.15} side={THREE.DoubleSide} />
+          <meshPhongMaterial
+            color={isPink ? '#fff8fc' : '#ffffff'}
+            transparent
+            opacity={isPink ? 0.35 : 0.15}
+            side={THREE.DoubleSide}
+          />
         </Sphere>
 
         {markers.map(marker => {
           const isSelected = selectedStation?.country === marker.name
+          const coreSize = isPink ? 0.022 : 0.015
           return (
             <group
               key={marker.name}
@@ -132,41 +154,40 @@ export function Globe({ onSelectCountry, themeMode, selectedStation }: Props) {
               onPointerOut={() => setHovered(null)}
             >
               <mesh name="country-core" userData={{ selected: isSelected }}>
-                <sphereGeometry args={[0.015, 16, 16]} />
+                <sphereGeometry args={[coreSize, 16, 16]} />
                 <meshBasicMaterial color={isSelected ? '#fff' : markerColor} />
               </mesh>
-              <mesh name="country-beam" position={[0, 0.08, 0]} userData={{ selected: isSelected }}>
-                <cylinderGeometry args={[0.002, 0.002, 0.16, 8]} />
-                <meshBasicMaterial color={markerColor} transparent opacity={0.3} />
-              </mesh>
-              <mesh name="country-tip" position={[0, 0.16, 0]} userData={{ selected: isSelected }}>
-                <sphereGeometry args={[0.008, 16, 16]} />
-                <meshBasicMaterial color={isSelected ? '#fff' : markerColor} transparent opacity={0.6} />
-              </mesh>
+              {!isPink && (
+                <>
+                  <mesh name="country-beam" position={[0, 0.08, 0]} userData={{ selected: isSelected }}>
+                    <cylinderGeometry args={[0.002, 0.002, 0.16, 8]} />
+                    <meshBasicMaterial color={markerColor} transparent opacity={0.3} />
+                  </mesh>
+                  <mesh name="country-tip" position={[0, 0.16, 0]} userData={{ selected: isSelected }}>
+                    <sphereGeometry args={[0.008, 16, 16]} />
+                    <meshBasicMaterial color={isSelected ? '#fff' : markerColor} transparent opacity={0.6} />
+                  </mesh>
+                </>
+              )}
 
               {hovered === marker.name && (
                 <Html distanceFactor={10}>
                   <div
-                    className="pointer-events-none flex -translate-x-1/2 -translate-y-[140%] flex-col gap-2 whitespace-nowrap rounded-sm border px-4 py-3 text-[11px] font-medium shadow-panel"
-                    style={{
-                      background: isPink ? bunny.light : 'rgba(0,0,0,0.95)',
-                      color: isPink ? bunny.dark : '#fff',
-                      borderColor: isPink ? bunny.pink : 'rgba(255,255,255,0.1)',
-                    }}
+                    className={cn(
+                      'pointer-events-none flex -translate-x-1/2 -translate-y-[140%] flex-col gap-1.5 whitespace-nowrap px-4 py-3 text-[11px] font-semibold shadow-panel',
+                      isPink ? 'rounded-2xl border-2 border-accent bg-white text-foreground' : 'rounded-sm border border-white/10 bg-black/95 text-white',
+                    )}
                   >
-                    <div className="flex items-center justify-between gap-5">
-                      <span className="font-sans text-[9px] uppercase tracking-[0.15em] opacity-40">Location</span>
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-[9px] font-bold uppercase tracking-wider opacity-50">♡ Location</span>
                       {isSelected && (
-                        <span className="text-[9px] font-bold uppercase tracking-widest" style={{ color: markerColor }}>
-                          ● Online
-                        </span>
+                        <span className="text-[9px] font-bold" style={{ color: markerColor }}>● On air</span>
                       )}
                     </div>
-                    <span className="font-sans text-sm font-semibold tracking-wide">{marker.name}</span>
+                    <span className="text-sm font-bold">{marker.name}</span>
                     {isSelected && selectedStation && (
-                      <div className="flex flex-col gap-0.5 border-t border-black/5 pt-2">
-                        <span className="text-[9px] uppercase tracking-widest opacity-30">Broadcasting</span>
-                        <span className="text-[11px] font-medium" style={{ color: markerColor }}>{selectedStation.name}</span>
+                      <div className="border-t border-border pt-1.5">
+                        <span className="text-[10px] opacity-60">{selectedStation.name}</span>
                       </div>
                     )}
                   </div>
