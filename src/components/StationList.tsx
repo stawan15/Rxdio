@@ -18,6 +18,11 @@ type Props = {
   onManagePlaylists?: () => void
 }
 
+function promptNewPlaylist(createPlaylist: (name: string) => void) {
+  const name = window.prompt('Enter playlist name:')
+  if (name?.trim()) createPlaylist(name.trim())
+}
+
 export function StationList({
   stations, onSelect, loading, selectedStation, themeMode,
   favorites, toggleFavorite, recents, playlists, createPlaylist, onManagePlaylists,
@@ -33,17 +38,37 @@ export function StationList({
 
   const tabs = ['all', 'favs', 'recent', ...playlists.map(p => p.id)] as const
 
+  const tabLabel = (tab: string) => {
+    if (tab === 'all') return 'Stations'
+    if (tab === 'favs') return isPink ? '♡ Saved' : 'Saved'
+    if (tab === 'recent') return 'Recent'
+    return playlists.find(p => p.id === tab)?.name ?? tab
+  }
+
+  const addPlaylistBtn = (
+    <button
+      type="button"
+      onClick={() => promptNewPlaylist(createPlaylist)}
+      title="New playlist"
+      aria-label="New playlist"
+      className={cn(
+        'flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full text-lg font-bold transition-transform active:scale-95',
+        isPink
+          ? 'bunny-btn-primary shadow-[0_3px_12px_rgb(233_140_181/0.4)]'
+          : 'border border-border bg-surface-muted text-foreground hover:bg-selected',
+      )}
+    >
+      +
+    </button>
+  )
+
   return (
     <aside className="station-list relative z-10 flex h-full w-[340px] shrink-0 flex-col border-l border-border bg-surface max-md:h-[45%] max-md:w-full max-md:border-l-0 max-md:border-t">
-      <header className={cn('px-5 pt-5', isPink && 'px-4')}>
-        <div className={cn('flex items-center', isPink ? 'flex-col items-stretch gap-3 border-none' : 'border-b border-border')}>
-          <div className={cn('scrollbar-hide flex gap-2 overflow-x-auto whitespace-nowrap', isPink ? 'pb-1' : 'flex-1 gap-5')}>
+      <header className={cn('px-4 pt-4 md:px-5 md:pt-5')}>
+        <div className={cn('flex items-center gap-2', !isPink && 'border-b border-border')}>
+          <div className="scrollbar-hide flex min-w-0 flex-1 items-center gap-2 overflow-x-auto whitespace-nowrap">
             {tabs.map(tab => {
-              const isPl = tab !== 'all' && tab !== 'favs' && tab !== 'recent'
-              const plData = isPl ? playlists.find(p => p.id === tab) : null
               const active = activeTab === tab
-              const label = tab === 'all' ? 'Stations' : tab === 'favs' ? '♡ Saved' : tab === 'recent' ? 'Recent' : plData?.name
-
               if (isPink) {
                 return (
                   <button
@@ -52,11 +77,10 @@ export function StationList({
                     onClick={() => setActiveTab(tab)}
                     className={active ? 'bunny-tab-active' : 'bunny-tab-idle'}
                   >
-                    {label}
+                    {tabLabel(tab)}
                   </button>
                 )
               }
-
               return (
                 <div
                   key={tab}
@@ -69,56 +93,49 @@ export function StationList({
                     type="button"
                     onClick={() => setActiveTab(tab)}
                     className={cn(
-                      'cursor-pointer text-[0.78rem] font-medium uppercase tracking-widest',
+                      'cursor-pointer px-1 text-[0.78rem] font-medium uppercase tracking-widest',
                       active ? 'font-bold text-foreground' : 'text-foreground-muted',
                     )}
                   >
-                    {label}
+                    {tabLabel(tab)}
                   </button>
                 </div>
               )
             })}
           </div>
-
-          <div className={cn('flex shrink-0 items-center gap-2', !isPink && 'border-b border-transparent pb-3.5 pl-4')}>
-            {playlists.length > 0 && (
-              <button
-                type="button"
-                onClick={onManagePlaylists}
-                className={cn(
-                  'flex min-h-10 cursor-pointer items-center justify-center text-[0.8rem] font-semibold transition-colors',
-                  isPink ? 'bunny-btn-ghost px-3 py-1.5 text-sm' : 'min-w-11 text-foreground hover:opacity-80',
-                )}
-              >
-                {isPink ? 'Manage ♡' : 'MANAGE'}
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => {
-                const name = window.prompt('Enter playlist name:')
-                if (name?.trim()) createPlaylist(name.trim())
-              }}
-              className={cn(
-                'flex cursor-pointer items-center justify-center font-bold transition-opacity',
-                isPink ? 'bunny-btn-primary size-10 text-lg' : 'min-h-11 min-w-11 text-xl text-foreground opacity-80 hover:opacity-100',
-              )}
-            >
-              +
-            </button>
-          </div>
+          {addPlaylistBtn}
         </div>
 
-        <p className={cn('py-3 text-[0.72rem] tabular-nums', isPink ? 'font-semibold text-accent' : 'tracking-wide text-foreground-muted')}>
-          {activeTab === 'all'
-            ? loading ? 'Scanning...' : isPink ? `♡ ${stations.length} stations ready` : `${stations.length} active`
-            : displayStations.length > 0 ? `${displayStations.length} stations` : 'Empty playlist'}
-        </p>
+        <div className="mt-2 flex items-center justify-between gap-2 pb-1">
+          <p className={cn('text-[0.72rem] tabular-nums', isPink ? 'font-semibold text-accent' : 'tracking-wide text-foreground-muted')}>
+            {activeTab === 'all'
+              ? loading ? 'Scanning...' : isPink ? `♡ ${stations.length} stations` : `${stations.length} active`
+              : displayStations.length > 0 ? `${displayStations.length} stations` : 'Empty playlist'}
+          </p>
+          {playlists.length > 0 && (
+            <button
+              type="button"
+              onClick={onManagePlaylists}
+              className="hidden cursor-pointer text-[0.72rem] font-semibold text-foreground-muted underline-offset-2 hover:text-accent hover:underline md:inline"
+            >
+              Manage
+            </button>
+          )}
+        </div>
+        {playlists.length > 0 && (
+          <button
+            type="button"
+            onClick={onManagePlaylists}
+            className="mb-1 cursor-pointer text-[0.7rem] font-semibold text-accent underline-offset-2 hover:underline md:hidden"
+          >
+            Manage playlists
+          </button>
+        )}
       </header>
 
       <ul className="scrollbar-hide flex-1 overflow-y-auto pb-3">
         {loading ? (
-          <li className="px-6 py-10 text-[0.8rem] text-foreground-muted">{isPink ? 'Loading cute stations...' : 'Loading...'}</li>
+          <li className="px-6 py-10 text-[0.8rem] text-foreground-muted">{isPink ? 'Loading...' : 'Loading...'}</li>
         ) : displayStations.length === 0 ? (
           <li className="px-6 py-10 text-center text-[0.8rem] text-foreground-muted">
             {activeTab === 'favs' ? (isPink ? 'Tap ♡ to save a station!' : 'Star a station to save it.') : 'No stations found.'}

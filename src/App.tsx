@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Globe } from './components/Globe'
+import { BunnyGlobeDecor } from './components/BunnyGlobeDecor'
 import { radioApi, RadioStation } from './services/radioApi'
 import { StationList } from './components/StationList'
 import { AudioPlayer } from './components/AudioPlayer'
@@ -243,9 +244,12 @@ function App() {
     <div className="app-container fixed inset-0 flex flex-col overflow-hidden bg-surface pb-[calc(64px+env(safe-area-inset-bottom))] text-foreground">
       <header className={cn('bunny-header z-[100] flex h-[calc(56px+env(safe-area-inset-top))] shrink-0 items-center justify-between border-b border-border bg-surface-raised px-7 pt-[env(safe-area-inset-top)]')}>
         <div className="flex items-center gap-2.5">
-          <div className={cn('flex size-8 items-center justify-center text-[0.72rem] font-bold tracking-tight', isPink ? 'bunny-logo' : 'rounded-md bg-foreground text-surface')}>Rx</div>
-          <span className={cn('text-[0.95rem] font-semibold tracking-tight', isPink && 'bunny-brand')}>Rxdio</span>
-          {isPink && <span className="text-lg" aria-hidden>🎀</span>}
+          <div className={cn(
+            'flex size-8 items-center justify-center rounded-2xl text-[0.72rem] font-bold tracking-tight',
+            isPink ? 'bg-accent text-accent-fg shadow-[0_3px_12px_rgb(233_140_181/0.45)]' : 'bg-foreground text-surface',
+          )}>Rx</div>
+          <span className={cn('text-[0.95rem] font-semibold tracking-tight', isPink && 'font-bold text-accent')}>Rxdio</span>
+          {isPink && <span className="text-base opacity-90" aria-hidden>🎀</span>}
         </div>
 
         <div className="flex items-center gap-2">
@@ -319,6 +323,17 @@ function App() {
                 {themeBtn('pink', 'Ribbon Bunny Mode')}
                 <button
                   type="button"
+                  onClick={() => {
+                    const name = window.prompt('Enter playlist name:')
+                    if (name?.trim()) createPlaylist(name.trim())
+                    setIsNavMenuOpen(false)
+                  }}
+                  className="w-full border-b border-border px-4 py-3 text-left text-[0.8rem] font-medium text-foreground transition-colors hover:bg-surface-muted md:hidden"
+                >
+                  New Playlist
+                </button>
+                <button
+                  type="button"
                   onClick={() => supabase.auth.signOut()}
                   className="w-full px-4 py-3 text-left text-[0.8rem] text-red-500 transition-colors hover:bg-red-500/10 data-[theme=pink]:hover:bg-surface-muted"
                 >
@@ -331,10 +346,14 @@ function App() {
       </header>
 
       <div className="main-content flex flex-1 overflow-hidden max-md:flex-col">
-        <div className={cn('globe-container bunny-scene relative flex-1 max-md:h-[55%]', !isPink && 'bg-surface')}>
-          <Canvas className="globe-canvas absolute inset-0" camera={{ position: [0, 0, 6], fov: 45 }}>
-            <Globe onSelectCountry={setSelectedCountry} themeMode={themeMode} selectedStation={selectedStation} />
-          </Canvas>
+        <div className={cn('globe-container bunny-scene relative flex min-h-0 flex-1 flex-col max-md:h-[55%]', !isPink && 'bg-surface')}>
+          {isPink ? (
+            <BunnyGlobeDecor selectedCountry={selectedCountry} onSelectCountry={setSelectedCountry} />
+          ) : (
+            <Canvas className="globe-canvas absolute inset-0" camera={{ position: [0, 0, 6], fov: 45 }}>
+              <Globe onSelectCountry={setSelectedCountry} themeMode={themeMode} selectedStation={selectedStation} />
+            </Canvas>
+          )}
 
           {selectedStation && (
             <div className={cn('pointer-events-none absolute left-6 top-6 z-[5] flex max-w-[320px] flex-col gap-0.5 border border-border border-l-4 border-l-accent bg-surface-panel p-3.5 pl-[22px] shadow-panel backdrop-blur-md', isPink ? 'bunny-live-card' : 'rounded-2xl')}>
@@ -346,10 +365,16 @@ function App() {
             </div>
           )}
 
-          <div className="pointer-events-none absolute bottom-9 left-9 z-[3]">
-            <h1 className={cn('text-[clamp(2rem,4vw,3.5rem)] font-bold leading-none tracking-tight', isPink ? 'bunny-country-title' : 'text-foreground')}>{selectedCountry}</h1>
+          <div className={cn(
+            'pointer-events-none z-[3]',
+            isPink ? 'absolute inset-x-0 bottom-3 flex flex-col items-center text-center' : 'absolute bottom-9 left-9',
+          )}>
+            <h1 className={cn(
+              'font-bold leading-none tracking-tight',
+              isPink ? 'text-2xl text-foreground md:text-3xl' : 'text-[clamp(2rem,4vw,3.5rem)] text-foreground',
+            )}>{selectedCountry}</h1>
             {!loading && stations.length > 0 && (
-              <p className={cn('mt-2 tabular-nums', isPink ? 'bunny-country-meta' : 'text-[0.72rem] uppercase tracking-widest text-foreground-muted')}>
+              <p className={cn('mt-1.5 tabular-nums', isPink ? 'bunny-country-meta' : 'mt-2 text-[0.72rem] uppercase tracking-widest text-foreground-muted')}>
                 {isPink ? `♡ ${stations.length} stations` : `${stations.length} stations`}
               </p>
             )}

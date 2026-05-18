@@ -7,6 +7,12 @@ export const bunny = {
   white: '#FFFFFF',
 } as const
 
+export const FAVICON = {
+  dark: 'https://ui-avatars.com/api/?name=Rx&background=000000&color=ffffff&bold=true',
+  light: 'https://ui-avatars.com/api/?name=Rx&background=faf9f7&color=1a1a1a&bold=true',
+  pink: `https://ui-avatars.com/api/?name=Rx&background=${bunny.pink.replace('#', '')}&color=ffffff&bold=true`,
+} as const
+
 export type ThemeMode = 'dark' | 'light' | 'pink'
 
 export const THEME_STORAGE_KEY = 'rxdio_theme'
