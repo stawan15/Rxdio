@@ -16,6 +16,18 @@ A modern, immersive web-based radio application built with **React**, **TypeScri
 - **3D Graphics**: [Three.js](https://threejs.org/) / [React Three Fiber](https://docs.pmnd.rs/react-three-fiber)
 - **Build Tool**: [Vite](https://vitejs.dev/)
 - **API**: Radio Browser API (via `radioApi.ts`)
+- **Performance**: `@vercel/speed-insights`
+
+## 🚀 Performance Helper
+
+This project includes a helper module for Vercel Speed Insights at `src/speedInsights.ts`.
+
+Example import:
+```ts
+import { SpeedInsights } from './speedInsights'
+```
+
+Use the helper to integrate performance measurement and reports where needed.
 
 ## 📦 Getting Started
 
