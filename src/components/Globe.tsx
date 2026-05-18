@@ -3,7 +3,7 @@ import { useFrame, useLoader } from '@react-three/fiber'
 import { OrbitControls, Sphere, Html, Stars } from '@react-three/drei'
 import * as THREE from 'three'
 import { RadioStation } from '../services/radioApi'
-import { accentHex, bunny, type ThemeMode } from '../theme'
+import { accentHex, type ThemeMode } from '../theme'
 import { cn } from '../lib/cn'
 
 const COUNTRY_NODES = [
@@ -58,10 +58,9 @@ export function Globe({ onSelectCountry, themeMode, selectedStation }: Props) {
   const isPink = themeMode === 'pink'
   const markerColor = accentHex(themeMode)
 
-  const [colorMap, bumpMap, specularMap] = useLoader(THREE.TextureLoader, [
+  const [colorMap, bumpMap] = useLoader(THREE.TextureLoader, [
     'https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_atmos_2048.jpg',
     'https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_normal_2048.jpg',
-    'https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_specular_2048.jpg',
   ])
 
   useFrame((state) => {
@@ -94,13 +93,13 @@ export function Globe({ onSelectCountry, themeMode, selectedStation }: Props) {
 
   return (
     <>
-      <ambientLight intensity={isDark ? 0.3 : isPink ? 1.1 : 1} />
-      <directionalLight position={[10, 10, 5]} intensity={isDark ? 1.5 : isPink ? 1.2 : 2.5} color={isPink ? '#fff5f9' : '#ffffff'} />
+      <ambientLight intensity={isDark ? 0.3 : isPink ? 0.9 : 1} />
+      <directionalLight position={[5, 8, 5]} intensity={isDark ? 1.5 : isPink ? 1.3 : 2.5} color={isPink ? '#ffe9f0' : '#ffffff'} />
       {isPink && (
         <>
-          <pointLight position={[-8, 4, 6]} intensity={0.8} color={bunny.pink} />
-          <pointLight position={[6, -2, 8]} intensity={0.5} color="#ffffff" />
-          <hemisphereLight args={['#fff8fb', bunny.bg, 0.6]} />
+          <pointLight position={[-5, 4, 6]} intensity={0.7} color="#ff98c9" />
+          <pointLight position={[4, -2, 3]} intensity={0.4} color="#ffd4e1" />
+          <hemisphereLight args={['#ffe8f1', '#341b2d', 0.35]} />
         </>
       )}
 
@@ -108,16 +107,16 @@ export function Globe({ onSelectCountry, themeMode, selectedStation }: Props) {
         <Stars radius={150} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
       )}
       {isPink && (
-        <Stars radius={120} depth={40} count={1200} factor={2.5} saturation={0.95} fade speed={0.4} />
+        <Stars radius={120} depth={40} count={900} factor={2.5} saturation={0.8} fade speed={0.4} />
       )}
 
       <group ref={worldRef}>
         {isPink && (
-          <Sphere args={[1.1, 32, 32]} scale={2.1}>
+          <Sphere args={[1.12, 64, 64]} scale={2.12}>
             <meshBasicMaterial
-              color="#ffbbd4"
+              color="#ffbfd5"
               transparent
-              opacity={0.12}
+              opacity={0.14}
               blending={THREE.AdditiveBlending}
               side={THREE.BackSide}
             />
@@ -125,27 +124,43 @@ export function Globe({ onSelectCountry, themeMode, selectedStation }: Props) {
         )}
 
         <Sphere args={[1, 64, 64]} scale={2}>
-          <meshPhongMaterial
+          <meshPhysicalMaterial
             map={colorMap}
             bumpMap={bumpMap}
-            bumpScale={isPink ? 0.04 : 0.05}
-            specularMap={isPink ? undefined : specularMap}
-            color={isPink ? '#ffd4e4' : '#ffffff'}
-            emissive={isPink ? new THREE.Color('#ffbfd6') : new THREE.Color('#000000')}
-            emissiveIntensity={isPink ? 0.28 : 0}
-            specular={new THREE.Color(isPink ? '#ffc0d9' : 'grey')}
-            shininess={isPink ? 30 : 10}
+            bumpScale={isPink ? 0.06 : 0.05}
+            color={isPink ? '#ffbfd6' : '#ffffff'}
+            emissive={isPink ? new THREE.Color('#ffdae6') : new THREE.Color('#000000')}
+            emissiveIntensity={isPink ? 0.24 : 0}
+            roughness={isPink ? 0.35 : 0.6}
+            metalness={isPink ? 0.05 : 0}
+            clearcoat={isPink ? 0.4 : 0}
+            clearcoatRoughness={isPink ? 0.25 : 0}
+            envMapIntensity={isPink ? 0.8 : 1}
           />
         </Sphere>
 
-        <Sphere ref={cloudsRef} args={[1.005, 64, 64]} scale={2.02}>
-          <meshPhongMaterial
-            color={isPink ? '#ffe6f0' : '#ffffff'}
+        <Sphere ref={cloudsRef} args={[1.012, 64, 64]} scale={2.02}>
+          <meshStandardMaterial
+            color={isPink ? '#fff5f8' : '#ffffff'}
             transparent
-            opacity={isPink ? 0.28 : 0.15}
+            opacity={isPink ? 0.22 : 0.15}
+            roughness={1}
+            metalness={0}
             side={THREE.DoubleSide}
           />
         </Sphere>
+
+        {isPink && (
+          <Sphere args={[1.09, 64, 64]} scale={2.06}>
+            <meshBasicMaterial
+              color="#ffd9e8"
+              transparent
+              opacity={0.08}
+              blending={THREE.AdditiveBlending}
+              side={THREE.FrontSide}
+            />
+          </Sphere>
+        )}
 
         {markers.map(marker => {
           const isSelected = selectedStation?.country === marker.name
