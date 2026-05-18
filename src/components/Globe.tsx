@@ -113,8 +113,14 @@ export function Globe({ onSelectCountry, themeMode, selectedStation }: Props) {
 
       <group ref={worldRef}>
         {isPink && (
-          <Sphere args={[1, 32, 32]} scale={2.08}>
-            <meshBasicMaterial color={bunny.pink} transparent opacity={0.12} />
+          <Sphere args={[1.1, 32, 32]} scale={2.1}>
+            <meshBasicMaterial
+              color="#ffbbd4"
+              transparent
+              opacity={0.12}
+              blending={THREE.AdditiveBlending}
+              side={THREE.BackSide}
+            />
           </Sphere>
         )}
 
@@ -122,21 +128,21 @@ export function Globe({ onSelectCountry, themeMode, selectedStation }: Props) {
           <meshPhongMaterial
             map={colorMap}
             bumpMap={bumpMap}
-            bumpScale={isPink ? 0.02 : 0.05}
+            bumpScale={isPink ? 0.04 : 0.05}
             specularMap={isPink ? undefined : specularMap}
             color={isPink ? '#ffd4e4' : '#ffffff'}
-            emissive={isPink ? new THREE.Color('#ffb8d4') : new THREE.Color('#000000')}
-            emissiveIntensity={isPink ? 0.12 : 0}
-            specular={new THREE.Color(isPink ? '#ffc4dd' : 'grey')}
-            shininess={isPink ? 18 : 10}
+            emissive={isPink ? new THREE.Color('#ffbfd6') : new THREE.Color('#000000')}
+            emissiveIntensity={isPink ? 0.28 : 0}
+            specular={new THREE.Color(isPink ? '#ffc0d9' : 'grey')}
+            shininess={isPink ? 30 : 10}
           />
         </Sphere>
 
         <Sphere ref={cloudsRef} args={[1.005, 64, 64]} scale={2.02}>
           <meshPhongMaterial
-            color={isPink ? '#fff8fc' : '#ffffff'}
+            color={isPink ? '#ffe6f0' : '#ffffff'}
             transparent
-            opacity={isPink ? 0.35 : 0.15}
+            opacity={isPink ? 0.28 : 0.15}
             side={THREE.DoubleSide}
           />
         </Sphere>
