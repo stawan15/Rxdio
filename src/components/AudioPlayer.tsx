@@ -195,7 +195,7 @@ export function AudioPlayer({ station, isDarkMode, themeMode, favorites, toggleF
           width: dim, height: dim,
           background: isPlaying ? text : 'transparent',
           color: isPlaying ? bg : text,
-          border: `1px solid ${isDarkMode ? '#333' : isPinkMode ? '#ffbfd4' : '#ddd'}`,
+          border: `1px solid ${isPlaying ? accent : isDarkMode ? '#333' : isPinkMode ? '#ffbfd4' : '#ddd'}`,
           borderRadius: '50%', cursor: hasError ? 'not-allowed' : 'pointer', 
           fontSize: fz, display: 'flex', alignItems: 'center', justifyContent: 'center',
           flexShrink: 0, transition: 'all 0.2s', opacity: hasError ? 0.4 : 1

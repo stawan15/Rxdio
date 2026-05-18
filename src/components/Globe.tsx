@@ -54,6 +54,8 @@ export function Globe({ onSelectCountry, isDarkMode, themeMode, selectedStation 
   const worldRef = useRef<THREE.Group>(null!)
   const cloudsRef = useRef<THREE.Mesh>(null!)
   const [hovered, setHovered] = useState<string | null>(null)
+  const isPinkMode = themeMode === 'pink'
+  const isPinkMode = themeMode === 'pink'
 
   const [colorMap, bumpMap, specularMap] = useLoader(THREE.TextureLoader, [
     'https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_atmos_2048.jpg',
@@ -102,10 +104,10 @@ export function Globe({ onSelectCountry, isDarkMode, themeMode, selectedStation 
 
   return (
     <>
-      <ambientLight intensity={isDarkMode ? 0.3 : 1} />
-      <directionalLight position={[10, 10, 5]} intensity={isDarkMode ? 1.5 : 2.5} />
+      <ambientLight intensity={isDarkMode ? 0.3 : isPinkMode ? 0.72 : 1} />
+      <directionalLight position={[10, 10, 5]} intensity={isDarkMode ? 1.5 : isPinkMode ? 1.9 : 2.5} color={isPinkMode ? '#ff8fc2' : '#ffffff'} />
       
-      {isDarkMode && <Stars radius={150} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />}
+      {(isDarkMode || isPinkMode) && <Stars radius={150} depth={50} count={5000} factor={4} saturation={isPinkMode ? 0.8 : 0} fade speed={1} />}
       
       {/* กลุ่มของโลกที่หมุนไปพร้อมกัน */}
       <group ref={worldRef}>
