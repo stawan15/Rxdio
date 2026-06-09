@@ -85,6 +85,8 @@ Build for production:
 npm run build
 ```
 
+Set `VITE_SITE_URL` to `https://rxdio.teveus.xyz` in production so Google OAuth redirects return to the correct domain.
+
 Preview the production build:
 
 ```bash

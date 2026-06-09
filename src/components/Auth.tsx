@@ -8,6 +8,9 @@ export function Auth() {
   const [password, setPassword] = useState('')
   const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [message, setMessage] = useState<{ text: string; type: 'error' | 'success' } | null>(null)
+  const redirectTo = import.meta.env.PROD
+    ? (import.meta.env.VITE_SITE_URL ?? 'https://rxdio.teveus.xyz')
+    : window.location.origin
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -26,7 +29,10 @@ export function Auth() {
   }
 
   const handleGoogleLogin = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' })
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo },
+    })
     if (error) setMessage({ text: error.message, type: 'error' })
   }
 
@@ -38,7 +44,7 @@ export function Auth() {
 
   return (
     <div className="flex h-dvh w-screen items-center justify-center bg-black font-sans">
-      <div className="flex w-full max-w-[380px] flex-col gap-7 rounded-[20px] border border-[#1e1e1e] bg-[#0a0a0a] px-9 py-10">
+      <div className="flex w-full max-w-95 flex-col gap-7 rounded-[20px] border border-[#1e1e1e] bg-[#0a0a0a] px-9 py-10">
         <div className="flex items-center gap-3">
           <div className="flex size-10 items-center justify-center rounded-[10px] bg-white text-sm font-bold tracking-tight text-black">Rx</div>
           <div>
