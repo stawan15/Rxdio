@@ -1,5 +1,6 @@
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useState, useRef, useCallback, Suspense } from 'react'
 import { Canvas } from '@react-three/fiber'
+import { Html, useProgress } from '@react-three/drei'
 import { Globe } from './components/Globe'
 import { radioApi, RadioStation } from './services/radioApi'
 import { StationList } from './components/StationList'
@@ -27,6 +28,18 @@ function getContinent(name: string) {
   if (ASIA.has(n)) return 'Asia'
   if (EUROPE.has(n)) return 'Europe'
   return 'Other'
+}
+
+function Loader() {
+  const { progress } = useProgress()
+  return (
+    <Html center>
+      <div className="flex flex-col items-center justify-center gap-3 w-48">
+        <div className="size-10 rounded-full border-4 border-accent border-t-transparent animate-spin" />
+        <span className="text-xs font-bold tracking-widest text-accent uppercase">{Math.round(progress)}% Loaded</span>
+      </div>
+    </Html>
+  )
 }
 
 function App() {
@@ -348,7 +361,9 @@ function App() {
       <div className="main-content flex flex-1 overflow-hidden max-md:flex-col">
         <div className={cn('globe-container bunny-scene relative flex min-h-0 flex-1 flex-col max-md:h-[55%]', !isPink && 'bg-surface')}>
           <Canvas className="globe-canvas absolute inset-0" camera={{ position: [0, 0, 6], fov: 45 }}>
-            <Globe onSelectCountry={setSelectedCountry} themeMode={themeMode} selectedStation={selectedStation} />
+            <Suspense fallback={<Loader />}>
+              <Globe onSelectCountry={setSelectedCountry} themeMode={themeMode} selectedStation={selectedStation} />
+            </Suspense>
           </Canvas>
 
           {selectedStation && (

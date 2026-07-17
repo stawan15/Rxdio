@@ -6,6 +6,7 @@ export function Auth() {
   const [loading, setLoading] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [message, setMessage] = useState<{ text: string; type: 'error' | 'success' } | null>(null)
   const redirectTo = import.meta.env.PROD
@@ -27,6 +28,11 @@ export function Auth() {
         setMessage({ text: msg, type: 'error' })
       }
     } else {
+      if (password !== confirmPassword) {
+        setMessage({ text: 'Passwords do not match. Please try again.', type: 'error' })
+        setLoading(false)
+        return
+      }
       const { error } = await supabase.auth.signUp({ email, password })
       if (error) {
         setMessage({ text: error.message, type: 'error' })
@@ -79,7 +85,12 @@ export function Auth() {
             <button
               key={tab}
               type="button"
-              onClick={() => { setMode(tab); setMessage(null) }}
+              onClick={() => { 
+                setMode(tab)
+                setMessage(null)
+                setPassword('')
+                setConfirmPassword('')
+              }}
               className={cn(
                 'cursor-pointer border-b-2 pb-2 text-[0.9rem] font-semibold transition-all duration-200',
                 mode === tab ? 'border-white text-white' : 'border-transparent text-[#555] hover:text-white/60',
@@ -107,8 +118,19 @@ export function Auth() {
             value={password}
             onChange={e => setPassword(e.target.value)}
             required
-            autoComplete="current-password"
+            autoComplete={mode === 'login' ? "current-password" : "new-password"}
           />
+          {mode === 'signup' && (
+            <input
+              className={inputClass}
+              type="password"
+              placeholder="Confirm Password"
+              value={confirmPassword}
+              onChange={e => setConfirmPassword(e.target.value)}
+              required
+              autoComplete="new-password"
+            />
+          )}
 
           {message && (
             <div className={cn(

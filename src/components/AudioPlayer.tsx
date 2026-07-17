@@ -162,6 +162,24 @@ export function AudioPlayer({
     return null
   }
 
+  const Visualizer = () => {
+    if (!isPlaying) return null
+    return (
+      <div className="flex items-end gap-[2px] h-[12px] ml-1 opacity-80">
+        {[1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            className="w-[2.5px] bg-accent rounded-t-[1px]"
+            style={{
+              animation: `eq ${0.4 + i * 0.15}s ease-in-out infinite alternate`,
+              height: '4px'
+            }}
+          />
+        ))}
+      </div>
+    )
+  }
+
   const TimerMenu = ({ align = 'left' }: { align?: 'left' | 'center' | 'top' }) => (
     <div ref={timerRef} className="relative flex items-center">
       <button
@@ -281,6 +299,7 @@ export function AudioPlayer({
             <div className="mt-0.5 flex items-center gap-2">
               <span className="text-[0.7rem] uppercase text-foreground-muted">{station.country}</span>
               <StatusTag />
+              <Visualizer />
             </div>
           </div>
           <button type="button" className={playBtnClass()} disabled={hasError} onClick={togglePlay}>
@@ -304,6 +323,7 @@ export function AudioPlayer({
             <div className="flex items-center justify-center gap-2">
               <p className="text-[0.9rem] uppercase tracking-wide text-foreground-muted">{station.country}</p>
               <StatusTag />
+              <Visualizer />
             </div>
           </div>
           <div className="mb-8 flex items-center justify-center gap-6">
@@ -333,6 +353,7 @@ export function AudioPlayer({
             <div className="mt-0.5 flex items-center gap-2">
               <span className="text-[0.75rem] uppercase text-foreground-muted">{station.country}</span>
               <StatusTag />
+              <Visualizer />
             </div>
           </div>
         </div>
