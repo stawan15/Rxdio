@@ -159,13 +159,10 @@ export function Auth() {
 
         {mode === 'signup' && (
           <p className="text-[11px] text-center text-[#555] leading-relaxed">
-            Note: If you don't receive verification emails, make sure SMTP is configured in your Supabase dashboard under Authentication > Providers > Email.
+            Note: If you don't receive verification emails, make sure SMTP is configured in your Supabase dashboard under Authentication &gt; Providers &gt; Email.
           </p>
         )}
       </div>
     </div>
-  )
-}
-
   )
 }
