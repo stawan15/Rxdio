@@ -17,12 +17,25 @@ CREATE TABLE public.playlist_stations (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 3. Set up Row Level Security (RLS)
+-- 3. Create Favorites Table (maps user favorites)
+CREATE TABLE public.favorites (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) NOT NULL,
+    station_id TEXT NOT NULL,
+    station_name TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 4. Set up Row Level Security (RLS)
 ALTER TABLE public.playlists ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.playlist_stations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.favorites ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Users can manage their own playlists" ON public.playlists
     FOR ALL USING (auth.uid() = user_id);
 
 CREATE POLICY "Users can manage their own playlist stations" ON public.playlist_stations
+    FOR ALL USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can manage their own favorites" ON public.favorites
     FOR ALL USING (auth.uid() = user_id);
