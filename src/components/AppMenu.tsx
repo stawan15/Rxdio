@@ -10,7 +10,6 @@ type Props = {
   theme: ThemeMode
   onTheme: (mode: ThemeMode) => void
   email?: string
-  canSignIn: boolean
   onSignIn: () => void
   onSignOut: () => void
   onPlaylists: () => void
@@ -19,7 +18,7 @@ type Props = {
   showIosHint: boolean
 }
 
-export function AppMenu({ theme, onTheme, email, canSignIn, onSignIn, onSignOut, onPlaylists, canInstall, onInstall, showIosHint }: Props) {
+export function AppMenu({ theme, onTheme, email, onSignIn, onSignOut, onPlaylists, canInstall, onInstall, showIosHint }: Props) {
   const [open, setOpen] = useState(false)
 
   useEffect(() => {
@@ -65,7 +64,7 @@ export function AppMenu({ theme, onTheme, email, canSignIn, onSignIn, onSignOut,
               {email && item('list', 'Playlists', onPlaylists)}
               {canInstall && item('download', 'Install app', onInstall)}
               {showIosHint && <p className="px-3 py-2 text-xs text-foreground-muted">Install: tap Share, then “Add to Home Screen”.</p>}
-              {email ? item('logout', 'Sign out', onSignOut, 'danger') : canSignIn && item('user', 'Sign in', onSignIn)}
+              {email ? item('logout', 'Sign out', onSignOut, 'danger') : item('user', 'Sign in', onSignIn)}
             </div>
           </div>
         </>

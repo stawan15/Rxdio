@@ -31,6 +31,7 @@ export default defineConfig({
   server: {
     host: true, // needed for Docker access
     port: 3000,
+    proxy: { '/api': 'http://localhost:8788' }, // `npm run dev:api` (Pages Functions + local D1)
   },
   // the globe and hls.js chunks are lazy-loaded on purpose
   build: { chunkSizeWarningLimit: 1000 },

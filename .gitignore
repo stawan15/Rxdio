@@ -19,3 +19,6 @@ Thumbs.db
 .env.local
 .env.production
 .env.development
+# Cloudflare
+.dev.vars
+.wrangler/

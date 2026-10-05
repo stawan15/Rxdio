@@ -7,14 +7,6 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 
-# Vite inlines these at build time (all optional; without them the app is guest-only)
-ARG VITE_SUPABASE_URL
-ARG VITE_SUPABASE_ANON_KEY
-ARG VITE_SITE_URL
-ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL \
-    VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY \
-    VITE_SITE_URL=$VITE_SITE_URL
-
 COPY . .
 RUN npm run build
 
