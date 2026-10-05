@@ -5,16 +5,18 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "npm run typecheck && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit",
-    "lint": "biome lint src",
-    "test": "vitest run"
+    "typecheck": "tsc --noEmit && tsc --noEmit -p worker",
+    "lint": "biome lint src worker",
+    "test": "vitest run",
+    "dev:api": "mkdir -p dist && wrangler dev --port 8788 --local",
+    "db:migrate": "wrangler d1 migrations apply DB --local",
+    "dev:token": "node scripts/dev-token.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",
     "@react-three/fiber": "^9.8.1",
-    "@supabase/supabase-js": "^2.117.2",
     "@tailwindcss/vite": "^4.3.3",
     "@vercel/speed-insights": "^2.0.0",
     "clsx": "^2.1.1",
@@ -27,13 +29,15 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.15",
+    "@cloudflare/workers-types": "^5.20261005.1",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@types/three": "^0.186.0",
     "@vitejs/plugin-react": "^6.1.1",
     "typescript": "^7.0.2",
     "vite": "^8.3.2",
-    "vitest": "^5.0.3"
+    "vitest": "^5.0.3",
+    "wrangler": "^4.147.0"
   },
   "engines": {
     "node": ">=22"

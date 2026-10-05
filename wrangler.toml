@@ -1,0 +1,14 @@
+name = "rxdio"
+main = "worker/index.ts"
+compatibility_date = "2026-10-01"
+
+# The Vite build is served as static assets; only /api/* runs the Worker
+[assets]
+directory = "./dist"
+run_worker_first = ["/api/*"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "rxdio"
+database_id = "b92ec8d1-8a69-485a-8070-d50f6c8d7bc2"
+migrations_dir = "migrations"

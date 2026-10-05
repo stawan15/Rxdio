@@ -9,7 +9,6 @@ import { Header } from './components/Header'
 import { PlaylistManager, PlaylistPicker } from './components/Playlists'
 import { StationList } from './components/StationList'
 import { Toast } from './components/Toast'
-import { useSession } from './hooks/useAuth'
 import { useInstallPrompt } from './hooks/useInstallPrompt'
 import { useLibrary } from './hooks/useLibrary'
 import { useIsDesktop, usePrefersReducedMotion } from './hooks/useMediaQuery'
@@ -17,7 +16,7 @@ import { useCountries, useStations } from './hooks/useRadio'
 import { useTheme } from './hooks/useTheme'
 import { countryName, defaultCountryCode } from './lib/country'
 import { radioApi, type RadioStation } from './services/radioApi'
-import { supabase } from './services/supabaseClient'
+import { signOut, useSession } from './services/auth'
 
 const GlobeView = lazy(() => import('./components/globe/GlobeView'))
 
@@ -46,7 +45,7 @@ export default function App() {
     return () => clearTimeout(id)
   }, [toast])
 
-  const library = useLibrary(session?.user.id, notify)
+  const library = useLibrary(session?.userId, notify)
   const { countries } = useCountries()
   const [countryCode, setCountryCode] = useState(defaultCountryCode)
   const [focusKey, setFocusKey] = useState(0)
@@ -87,10 +86,7 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
-  const requestSignIn = useCallback(() => {
-    if (supabase) setAuthOpen(true)
-    else notify('Sign-in is not set up for this app')
-  }, [notify])
+  const requestSignIn = useCallback(() => setAuthOpen(true), [])
 
   const selectCountry = useCallback((code: string) => {
     setCountryCode(code)
@@ -163,10 +159,9 @@ export default function App() {
           <AppMenu
             theme={theme}
             onTheme={setTheme}
-            email={session?.user.email ?? undefined}
-            canSignIn={supabase !== null}
+            email={session?.email ?? session?.userId}
             onSignIn={requestSignIn}
-            onSignOut={() => supabase?.auth.signOut()}
+            onSignOut={signOut}
             onPlaylists={() => setPlaylistsOpen(true)}
             canInstall={install.canInstall}
             onInstall={install.install}
