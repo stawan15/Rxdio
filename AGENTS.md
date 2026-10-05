@@ -31,14 +31,15 @@ Email + password accounts live in D1 (`users`, `rate_limits`; `worker/accounts.t
 
 ## Visual design
 
-The look is a radio receiver, not a generic "AI app", in a five-colour teal palette: `#17252A` ink, `#2B7A78` deep teal, `#3AAFA9` teal, `#DEF2F1` mint, `#FEFFFF` white (everything else is a mix). Two themes: `dark` = Night, `light` = Mint. Rules:
-- **One accent per theme**, used only for the primary action and "you are here" marks. No gradients, no neon glow, no purple.
+The look is a radio receiver, not a generic "AI app", in **pure black and white** (no hue anywhere; the "accent" is just the foreground colour inverted). Two themes: `dark` = Night, `light` = Paper. Rules:
+- **One accent per theme** (white on Night, black on Paper), used only for the primary action and "you are here" marks. No gradients, no neon glow, no purple.
 - **No frosted glass.** Surfaces are flat with hairline borders; shadows are subtle. Don't add `backdrop-blur`.
 - **Squarer shapes.** Radii come from the tokens in `index.css` (4-14px). Only knob-like controls (play, scan FAB, icon buttons) stay circular.
 - **Type does the work.** IBM Plex Sans Thai for text, IBM Plex Mono uppercase for labels, counts and metadata.
 - **Plain voice, no emoji.** Countries use `CountryTag` (mono ISO code), never flag emoji. The random button is "Scan".
-- **A readable globe.** A flat political map: every country has a fill, neighbours never share a shade (`lib/mapColors.ts`, 4 tones), borders are drawn, and only the selected country (bright fill + outline) and the playing station (pin) stand out. No photo textures, glow, stars, markers or auto-rotation.
+- **A readable globe.** A flat political map: every country has a fill, neighbours never share a shade (`lib/mapColors.ts`, 4 tones), borders are drawn, and only the selected country (solid white/black fill + outline) and the playing station (pin) stand out. No photo textures, glow, stars, markers or auto-rotation.
 - **Decoration must mean something.** The ruler along the header is a tuning scale; its needle sits at the selected country's longitude.
+- Keyboard: Space play/pause, arrows prev/next, ⌘K / `/` country search.
 - The PWA icons in `public/icons/` are generated from an HTML template (Rx over the tuning scale); regenerate them if the palette changes.
 
 ## UX principles
@@ -75,7 +76,7 @@ The UI is built around the Laws of UX. Keep these intact when changing things:
 
 ## Conventions
 
-- Styling is Tailwind v4 (CSS-first config in `src/index.css`). Use the semantic tokens (`bg-surface`, `text-foreground`, `text-foreground-muted`, `border-border`, `bg-accent`, `text-heart`), never raw colors, so both themes (`dark` = Night, `light` = Mint) work. A new theme needs: `ThemeMode`/`isThemeMode`/`THEMES`/`THEME_COLOR`/`accentHex`/`GLOBE_LOOK`/`AVATAR_COLORS` in `theme.ts`, a `[data-theme]` block in `index.css`, and the inline theme script in `index.html`.
+- Styling is Tailwind v4 (CSS-first config in `src/index.css`). Use the semantic tokens (`bg-surface`, `text-foreground`, `text-foreground-muted`, `border-border`, `bg-accent`, `text-heart`), never raw colors, so both themes work. A new theme needs: `ThemeMode`/`isThemeMode`/`THEMES`/`THEME_COLOR`/`accentHex`/`GLOBE_LOOK`/`AVATAR_COLORS` in `theme.ts`, a `[data-theme]` block in `index.css`, and the inline theme script in `index.html`.
 - Compose classes with `cn()` (clsx + tailwind-merge).
 - Touch targets are ≥ 44px. Overlay stacking: header `z-30`, sheet `z-20`, player `z-40`, full player `z-50`, dialogs `z-60`, toast `z-70`.
 - Layout offsets use the CSS var `--player-h` (set on the app root; includes the safe-area inset). `main` has `margin-bottom: var(--player-h)`.

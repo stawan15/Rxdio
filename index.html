@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
     <meta name="description" content="Rxdio — tune into live radio from around the world on an interactive 3D globe." />
-    <meta name="theme-color" content="#17252A" />
+    <meta name="theme-color" content="#0a0a0a" />
     <meta name="color-scheme" content="dark light" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -27,7 +27,7 @@
         var t = localStorage.getItem('rxdio_theme');
         if (t === 'light' || t === 'dark') {
           document.documentElement.dataset.theme = t;
-          document.querySelector('meta[name="theme-color"]').content = { dark: '#17252A', light: '#DEF2F1' }[t];
+          document.querySelector('meta[name="theme-color"]').content = { dark: '#0a0a0a', light: '#fafafa' }[t];
         }
       } catch (e) {}
     </script>

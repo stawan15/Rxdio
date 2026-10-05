@@ -4,30 +4,27 @@ export const THEME_STORAGE_KEY = 'rxdio_theme'
 
 export const THEMES: { mode: ThemeMode; label: string }[] = [
   { mode: 'dark', label: 'Night' },
-  { mode: 'light', label: 'Mint' },
+  { mode: 'light', label: 'Paper' },
 ]
 
 export function isThemeMode(value: string | null): value is ThemeMode {
   return value === 'dark' || value === 'light'
 }
 
-/*
- * The palette is five colours: #17252A ink, #2B7A78 deep teal, #3AAFA9 teal, #DEF2F1 mint, #FEFFFF white.
- * Everything else is a mix of those. Keep `--c-*` in index.css in sync.
- */
+/* Black and white only: no hue anywhere. Keep `--c-*` in index.css in sync. */
 
 /** Browser/PWA chrome color — matches `--c-surface` in index.css */
-export const THEME_COLOR: Record<ThemeMode, string> = { dark: '#17252A', light: '#DEF2F1' }
+export const THEME_COLOR: Record<ThemeMode, string> = { dark: '#0a0a0a', light: '#fafafa' }
 
 /** Three.js / canvas — accent hex per mode (matches `--c-accent`) */
 export function accentHex(mode: ThemeMode): string {
-  return mode === 'dark' ? '#3AAFA9' : '#2B7A78'
+  return mode === 'dark' ? '#f5f5f5' : '#0a0a0a'
 }
 
 /** [surface, accent] pairs for the theme swatches in the menu */
 export const THEME_SWATCH: Record<ThemeMode, [string, string]> = {
-  dark: ['#17252A', '#3AAFA9'],
-  light: ['#DEF2F1', '#2B7A78'],
+  dark: ['#0a0a0a', '#f5f5f5'],
+  light: ['#fafafa', '#0a0a0a'],
 }
 
 type GlobeLook = {
@@ -48,32 +45,32 @@ type GlobeLook = {
 
 export const GLOBE_LOOK: Record<ThemeMode, GlobeLook> = {
   dark: {
-    ocean: '#0f1a1e',
-    tones: ['#1b5352', '#226664', '#2B7A78', '#329692'],
-    border: '#17252A',
-    selected: '#3AAFA9',
-    outline: '#FEFFFF',
-    hover: '#DEF2F1',
-    rim: '#2B7A78',
-    pin: '#FEFFFF',
-    night: 0.6,
+    ocean: '#000000',
+    tones: ['#1d1d1d', '#2b2b2b', '#393939', '#484848'],
+    border: '#000000',
+    selected: '#f5f5f5',
+    outline: '#ffffff',
+    hover: '#ffffff',
+    rim: '#555555',
+    pin: '#ffffff',
+    night: 0.55,
   },
   light: {
-    ocean: '#FEFFFF',
-    tones: ['#bfe5e2', '#a6dbd8', '#88cfcb', '#6bc3be'],
-    border: '#FEFFFF',
-    selected: '#2B7A78',
-    outline: '#17252A',
-    hover: '#17252A',
-    rim: '#17252A',
-    pin: '#17252A',
-    night: 0.86,
+    ocean: '#ffffff',
+    tones: ['#ececec', '#dedede', '#d0d0d0', '#c2c2c2'],
+    border: '#ffffff',
+    selected: '#0a0a0a',
+    outline: '#0a0a0a',
+    hover: '#0a0a0a',
+    rim: '#0a0a0a',
+    pin: '#0a0a0a',
+    night: 0.88,
   },
 }
 
 const AVATAR_COLORS: Record<ThemeMode, [bg: string, fg: string]> = {
-  dark: ['#243a41', '#DEF2F1'],
-  light: ['#CBE7E5', '#17252A'],
+  dark: ['#1f1f1f', '#f5f5f5'],
+  light: ['#ebebeb', '#0a0a0a'],
 }
 
 /** Offline-safe letter avatar for stations without a usable favicon */

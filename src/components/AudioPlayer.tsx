@@ -159,6 +159,22 @@ export function AudioPlayer({ station, theme, isFavorite, onToggleFavorite, onAd
     else audio.play().catch(() => setFailed(true))
   }
 
+  // Keyboard: space plays/pauses, arrows change station (ignored while typing or on a focused control)
+  const toggleRef = useRef(togglePlay)
+  toggleRef.current = togglePlay
+  useEffect(() => {
+    if (!station) return
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target instanceof HTMLElement ? e.target : null
+      if (e.metaKey || e.ctrlKey || e.altKey || el?.closest('input, textarea, button, a, [role="dialog"], [contenteditable]')) return
+      if (e.key === ' ') { e.preventDefault(); toggleRef.current() }
+      else if (e.key === 'ArrowRight') nav.current.onNext?.()
+      else if (e.key === 'ArrowLeft') nav.current.onPrev?.()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [station])
+
   const startTimer = (minutes: number) => { setTimerEndsAt(Date.now() + minutes * 60_000); setTimerOpen(false) }
 
   const status = failed

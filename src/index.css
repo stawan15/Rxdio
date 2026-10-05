@@ -32,42 +32,41 @@
   --animate-fade-in: fade-in 0.18s ease-out;
 }
 
-/* Themes, built from five colours: #17252A ink, #2B7A78 deep teal, #3AAFA9 teal, #DEF2F1 mint, #FEFFFF white.
-   The rest are mixes of those. Keep `THEME_COLOR` and `GLOBE_LOOK` in theme.ts in sync. */
+/* Themes: pure black and white. Keep `THEME_COLOR` and `GLOBE_LOOK` in theme.ts in sync. */
 
-/* Night: ink with teal */
+/* Night */
 :root,
 [data-theme="dark"] {
-  --c-surface: #17252a;
-  --c-surface-raised: #1d2f35;
-  --c-surface-muted: #243a41;
-  --c-surface-panel: rgb(23 37 42 / 0.96);
-  --c-foreground: #def2f1;
-  --c-foreground-muted: #92a4a5;
-  --c-border: #2c444b;
-  --c-accent: #3aafa9;
-  --c-accent-fg: #17252a;
-  --c-selected: #1f333a;
-  --c-heart: #3aafa9;
-  --c-shadow-dropdown: 0 8px 24px rgb(0 0 0 / 0.45);
-  --c-shadow-panel: 0 10px 28px rgb(0 0 0 / 0.4);
+  --c-surface: #0a0a0a;
+  --c-surface-raised: #121212;
+  --c-surface-muted: #1a1a1a;
+  --c-surface-panel: rgb(10 10 10 / 0.96);
+  --c-foreground: #f5f5f5;
+  --c-foreground-muted: #8a8a8a;
+  --c-border: #262626;
+  --c-accent: #f5f5f5;
+  --c-accent-fg: #0a0a0a;
+  --c-selected: #161616;
+  --c-heart: #f5f5f5;
+  --c-shadow-dropdown: 0 8px 24px rgb(0 0 0 / 0.5);
+  --c-shadow-panel: 0 10px 28px rgb(0 0 0 / 0.45);
 }
 
-/* Mint: pale mint paper, white cards, deep teal */
+/* Paper */
 [data-theme="light"] {
-  --c-surface: #def2f1;
-  --c-surface-raised: #feffff;
-  --c-surface-muted: #cbe7e5;
-  --c-surface-panel: rgb(254 255 255 / 0.96);
-  --c-foreground: #17252a;
-  --c-foreground-muted: #576769;
-  --c-border: #b5d8d6;
-  --c-accent: #2b7a78;
-  --c-accent-fg: #feffff;
-  --c-selected: #cfeae8;
-  --c-heart: #2b7a78;
-  --c-shadow-dropdown: 0 8px 24px rgb(23 37 42 / 0.14);
-  --c-shadow-panel: 0 10px 28px rgb(23 37 42 / 0.14);
+  --c-surface: #fafafa;
+  --c-surface-raised: #ffffff;
+  --c-surface-muted: #f0f0f0;
+  --c-surface-panel: rgb(255 255 255 / 0.96);
+  --c-foreground: #0a0a0a;
+  --c-foreground-muted: #6b6b6b;
+  --c-border: #e2e2e2;
+  --c-accent: #0a0a0a;
+  --c-accent-fg: #ffffff;
+  --c-selected: #f0f0f0;
+  --c-heart: #0a0a0a;
+  --c-shadow-dropdown: 0 8px 24px rgb(0 0 0 / 0.12);
+  --c-shadow-panel: 0 10px 28px rgb(0 0 0 / 0.12);
 }
 
 :root {

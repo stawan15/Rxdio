@@ -11,7 +11,7 @@ Live radio from around the world on an interactive 3D globe — built as a phone
 - **Search** — pick a country by name (`⌘K` / `/` on desktop).
 - **Favorites & playlists** — optional account (email + password), stored in Cloudflare D1. Browsing and listening need no account.
 - **Picks up where you left off** — reopens on your last country and station, ready to resume.
-- **Themes** — Night and Mint (a five-colour teal palette).
+- **Themes** — Night and Paper, pure black and white.
 - **Installable** — works as a PWA (add to home screen); the app shell loads offline.
 
 ## Getting started
