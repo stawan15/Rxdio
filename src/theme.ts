@@ -29,11 +29,11 @@ export const THEME_SWATCH: Record<ThemeMode, [string, string]> = {
   cobalt: ['#0a1f66', '#ffc61a'],
 }
 
-/** How the globe is lit and tinted per theme */
-export const GLOBE_LOOK: Record<ThemeMode, { tint: string; lights: string; atmosphere: string; borders: string; ambient: number; stars: number }> = {
-  dark: { tint: '#ffffff', lights: '#ffb25a', atmosphere: '#7aa2e8', borders: '#f1ece2', ambient: 0.1, stars: 3500 },
-  light: { tint: '#ffffff', lights: '#ff9a3c', atmosphere: '#8aa5d6', borders: '#17140f', ambient: 0.55, stars: 0 },
-  cobalt: { tint: '#c8d8ff', lights: '#ffd45a', atmosphere: '#8fa9ff', borders: '#f5f0e2', ambient: 0.16, stars: 2200 },
+/** Globe colours per theme: the sphere, the land dots, and how strongly the night half dims (see shaders.ts) */
+export const GLOBE_LOOK: Record<ThemeMode, { ocean: string; land: string; night: number }> = {
+  dark: { ocean: '#1a1712', land: '#b8ae9c', night: 0.62 },
+  light: { ocean: '#ece6d6', land: '#2a261f', night: 0.84 },
+  cobalt: { ocean: '#0e2f94', land: '#dde5ff', night: 0.7 },
 }
 
 const AVATAR_COLORS: Record<ThemeMode, [bg: string, fg: string]> = {

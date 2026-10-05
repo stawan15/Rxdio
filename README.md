@@ -4,7 +4,7 @@ Live radio from around the world on an interactive 3D globe — built as a phone
 
 ## Features
 
-- **Interactive globe** — real-time day/night with city lights, atmosphere glow, country borders. Tap any country to fly there and see its stations; pinch/drag to explore.
+- **Interactive globe** — a dot-matrix Earth with a real-time night side. Tap any country to fly there and see its stations; pinch/drag to explore.
 - **Easy on a phone** — the station list is a draggable bottom sheet (peek / half / full), 44px touch targets, safe-area aware. On desktop it's a side panel.
 - **Player** — mini player + full-screen player, previous/next, sleep timer, lock-screen controls, auto-reconnect, HLS support.
 - **Scan** — plays a random station and flies the globe to it.
@@ -67,7 +67,6 @@ Later schema changes go in a new `migrations/000N_*.sql` file; apply it with ste
 ## Data & credits
 
 - Stations: [Radio Browser](https://www.radio-browser.info/)
-- Earth textures: [three.js examples](https://github.com/mrdoob/three.js) (MIT)
 - Borders: [Natural Earth](https://www.naturalearthdata.com/) via `world-atlas`; centroids via `world-countries`
 
 See `AGENTS.md` for architecture notes.

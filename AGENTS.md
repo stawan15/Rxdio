@@ -36,7 +36,8 @@ The look is a radio receiver, not a generic "AI app". Rules to keep it that way:
 - **No frosted glass.** Surfaces are flat with hairline borders; shadows are subtle. Don't add `backdrop-blur`.
 - **Squarer shapes.** Radii come from the tokens in `index.css` (4–14px). Only knob-like controls (play, scan FAB, icon buttons) stay circular.
 - **Type does the work.** IBM Plex Sans Thai for text (Thai + Latin), IBM Plex Mono uppercase for labels, counts and metadata (tabs, bitrate, station counts).
-- **Plain voice.** No emoji in UI copy (flags are data), no "Welcome back" / "Surprise me". The random button is "Scan".
+- **Plain voice, no emoji.** Countries are shown with `CountryTag` (mono ISO code), never flag emoji. No "Welcome back" / "Surprise me"; the random button is "Scan".
+- **A quiet globe.** Land is a single-colour dot matrix on a flat sphere; only the selected country (accent dots + outline) and the playing station (pin) carry colour. No photo textures, glow, stars, per-country markers or auto-rotation.
 - **Decoration must mean something.** The ruler along the header is a tuning scale; its needle sits at the selected country's longitude.
 - Icons are hand-drawn strokes in `components/icons.tsx`; avoid sparkle/magic-wand symbols.
 - The PWA icons in `public/icons/` are generated from an HTML template (Rx over the tuning scale); regenerate them if the palette changes.
@@ -64,14 +65,14 @@ The UI is built around the Laws of UX. Keep these intact when changing things:
 - `src/App.tsx` — composition + app state (country, current station, queue, dialogs). Data logic lives in hooks.
 - `src/lib/passwordKey.ts` — browser-side password stretching (see Auth). `src/lib/haptics.ts` — vibration tick.
 - `src/hooks/` — `useLibrary` (favorites/playlists via `/api`, recents in localStorage, optimistic with rollback), `useRadio` (countries, stations; aborts stale requests), `useTheme`, `useMediaQuery`, `useInstallPrompt`.
-- `src/components/globe/` — `GlobeView` (Canvas, loader, hover tooltip, error fallback; lazy-loaded) and `GlobeScene` (day/night Earth shader, atmosphere, border overlay, markers, ripples, arcs, camera rig). Shaders in `shaders.ts`.
+- `src/components/globe/` — `GlobeView` (Canvas, hover tooltip, error fallback; lazy-loaded) and `GlobeScene` (dot-matrix Earth, border outline for the selected/hovered country, playing pin, arcs, camera rig). Shaders in `shaders.ts`.
 - `src/components/` — `StationList`, `BottomSheet` (phone: peek/half/full), `AudioPlayer` (desktop bar / mobile mini + full-screen), `Header`, `AppMenu`, `CountryPicker`, `Playlists`, `AuthDialog`, `Dialog`, `icons`.
 - `src/lib/geo.ts` — lat/lon ↔ 3D, point-in-country lookup, nearest centroid. `src/lib/sun.ts` — subsolar point for the day/night terminator. Both are unit-tested.
 - `src/data/` — `borders.json` (Natural Earth 110m via world-atlas, keyed by ISO alpha-2) and `centroids.json` (world-countries). Generated once; edit by regenerating, not by hand.
 - `src/services/` — `radioApi.ts` (Radio Browser), `libraryApi.ts` (typed `/api` client), `auth.ts` (token + session store).
 - `worker/` — Cloudflare Worker: `index.ts` (REST routes over D1, per-user quotas, ownership checks), `accounts.ts` (signup/login + throttling), `auth.ts` (JWT sign/verify, `getUserId`), `http.ts` (response helpers). Served with `[assets]` from `wrangler.toml`; only `/api/*` runs the Worker.
 - `migrations/` — D1 schema (`wrangler d1 migrations`); never edit an applied file, add a new one.
-- `public/sw.js` — hand-written service worker (app shell offline; never touches streams/API). Bump `CACHE` if caching rules change. `public/textures/` — self-hosted Earth textures.
+- `public/sw.js` — hand-written service worker (app shell offline; never touches streams/API). Bump `CACHE` if caching rules change.
 
 ## Conventions
 

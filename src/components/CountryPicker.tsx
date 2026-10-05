@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { cn } from '../lib/cn'
-import { countryName, flagEmoji, isExactCountryMatch, localCountryName, matchesCountry } from '../lib/country'
+import { countryName, isExactCountryMatch, localCountryName, matchesCountry } from '../lib/country'
 import type { Country } from '../services/radioApi'
+import { CountryTag } from './CountryTag'
 import { Dialog } from './Dialog'
 import { Icon } from './icons'
 
@@ -39,7 +40,7 @@ export function CountryPicker({ open, countries, selectedCode, onSelect, onClose
           onClick={() => pick(c.code)}
           className={cn('flex min-h-14 w-full cursor-pointer items-center gap-3 rounded-xl px-2 text-left hover:bg-surface-muted', c.code === selectedCode && 'bg-selected')}
         >
-          <span className="text-2xl" aria-hidden="true">{flagEmoji(c.code)}</span>
+          <CountryTag code={c.code} className="w-9" />
           <span className="min-w-0 flex-1 truncate font-medium">
             {c.label}
             {local && local !== c.label && <span className="ml-2 text-sm font-normal text-foreground-muted">{local}</span>}

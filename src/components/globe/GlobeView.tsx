@@ -1,24 +1,11 @@
-import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
+import { Suspense, useCallback, useRef, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
-import { useProgress } from '@react-three/drei'
-import { countryName, flagEmoji } from '../../lib/country'
+import { countryName } from '../../lib/country'
 import type { Country } from '../../services/radioApi'
+import { CountryTag } from '../CountryTag'
 import { ErrorBoundary } from '../ErrorBoundary'
 import { Icon } from '../icons'
 import { GlobeScene, type GlobeSceneProps } from './GlobeScene'
-
-function Loader() {
-  const { active, progress } = useProgress()
-  const [done, setDone] = useState(false)
-  useEffect(() => { if (!active && progress === 100) setDone(true) }, [active, progress])
-  if (done) return null
-  return (
-    <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-3 bg-surface">
-      <div className="size-10 animate-spin rounded-full border-4 border-accent border-t-transparent" />
-      <span className="font-mono text-xs font-medium uppercase tracking-[0.2em] text-accent">Tuning {Math.round(progress)}%</span>
-    </div>
-  )
-}
 
 function Fallback() {
   return (
@@ -55,16 +42,16 @@ export default function GlobeView({ countries, compact, ...scene }: Props) {
           aria-label="Interactive globe. Tap a country to browse its radio stations."
         >
           <Suspense fallback={null}>
-            <GlobeScene {...scene} countries={countries} compact={compact} onHover={onHover} />
+            <GlobeScene {...scene} countries={countries} onHover={onHover} />
           </Suspense>
         </Canvas>
-        <Loader />
       </ErrorBoundary>
       <div ref={tip} className="pointer-events-none absolute left-0 top-0 z-10" aria-hidden="true">
         {hoverCode && (
-          <div className="whitespace-nowrap rounded-lg border border-border bg-surface-panel px-3 py-2 text-xs font-semibold shadow-panel">
-            {flagEmoji(hoverCode)} {countryName(hoverCode, hovered?.name)}
-            {hovered && <span className="ml-2 font-normal text-foreground-muted">{hovered.stationcount} stations</span>}
+          <div className="flex items-center gap-2 whitespace-nowrap rounded-lg border border-border bg-surface-panel px-2.5 py-2 text-xs font-medium shadow-panel">
+            <CountryTag code={hoverCode} />
+            {countryName(hoverCode, hovered?.name)}
+            {hovered && <span className="font-mono text-[0.65rem] uppercase tracking-wide text-foreground-muted">{hovered.stationcount} stations</span>}
           </div>
         )}
       </div>

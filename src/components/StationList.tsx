@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { cn } from '../lib/cn'
-import { flagEmoji } from '../lib/country'
 import type { Playlist } from '../hooks/useLibrary'
 import type { RadioStation } from '../services/radioApi'
 import type { ThemeMode } from '../theme'
 import type { PlayerState } from './AudioPlayer'
+import { CountryTag } from './CountryTag'
 import { EqBars } from './EqBars'
 import { Icon } from './icons'
 import { StationArt } from './StationArt'
@@ -63,8 +63,9 @@ export function StationList(props: Props) {
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex shrink-0 items-baseline justify-between gap-3 px-4 pb-2 md:px-5 md:pt-4">
-        <h1 className="truncate text-xl font-semibold tracking-tight">
-          <span aria-hidden="true">{flagEmoji(country.code)}</span> {country.name}
+        <h1 className="flex min-w-0 items-center gap-2.5 text-xl font-semibold tracking-tight">
+          <CountryTag code={country.code} />
+          <span className="truncate">{country.name}</span>
         </h1>
         <span className="shrink-0 font-mono text-[0.7rem] uppercase tabular-nums tracking-wider text-foreground-muted">
           {loading ? 'Loading…' : `${visible.length} ${visible.length === 1 ? 'station' : 'stations'}`}

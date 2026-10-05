@@ -1,66 +1,76 @@
 const common = /* glsl */ `
-  varying vec2 vUv;
   varying vec3 vNormalW;
-  varying vec3 vNormalV;
   varying vec3 vViewDirW;
 `
 
 export const vertex = /* glsl */ `
   ${common}
   void main() {
-    vUv = uv;
     vNormalW = normalize(mat3(modelMatrix) * normal);
-    vNormalV = normalize(normalMatrix * normal);
     vec4 worldPos = modelMatrix * vec4(position, 1.0);
     vViewDirW = normalize(cameraPosition - worldPos.xyz);
     gl_Position = projectionMatrix * viewMatrix * worldPos;
   }
 `
 
-/** Day/night Earth: city lights on the dark side, soft terminator, rim glow toward the sun. */
-export const earthFragment = /* glsl */ `
+/** The sphere body: flat ocean colour, a darker night half, and a thin crisp edge so it reads on any background. */
+export const oceanFragment = /* glsl */ `
   ${common}
-  uniform sampler2D uDay;
-  uniform sampler2D uNight;
+  uniform vec3 uOcean;
+  uniform vec3 uLand;
   uniform vec3 uSun;
-  uniform vec3 uTint;
-  uniform vec3 uLights;
-  uniform vec3 uAtmosphere;
-  uniform float uAmbient;
+  uniform float uNight; // brightness of the night half, 0..1
 
   void main() {
     vec3 n = normalize(vNormalW);
-    float d = dot(n, normalize(uSun));
-    float dayMix = smoothstep(-0.14, 0.22, d);
-
-    vec3 day = texture2D(uDay, vUv).rgb * uTint;
-    vec3 night = texture2D(uNight, vUv).rgb;
-
-    vec3 nightSide = day * uAmbient + night * uLights * 1.8;
-    vec3 daySide = day * clamp(0.38 + 0.95 * d, 0.0, 1.15);
-    vec3 col = mix(nightSide, daySide, dayMix);
-
-    float twilight = smoothstep(0.22, 0.0, abs(d));
-    col += uAtmosphere * 0.1 * twilight;
-
-    float rim = pow(1.0 - max(dot(n, normalize(vViewDirW)), 0.0), 3.0);
-    col += uAtmosphere * rim * (0.25 + 0.75 * dayMix);
-
+    float day = smoothstep(-0.15, 0.25, dot(n, normalize(uSun)));
+    vec3 col = uOcean * (uNight + (1.0 - uNight) * day);
+    // a crisp few-pixel outline at the silhouette, not a glow
+    float edge = smoothstep(0.9, 1.0, 1.0 - max(dot(n, normalize(vViewDirW)), 0.0));
+    col = mix(col, uLand, edge * 0.5);
     gl_FragColor = vec4(col, 1.0);
     #include <colorspace_fragment>
   }
 `
 
-/** Glow shell drawn on back faces: brightest at the limb, fading outward. */
-export const atmosphereFragment = /* glsl */ `
-  ${common}
-  uniform vec3 uColor;
+/** Land as a dot matrix. The selected country's dots turn accent and grow; the night half dims. */
+export const dotsVertex = /* glsl */ `
+  attribute float aId;
+  uniform float uSelected;
+  uniform float uHover;
+  uniform float uSize;
+  uniform float uScale;
   uniform vec3 uSun;
+  varying float vState;
+  varying float vDay;
+  varying float vFacing;
 
   void main() {
-    float intensity = pow(max(0.0, 0.72 - dot(normalize(vNormalV), vec3(0.0, 0.0, 1.0))), 4.0);
-    float lit = 0.3 + 0.7 * smoothstep(-0.3, 0.6, dot(normalize(vNormalW), normalize(uSun)));
-    gl_FragColor = vec4(uColor, 1.0) * intensity * lit * 0.55;
+    vDay = smoothstep(-0.15, 0.25, dot(normalize(position), normalize(uSun)));
+    vFacing = dot(normalize(position), normalize(cameraPosition - position));
+    vState = aId == uSelected ? 2.0 : (aId == uHover ? 1.0 : 0.0);
+    vec4 mv = modelViewMatrix * vec4(position, 1.0);
+    gl_Position = projectionMatrix * mv;
+    float grow = vState > 1.5 ? 1.5 : (vState > 0.5 ? 1.25 : 1.0);
+    gl_PointSize = clamp(uSize * uScale * grow / -mv.z, 1.0, 40.0);
+  }
+`
+
+export const dotsFragment = /* glsl */ `
+  uniform vec3 uLand;
+  uniform vec3 uAccent;
+  varying float vState;
+  varying float vDay;
+  varying float vFacing;
+
+  void main() {
+    float d = length(gl_PointCoord - 0.5);
+    // dots fade out toward the edge so the rim doesn't pile up into a dark crescent
+    float alpha = smoothstep(0.5, 0.38, d) * smoothstep(0.0, 0.32, vFacing);
+    if (alpha < 0.01) discard;
+    vec3 col = vState > 1.5 ? uAccent : (vState > 0.5 ? mix(uLand, uAccent, 0.6) : uLand);
+    float dim = vState > 1.5 ? 1.0 : mix(0.28, 1.0, vDay);
+    gl_FragColor = vec4(col, alpha * dim);
     #include <colorspace_fragment>
   }
 `

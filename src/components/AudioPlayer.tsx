@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { cn } from '../lib/cn'
-import { countryName, flagEmoji } from '../lib/country'
+import { countryName } from '../lib/country'
 import { useIsDesktop } from '../hooks/useMediaQuery'
 import type { RadioStation } from '../services/radioApi'
 import type { ThemeMode } from '../theme'
+import { CountryTag } from './CountryTag'
 import { Dialog } from './Dialog'
 import { EqBars } from './EqBars'
 import { Icon } from './icons'
@@ -235,7 +236,8 @@ export function AudioPlayer({ station, theme, isFavorite, onToggleFavorite, onAd
 
   const meta = (
     <>
-      <span aria-hidden="true">{flagEmoji(station.countrycode ?? '')}</span> {station.countrycode ? countryName(station.countrycode, station.country) : station.country || 'Live radio'}
+      {station.countrycode && <CountryTag code={station.countrycode} className="mr-1.5 align-middle" />}
+      {station.countrycode ? countryName(station.countrycode, station.country) : station.country || 'Live radio'}
       {station.codec && <> · {station.codec}</>}
     </>
   )

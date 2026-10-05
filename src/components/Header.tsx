@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { flagEmoji } from '../lib/country'
+import { CountryTag } from './CountryTag'
 import { centroidOf } from '../lib/centroids'
 import { Icon } from './icons'
 
@@ -43,9 +43,8 @@ export function Header({ country, onOpenPicker, onShuffle, shuffling, onSignIn, 
         className="flex h-11 min-w-0 flex-1 cursor-pointer items-center gap-2.5 rounded-lg border border-border bg-surface-raised px-3.5 text-left transition-colors hover:border-foreground-muted md:max-w-sm md:flex-none md:basis-80"
       >
         <Icon name="search" size={16} className="shrink-0 text-foreground-muted" />
-        <span className="min-w-0 flex-1 truncate text-sm font-medium">
-          <span aria-hidden="true">{flagEmoji(country.code)}</span> {country.name}
-        </span>
+        <CountryTag code={country.code} />
+        <span className="min-w-0 flex-1 truncate text-sm font-medium">{country.name}</span>
         <kbd className="hidden rounded-sm border border-border px-1.5 py-0.5 font-mono text-[0.65rem] text-foreground-muted md:inline">⌘K</kbd>
       </button>
 

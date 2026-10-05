@@ -1,13 +1,10 @@
 // Rxdio service worker: makes the app shell load offline. Streams and API calls are never touched.
 // Build: __BUILD_ID__ (stamped at build time so every deploy installs a new worker)
 const CACHE = 'rxdio-v1'
-const STATIC = /^\/(assets|textures|icons)\//
+const STATIC = /^\/(assets|icons)\//
 const SHELL = [
   '/',
   '/manifest.webmanifest',
-  '/textures/earth_atmos_2048.jpg',
-  '/textures/earth_lights_2048.png',
-  '/textures/earth_clouds_1024.png',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
 ]
@@ -49,7 +46,7 @@ self.addEventListener('fetch', event => {
     return
   }
 
-  // Hashed bundles, textures, icons: cache first
+  // Hashed bundles and icons: cache first
   if (STATIC.test(url.pathname)) {
     event.respondWith(
       caches.match(request, { ignoreVary: true }).then(hit => hit ?? fetch(request).then(res => {

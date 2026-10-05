@@ -15,7 +15,7 @@ import { useLibrary } from './hooks/useLibrary'
 import { useIsDesktop, usePrefersReducedMotion } from './hooks/useMediaQuery'
 import { useCountries, useStations } from './hooks/useRadio'
 import { useTheme } from './hooks/useTheme'
-import { countryName, defaultCountryCode, flagEmoji } from './lib/country'
+import { countryName, defaultCountryCode } from './lib/country'
 import { tick } from './lib/haptics'
 import { readStorage, writeStorage } from './lib/storage'
 import { radioApi, type RadioStation } from './services/radioApi'
@@ -138,7 +138,7 @@ export default function App() {
       if (!random?.countrycode) { notify('No station found — try again'); return }
       selectCountry(random.countrycode)
       play(random, [random])
-      notify(`Tuned in to ${random.name} · ${flagEmoji(random.countrycode)} ${countryName(random.countrycode, random.country)}`)
+      notify(`Tuned in to ${random.name} · ${countryName(random.countrycode, random.country)}`)
     } catch {
       notify("Couldn't reach the radio directory")
     } finally {
