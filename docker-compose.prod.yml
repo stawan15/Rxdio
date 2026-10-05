@@ -1,10 +1,13 @@
-# Production compose — ใช้ nginx stage ของ Dockerfile เซิร์ฟบน port 80
+# Production compose — serves the nginx stage of the Dockerfile on port 80.
+# VITE_* values are read from your shell or a .env file at build time.
 services:
   radio-web:
     build:
       context: .
+      args:
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL:-}
+        VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY:-}
+        VITE_SITE_URL: ${VITE_SITE_URL:-}
     ports:
       - "80:80"
     restart: unless-stopped
-    environment:
-      - NODE_ENV=production

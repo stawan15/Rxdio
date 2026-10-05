@@ -1,122 +1,57 @@
-# Radio Web Project 📻
+# Rxdio 📻
 
-A modern, immersive web radio experience built with **React**, **TypeScript**, and **Three.js**. This project features an interactive 3D globe, global radio station discovery, and a responsive UI designed for both desktop and mobile.
+Live radio from around the world on an interactive 3D globe — built as a phone-first PWA with **React 19**, **TypeScript**, **Three.js** and **Tailwind v4**.
 
-## 📌 Project Overview
+## Features
 
-This repository contains a frontend radio application with:
+- **Interactive globe** — real-time day/night with city lights, atmosphere glow, country borders. Tap any country to fly there and see its stations; pinch/drag to explore.
+- **Easy on a phone** — the station list is a draggable bottom sheet (peek / half / full), 44px touch targets, safe-area aware. On desktop it's a side panel.
+- **Player** — mini player + full-screen player, previous/next, sleep timer, lock-screen controls, auto-reconnect, HLS support.
+- **Surprise me** — plays a random station and flies the globe to it.
+- **Search** — pick a country by name (`⌘K` / `/` on desktop).
+- **Favorites & playlists** — optional sign-in (email or Google) via Supabase. Browsing and listening need no account.
+- **Themes** — Dark, Light, Neon.
+- **Installable** — works as a PWA (add to home screen); the app shell loads offline.
 
-- An interactive 3D globe rendered using `@react-three/fiber` and `@react-three/drei`
-- Theme modes: `dark`, `light`, and `pink`
-- Country-based station selection and playback
-- A custom pink globe style for the `pink` theme
-- Supabase-based authentication support
-- A Vercel Speed Insights helper module
+## Getting started
 
-## 🛠️ Tech Stack
+Requires Node 22+.
 
-- **Framework**: [React](https://reactjs.org/)
-- **Language**: [TypeScript](https://www.typescriptlang.org/)
-- **3D Graphics**: [Three.js](https://threejs.org/) / [React Three Fiber](https://docs.pmnd.rs/react-three-fiber)
-- **Build Tool**: [Vite](https://vitejs.dev/)
-- **Styling**: Tailwind-style utility classes and custom CSS
-- **API**: Radio Browser API and Supabase
-- **Performance**: `@vercel/speed-insights`
-
-## 📁 Important Files
-
-- `src/App.tsx` — app layout, theme switching, globe container, and main UI
-- `src/components/Globe.tsx` — 3D globe rendering and globe marker interactions
-- `src/components/AudioPlayer.tsx` — station playback panel
-- `src/components/StationList.tsx` — station browsing and selection
-- `src/components/Auth.tsx` — Supabase sign-in / sign-out UI
-- `src/services/radioApi.ts` — radio station API wrapper
-- `src/services/supabaseClient.ts` — Supabase client setup
-- `src/theme.ts` — theme definitions and helper functions
-- `src/speedInsights.ts` — Vercel Speed Insights adapter
-
-## 🚀 Performance Helper
-
-`src/speedInsights.ts` exports the Vercel Speed Insights adapter for the project.
-
-Use it like this:
-
-```ts
-import { SpeedInsights } from './speedInsights'
-```
-
-That file re-exports the Next-specific adapter from `@vercel/speed-insights/next`.
-
-## 📦 Getting Started
-
-### Prerequisites
-
-- [Node.js](https://nodejs.org/) (v18 or higher recommended)
-- [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/)
-
-### Installation
-
-1. Clone the repository:
-   ```bash
-git clone https://github.com/stawan15/Rxdio.git
-cd Rxdio
-```
-
-2. Install dependencies:
-   ```bash
+```bash
 npm install
+npm run dev        # http://localhost:3000
 ```
 
-### Development
+### Optional: accounts (Supabase)
 
-Start the development server:
+Copy `.env.example` to `.env` and fill in your project values. Then run `supabase_playlists_schema.sql` in the Supabase SQL editor (safe to re-run). Without these the app runs in guest-only mode.
+
+### Scripts
+
+| Command | What it does |
+| --- | --- |
+| `npm run dev` | Dev server |
+| `npm run build` | Typecheck + production build |
+| `npm run typecheck` | `tsc --noEmit` |
+| `npm run lint` | Biome |
+| `npm test` | Vitest |
+| `npm run preview` | Serve `dist/` |
+
+## Docker
 
 ```bash
-npm run dev
+docker compose up --build                          # dev, port 3000
+docker compose -f docker-compose.prod.yml up --build   # nginx, port 80
 ```
 
-Open the app at `http://localhost:5173`.
+`VITE_*` variables are read at **build** time (shell or `.env`). In GitHub Actions, add `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` and `VITE_SITE_URL` as repository secrets so the published image includes them.
 
-### Production
+## Data & credits
 
-Build for production:
+- Stations: [Radio Browser](https://www.radio-browser.info/)
+- Earth textures: [three.js examples](https://github.com/mrdoob/three.js) (MIT)
+- Borders: [Natural Earth](https://www.naturalearthdata.com/) via `world-atlas`; centroids via `world-countries`
 
-```bash
-npm run build
-```
+See `AGENTS.md` for architecture notes.
 
-Set `VITE_SITE_URL` to `https://rxdio.teveus.xyz` in production so Google OAuth redirects return to the correct domain.
-
-Preview the production build:
-
-```bash
-npm run preview
-```
-
-## 🐳 Docker Support
-
-The project includes a `Dockerfile` and `docker-compose.yml`.
-
-Start the app with Docker Compose:
-
-```bash
-docker compose up --build
-```
-
-Stop and remove containers:
-
-```bash
-docker compose down
-```
-
-## 💡 Notes
-
-- The pink globe appearance is configured in `src/components/Globe.tsx`.
-- `theme.ts` controls theme colors and mode logic.
-- `radioApi.ts` is used to fetch station data from the Radio Browser API.
-- `supabaseClient.ts` handles authentication for user sessions.
-
-This project is private and intended for personal use.
-
----
-Built with ❤️ by Madam Eve.
+This project is private and intended for personal use. Built with ❤️ by Madam Eve.
