@@ -42,7 +42,7 @@ export default function GlobeView({ countries, compact, ...scene }: Props) {
           aria-label="Interactive globe. Tap a country to browse its radio stations."
         >
           <Suspense fallback={null}>
-            <GlobeScene {...scene} countries={countries} onHover={onHover} />
+            <GlobeScene {...scene} countries={countries} compact={compact} onHover={onHover} />
           </Suspense>
         </Canvas>
       </ErrorBoundary>

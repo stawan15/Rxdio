@@ -55,7 +55,7 @@ export function AppMenu({ theme, onTheme, email, onSignIn, onSignOut, onPlaylist
         <>
           <button type="button" aria-label="Close menu" tabIndex={-1} className="fixed inset-0 z-40 cursor-default" onClick={() => setOpen(false)} />
           <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-72 animate-fade-in rounded-2xl border border-border bg-surface-raised p-2 shadow-dropdown">
-            <fieldset className="m-0 grid grid-cols-3 gap-1 rounded-xl border-0 bg-surface-muted p-1">
+            <fieldset className="m-0 grid grid-cols-2 gap-1 rounded-xl border-0 bg-surface-muted p-1">
               <legend className="sr-only">Theme</legend>
               {THEMES.map(t => (
                 <button

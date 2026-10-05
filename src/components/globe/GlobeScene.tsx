@@ -4,110 +4,157 @@ import { Html, OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
 import { BORDERS, centroidOf, findCountryAt, latLonToXYZ, nearestCountry, xyzToLatLon, type LatLon } from '../../lib/geo'
 import { subsolarPoint } from '../../lib/sun'
-import { accentHex, GLOBE_LOOK, type ThemeMode } from '../../theme'
+import { GLOBE_LOOK, type ThemeMode } from '../../theme'
 import type { Country } from '../../services/radioApi'
 import { EqBars } from '../EqBars'
-import { borderIndex, buildLandDots } from './dots'
-import { dotsFragment, dotsVertex, oceanFragment, vertex } from './shaders'
+import { countryTones } from '../../lib/mapColors'
+import { mapFragment, vertex } from './shaders'
 
 const EARTH_RADIUS = 2
 const GLOBE_DIAMETER = 4.2 // used to fit the camera
-const OVERLAY_W = 3072
-const OVERLAY_H = 1536
 const Y_AXIS = new THREE.Vector3(0, 1, 0)
 
 const toVector = (lat: number, lon: number, radius: number) => new THREE.Vector3(...latLonToXYZ(lat, lon, radius))
 const hasBorder = (code: string) => BORDERS.some(b => b.code === code)
 
-// --- country outlines: only the selected / hovered country is drawn, into a canvas wrapped around the globe ----
+// --- the map: land shades and borders are painted into an equirectangular canvas wrapped around the globe -------
 
-const borderPaths = new Map<string, Path2D>()
+type Paths = { fill: Path2D; stroke: Path2D }
+const pathCache = new Map<string, Paths>()
 
-function pathFor(code: string) {
-  let path = borderPaths.get(code)
-  if (!path) {
-    path = new Path2D()
+function pathsFor(code: string, w: number, h: number): Paths {
+  const key = `${w}:${code}`
+  let paths = pathCache.get(key)
+  if (!paths) {
+    const fill = new Path2D()
+    const stroke = new Path2D()
     for (const ring of BORDERS.find(b => b.code === code)?.rings ?? []) {
+      // a few rings (Russia, Fiji, Antarctica) jump between +180 and -180: unwrap them, then draw a copy one map-width over
+      const unwrapped: [number, number][] = []
+      let shift = 0
       ring.forEach(([lon, lat], i) => {
-        const x = ((lon + 180) / 360) * OVERLAY_W
-        const y = ((90 - lat) / 180) * OVERLAY_H
-        if (i === 0) path?.moveTo(x, y)
-        else path?.lineTo(x, y)
+        if (i > 0 && lon + shift - unwrapped[i - 1][0] > 180) shift -= 360
+        else if (i > 0 && lon + shift - unwrapped[i - 1][0] < -180) shift += 360
+        unwrapped.push([lon + shift, lat])
       })
-      path.closePath()
+      for (const offset of [0, -360, 360]) {
+        unwrapped.forEach(([lon, lat], i) => {
+          const x = ((lon + offset + 180) / 360) * w
+          const y = ((90 - lat) / 180) * h
+          if (i === 0) fill.moveTo(x, y)
+          else fill.lineTo(x, y)
+          const [pl, pa] = unwrapped[i - 1] ?? [lon, lat]
+          // skip edges along the ±180° seam where polygons were cut, so no stray meridian line appears
+          const onSeam = i > 0 && Math.abs(pl) % 360 === 180 && Math.abs(lon) % 360 === 180 && pl === lon
+          if (i > 0 && !onSeam) {
+            stroke.moveTo(((pl + offset + 180) / 360) * w, ((90 - pa) / 180) * h)
+            stroke.lineTo(x, y)
+          }
+        })
+        fill.closePath()
+      }
     }
-    borderPaths.set(code, path)
+    paths = { fill, stroke }
+    pathCache.set(key, paths)
   }
-  return path
+  return paths
 }
 
-function paintOverlay(ctx: CanvasRenderingContext2D, selected: string, hover: string | null, accent: string, land: string) {
-  ctx.clearRect(0, 0, OVERLAY_W, OVERLAY_H)
+function paintMap(ctx: CanvasRenderingContext2D, w: number, h: number, look: (typeof GLOBE_LOOK)[ThemeMode]) {
+  const tones = countryTones(look.tones.length)
+  ctx.fillStyle = look.ocean
+  ctx.fillRect(0, 0, w, h)
+  for (const { code } of BORDERS) {
+    ctx.fillStyle = look.tones[tones.get(code) ?? 0]
+    ctx.fill(pathsFor(code, w, h).fill)
+  }
+  ctx.strokeStyle = look.border
   ctx.lineJoin = 'round'
-  if (hover && hover !== selected) {
-    ctx.strokeStyle = land
-    ctx.globalAlpha = 0.85
-    ctx.lineWidth = 2
-    ctx.stroke(pathFor(hover))
-  }
-  ctx.strokeStyle = accent
-  ctx.fillStyle = accent
-  ctx.globalAlpha = 0.12
-  ctx.fill(pathFor(selected))
-  ctx.globalAlpha = 1
-  ctx.lineWidth = 3
-  ctx.stroke(pathFor(selected))
+  ctx.lineCap = 'round'
+  ctx.lineWidth = Math.max(1.2, w / 2800)
+  for (const { code } of BORDERS) ctx.stroke(pathsFor(code, w, h).stroke)
 }
 
-// --- the sphere and its dots ---------------------------------------------------------------------------------
+function paintHighlight(ctx: CanvasRenderingContext2D, w: number, h: number, selected: string, hover: string | null, look: (typeof GLOBE_LOOK)[ThemeMode]) {
+  ctx.clearRect(0, 0, w, h)
+  ctx.lineJoin = 'round'
+  ctx.lineCap = 'round'
+  if (hover && hover !== selected) {
+    const { fill, stroke } = pathsFor(hover, w, h)
+    ctx.globalAlpha = 0.4
+    ctx.fillStyle = look.hover
+    ctx.fill(fill)
+    ctx.globalAlpha = 0.9
+    ctx.strokeStyle = look.hover
+    ctx.lineWidth = Math.max(1.6, w / 1800)
+    ctx.stroke(stroke)
+  }
+  const { fill, stroke } = pathsFor(selected, w, h)
+  ctx.globalAlpha = 1
+  ctx.fillStyle = look.selected
+  ctx.fill(fill)
+  ctx.strokeStyle = look.outline
+  ctx.lineWidth = Math.max(2.4, w / 1300)
+  ctx.stroke(stroke)
+}
 
-function Earth({ theme, selected, hover, onPick, onHover, earthRef }: {
+function useCanvasTexture(width: number) {
+  const gl = useThree(s => s.gl)
+  const size = Math.min(width, gl.capabilities.maxTextureSize)
+  const layer = useMemo(() => {
+    const canvas = document.createElement('canvas')
+    canvas.width = size
+    canvas.height = size / 2
+    const texture = new THREE.CanvasTexture(canvas)
+    texture.colorSpace = THREE.SRGBColorSpace
+    texture.anisotropy = Math.min(8, gl.capabilities.getMaxAnisotropy())
+    return { canvas, texture, w: canvas.width, h: canvas.height }
+  }, [gl, size])
+  useEffect(() => () => layer.texture.dispose(), [layer])
+  return layer
+}
+
+// --- the sphere ----------------------------------------------------------------------------------------------
+
+function Earth({ theme, compact, selected, hover, onPick, onHover, earthRef }: {
   theme: ThemeMode
+  compact: boolean
   selected: string
   hover: string | null
   onPick: (e: ThreeEvent<MouseEvent>) => void
   onHover: (e: ThreeEvent<PointerEvent>) => void
   earthRef: React.RefObject<THREE.Mesh | null>
 }) {
-  const { gl, camera } = useThree()
   const look = GLOBE_LOOK[theme]
-  const accent = accentHex(theme)
-
+  const width = compact ? 2048 : 4096
+  const base = useCanvasTexture(width)
+  const highlight = useCanvasTexture(width)
   const sun = useMemo(() => new THREE.Vector3(), [])
-  const dots = useMemo(() => buildLandDots(EARTH_RADIUS + 0.004), [])
-  const dotGeometry = useMemo(() => {
-    const geometry = new THREE.BufferGeometry()
-    geometry.setAttribute('position', new THREE.BufferAttribute(dots.positions, 3))
-    geometry.setAttribute('aId', new THREE.BufferAttribute(dots.ids, 1))
-    return geometry
-  }, [dots])
 
-  const ocean = useMemo(() => new THREE.ShaderMaterial({
+  const material = useMemo(() => new THREE.ShaderMaterial({
     vertexShader: vertex,
-    fragmentShader: oceanFragment,
-    uniforms: { uOcean: { value: new THREE.Color() }, uLand: { value: new THREE.Color() }, uSun: { value: sun }, uNight: { value: 0.7 } },
-  }), [sun])
-  const dotMaterial = useMemo(() => new THREE.ShaderMaterial({
-    vertexShader: dotsVertex,
-    fragmentShader: dotsFragment,
-    transparent: true,
-    depthWrite: false,
-    uniforms: {
-      uLand: { value: new THREE.Color() }, uAccent: { value: new THREE.Color() }, uSun: { value: sun },
-      uSelected: { value: -1 }, uHover: { value: -1 }, uSize: { value: 0.02 }, uScale: { value: 600 },
-    },
-  }), [sun])
+    fragmentShader: mapFragment,
+    uniforms: { uMap: { value: base.texture }, uRim: { value: new THREE.Color() }, uSun: { value: sun }, uNight: { value: 0.7 } },
+  }), [base.texture, sun])
 
   useEffect(() => {
-    ocean.uniforms.uOcean.value.set(look.ocean)
-    ocean.uniforms.uLand.value.set(look.land)
-    ocean.uniforms.uNight.value = look.night
-    dotMaterial.uniforms.uLand.value.set(look.land)
-    dotMaterial.uniforms.uAccent.value.set(accent)
-  }, [look, accent, ocean, dotMaterial])
+    material.uniforms.uRim.value.set(look.rim)
+    material.uniforms.uNight.value = look.night
+  }, [look, material])
 
-  useEffect(() => { dotMaterial.uniforms.uSelected.value = borderIndex(selected) }, [selected, dotMaterial])
-  useEffect(() => { dotMaterial.uniforms.uHover.value = hover ? borderIndex(hover) : -1 }, [hover, dotMaterial])
+  useEffect(() => {
+    const ctx = base.canvas.getContext('2d')
+    if (!ctx) return
+    paintMap(ctx, base.w, base.h, look)
+    base.texture.needsUpdate = true
+  }, [base, look])
+
+  useEffect(() => {
+    const ctx = highlight.canvas.getContext('2d')
+    if (!ctx) return
+    paintHighlight(ctx, highlight.w, highlight.h, selected, hover, look)
+    highlight.texture.needsUpdate = true
+  }, [highlight, selected, hover, look])
 
   // the night half follows real UTC time
   useEffect(() => {
@@ -117,38 +164,14 @@ function Earth({ theme, selected, hover, onPick, onHover, earthRef }: {
     return () => clearInterval(id)
   }, [sun])
 
-  // keep dot size constant on screen as the camera zooms: world size → pixels
-  useFrame(() => {
-    const fov = (camera as THREE.PerspectiveCamera).fov
-    dotMaterial.uniforms.uScale.value = gl.domElement.height / (2 * Math.tan((fov * Math.PI) / 360))
-  })
-
-  const overlay = useMemo(() => {
-    const canvas = document.createElement('canvas')
-    canvas.width = OVERLAY_W
-    canvas.height = OVERLAY_H
-    const texture = new THREE.CanvasTexture(canvas)
-    texture.colorSpace = THREE.SRGBColorSpace
-    texture.anisotropy = Math.min(8, gl.capabilities.getMaxAnisotropy())
-    return { canvas, texture }
-  }, [gl])
-
-  useEffect(() => {
-    const ctx = overlay.canvas.getContext('2d')
-    if (!ctx) return
-    paintOverlay(ctx, selected, hover, accent, look.land)
-    overlay.texture.needsUpdate = true
-  }, [overlay, selected, hover, accent, look.land])
-
   return (
     <>
-      <mesh ref={earthRef} material={ocean} onClick={onPick} onPointerMove={onHover} onPointerOut={onHover}>
+      <mesh ref={earthRef} material={material} onClick={onPick} onPointerMove={onHover} onPointerOut={onHover}>
         <sphereGeometry args={[EARTH_RADIUS, 96, 96]} />
       </mesh>
-      <points geometry={dotGeometry} material={dotMaterial} frustumCulled={false} />
       <mesh>
-        <sphereGeometry args={[EARTH_RADIUS + 0.008, 96, 96]} />
-        <meshBasicMaterial map={overlay.texture} transparent depthWrite={false} toneMapped={false} />
+        <sphereGeometry args={[EARTH_RADIUS + 0.006, 96, 96]} />
+        <meshBasicMaterial map={highlight.texture} transparent depthWrite={false} toneMapped={false} />
       </mesh>
     </>
   )
@@ -314,14 +337,15 @@ export type GlobeSceneProps = {
   playing: { code: string; name: string; isPlaying: boolean } | null
   bottomInset: number
   reduceMotion: boolean
+  compact: boolean
   onSelectCountry: (code: string) => void
   onHover: (code: string | null, x: number, y: number) => void
 }
 
-export function GlobeScene({ theme, countries, selectedCode, focusKey, playing, bottomInset, reduceMotion, onSelectCountry, onHover }: GlobeSceneProps) {
+export function GlobeScene({ theme, countries, selectedCode, focusKey, playing, bottomInset, reduceMotion, compact, onSelectCountry, onHover }: GlobeSceneProps) {
   const earthRef = useRef<THREE.Mesh>(null)
   const [hover, setHover] = useState<string | null>(null)
-  const accent = accentHex(theme)
+  const pin = GLOBE_LOOK[theme].pin
 
   const known = useMemo(() => new Set(countries.map(c => c.code)), [countries])
   const selectedLatLon = centroidOf(selectedCode)
@@ -365,10 +389,10 @@ export function GlobeScene({ theme, countries, selectedCode, focusKey, playing, 
   return (
     <>
       <CameraRig focus={focus} inset={bottomInset} reduceMotion={reduceMotion} />
-      <Earth theme={theme} selected={selectedCode} hover={hover} onPick={handlePick} onHover={handleHover} earthRef={earthRef} />
-      {selectedLatLon && !hasBorder(selectedCode) && <CentroidMark latLon={selectedLatLon} color={accent} />}
-      {playing && pinLatLon && <PlayingPin code={playing.code} name={playing.name} isPlaying={playing.isPlaying} color={accent} earthRef={earthRef} />}
-      {arc && <Arc key={arc.id} from={arc.from} to={arc.to} color={accent} onDone={() => setArc(null)} />}
+      <Earth theme={theme} compact={compact} selected={selectedCode} hover={hover} onPick={handlePick} onHover={handleHover} earthRef={earthRef} />
+      {selectedLatLon && !hasBorder(selectedCode) && <CentroidMark latLon={selectedLatLon} color={pin} />}
+      {playing && pinLatLon && <PlayingPin code={playing.code} name={playing.name} isPlaying={playing.isPlaying} color={pin} earthRef={earthRef} />}
+      {arc && <Arc key={arc.id} from={arc.from} to={arc.to} color={pin} onDone={() => setArc(null)} />}
     </>
   )
 }

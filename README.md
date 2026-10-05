@@ -4,14 +4,14 @@ Live radio from around the world on an interactive 3D globe — built as a phone
 
 ## Features
 
-- **Interactive globe** — a dot-matrix Earth with a real-time night side. Tap any country to fly there and see its stations; pinch/drag to explore.
+- **Interactive globe** — a clean political map with every country shaded apart from its neighbours and a real-time night side. Tap any country to fly there and see its stations; pinch/drag to explore.
 - **Easy on a phone** — the station list is a draggable bottom sheet (peek / half / full), 44px touch targets, safe-area aware. On desktop it's a side panel.
 - **Player** — mini player + full-screen player, previous/next, sleep timer, lock-screen controls, auto-reconnect, HLS support.
 - **Scan** — plays a random station and flies the globe to it.
 - **Search** — pick a country by name (`⌘K` / `/` on desktop).
 - **Favorites & playlists** — optional account (email + password), stored in Cloudflare D1. Browsing and listening need no account.
 - **Picks up where you left off** — reopens on your last country and station, ready to resume.
-- **Themes** — Night, Paper, Cobalt.
+- **Themes** — Night and Mint (a five-colour teal palette).
 - **Installable** — works as a PWA (add to home screen); the app shell loads offline.
 
 ## Getting started
