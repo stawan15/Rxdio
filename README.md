@@ -9,7 +9,8 @@ Live radio from around the world on an interactive 3D globe — built as a phone
 - **Player** — mini player + full-screen player, previous/next, sleep timer, lock-screen controls, auto-reconnect, HLS support.
 - **Surprise me** — plays a random station and flies the globe to it.
 - **Search** — pick a country by name (`⌘K` / `/` on desktop).
-- **Favorites & playlists** — optional sign-in, stored in Cloudflare D1. Browsing and listening need no account.
+- **Favorites & playlists** — optional account (email + password), stored in Cloudflare D1. Browsing and listening need no account.
+- **Picks up where you left off** — reopens on your last country and station, ready to resume.
 - **Themes** — Dark, Light, Neon.
 - **Installable** — works as a PWA (add to home screen); the app shell loads offline.
 
@@ -35,7 +36,7 @@ npm run dev:token -- alice        # prints a test login token; run in the browse
                                   #   localStorage.setItem('rxdio_token', '<token>'); location.reload()
 ```
 
-**Sign-in is yours to implement.** The API trusts a `Bearer` JWT (HS256, `AUTH_JWT_SECRET`) whose `sub` is the user id. Add `POST /api/auth/login` and `/api/auth/signup` in `worker/index.ts` (the spot is marked) returning `{ token }`; `signJwt` in `worker/auth.ts` mints it. To use another scheme, replace `getUserId` in `worker/auth.ts`.
+**Accounts** are email + password, stored in D1. The browser stretches the password (PBKDF2, 600k rounds) and sends only the derived key, so the password never reaches the server and the Worker stays within Cloudflare's 10 ms free-plan CPU limit. There is no email verification or password reset yet. `npm run dev:token` is only a shortcut for testing without signing up.
 
 ### Scripts
 
@@ -52,7 +53,7 @@ npm run dev:token -- alice        # prints a test login token; run in the browse
 ## Deploy to Cloudflare (Workers + D1)
 
 1. `npx wrangler login`, then `npx wrangler d1 create rxdio` and paste the printed `database_id` into `wrangler.toml`.
-2. `npx wrangler d1 migrations apply rxdio --remote`
+2. `npx wrangler d1 migrations apply rxdio --remote` (applies every pending file in `migrations/`)
 3. Merge to `main`. In the Cloudflare dashboard (Workers & Pages → Create → Import a repository) use:
    build command `npm run build`, deploy command `npx wrangler deploy`. The project name must match `name` in `wrangler.toml` (`rxdio`).
 4. Add the secret: Worker → Settings → Variables and Secrets → `AUTH_JWT_SECRET` (long random string), or `npx wrangler secret put AUTH_JWT_SECRET`.

@@ -10,6 +10,8 @@ import { Icon } from './icons'
 import { IconButton } from './IconButton'
 import { StationArt } from './StationArt'
 
+export type PlayerState = 'connecting' | 'playing' | 'paused' | 'error'
+
 type Props = {
   station: RadioStation | null
   theme: ThemeMode
@@ -18,15 +20,21 @@ type Props = {
   onAddToPlaylist: (station: RadioStation) => void
   onPrev?: () => void
   onNext?: () => void
-  onPlayingChange: (playing: boolean) => void
+  onStateChange: (state: PlayerState) => void
+  /** False for a station restored from the last session: load it, but wait for the user to press play. */
+  autoplay: boolean
+  /** Bumped on every explicit "play this" so tapping the current station restarts it. */
+  playRequest: number
+  onTimerEnd?: () => void
 }
 
 const MAX_RETRIES = 5
 const RETRY_DELAY_MS = 4000
 const TIMER_PRESETS = [15, 30, 45, 60, 90]
 const FALLBACK_ART = '/icons/icon-512.png'
+const FADE_SECONDS = 10 // sleep timer eases the volume down instead of cutting off
 
-export function AudioPlayer({ station, theme, isFavorite, onToggleFavorite, onAddToPlaylist, onPrev, onNext, onPlayingChange }: Props) {
+export function AudioPlayer({ station, theme, isFavorite, onToggleFavorite, onAddToPlaylist, onPrev, onNext, onStateChange, autoplay, playRequest, onTimerEnd }: Props) {
   const isDesktop = useIsDesktop()
   const audioRef = useRef<HTMLAudioElement>(null)
   const retries = useRef(0)
@@ -40,24 +48,28 @@ export function AudioPlayer({ station, theme, isFavorite, onToggleFavorite, onAd
   const [timerEndsAt, setTimerEndsAt] = useState<number | null>(null)
   const [timeLeft, setTimeLeft] = useState(0)
   const [customMinutes, setCustomMinutes] = useState('')
+  const [drag, setDrag] = useState<{ startY: number; dy: number } | null>(null)
 
   // Latest callbacks for the long-lived Media Session handlers
-  const nav = useRef({ onPrev, onNext })
-  nav.current = { onPrev, onNext }
+  const nav = useRef({ onPrev, onNext, onTimerEnd })
+  nav.current = { onPrev, onNext, onTimerEnd }
+  const volumeRef = useRef(volume)
+  volumeRef.current = volume
 
-  useEffect(() => onPlayingChange(playing), [playing, onPlayingChange])
+  const state: PlayerState = failed ? 'error' : playing ? 'playing' : buffering ? 'connecting' : 'paused'
+  useEffect(() => onStateChange(state), [state, onStateChange])
 
   // Load and play the current station (HLS via hls.js where the browser has no native support)
-  // biome-ignore lint/correctness/useExhaustiveDependencies: `attempt` re-runs the load to retry a dropped stream
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `attempt` retries a dropped stream, `playRequest` restarts the current station
   useEffect(() => {
     const audio = audioRef.current
     if (!audio || !station) return
     let hls: { destroy: () => void } | undefined
     let cancelled = false
     setFailed(false)
-    setBuffering(true)
+    setBuffering(autoplay)
 
-    const play = () => audio.play().catch(err => { if (!cancelled && err.name !== 'NotAllowedError') setFailed(true) })
+    const play = () => !autoplay ? undefined : audio.play().catch(err => { if (!cancelled && err.name !== 'NotAllowedError') setFailed(true) })
     const url = station.url_resolved
     const isHls = station.hls === 1 || /\.m3u8(\?|$)/i.test(url)
 
@@ -79,7 +91,7 @@ export function AudioPlayer({ station, theme, isFavorite, onToggleFavorite, onAd
       play()
     }
     return () => { cancelled = true; hls?.destroy(); audio.pause() }
-  }, [station, attempt])
+  }, [station, attempt, autoplay, playRequest])
 
   // Retry a dropped stream a few times, then wait for a manual tap
   // biome-ignore lint/correctness/useExhaustiveDependencies: a new station resets the retry budget
@@ -104,13 +116,16 @@ export function AudioPlayer({ station, theme, isFavorite, onToggleFavorite, onAd
   // Sleep timer
   useEffect(() => {
     if (!timerEndsAt) return
+    const audio = audioRef.current
     const tick = () => {
-      const left = Math.ceil((timerEndsAt - Date.now()) / 1000)
-      if (left <= 0) { audioRef.current?.pause(); setTimerEndsAt(null) } else setTimeLeft(left)
+      const left = (timerEndsAt - Date.now()) / 1000
+      if (left <= 0) { audio?.pause(); setTimerEndsAt(null); nav.current.onTimerEnd?.(); return }
+      setTimeLeft(Math.ceil(left))
+      if (audio && left <= FADE_SECONDS) audio.volume = volumeRef.current * (left / FADE_SECONDS)
     }
     tick()
-    const id = setInterval(tick, 1000)
-    return () => clearInterval(id)
+    const id = setInterval(tick, 500)
+    return () => { clearInterval(id); if (audio) audio.volume = volumeRef.current }
   }, [timerEndsAt])
 
   // Lock-screen / notification controls
@@ -184,6 +199,7 @@ export function AudioPlayer({ station, theme, isFavorite, onToggleFavorite, onAd
     <audio
       ref={audioRef}
       preload="none"
+      onPlay={() => setBuffering(true)}
       onPlaying={() => { setPlaying(true); setBuffering(false); setFailed(false) }}
       onPause={() => setPlaying(false)}
       onWaiting={() => setBuffering(true)}
@@ -285,8 +301,21 @@ export function AudioPlayer({ station, theme, isFavorite, onToggleFavorite, onAd
   return (
     <>
       {audio}
-      <div className="fixed inset-0 z-50 flex animate-slide-up flex-col bg-surface px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[calc(env(safe-area-inset-top)+8px)]">
-        <button type="button" onClick={() => setExpanded(false)} aria-label="Close player" className="flex h-12 w-full cursor-pointer items-center justify-center text-foreground-muted">
+      <div
+        className="fixed inset-0 z-50 flex animate-slide-up flex-col bg-surface px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[calc(env(safe-area-inset-top)+8px)]"
+        style={{ transform: drag ? `translateY(${drag.dy}px)` : undefined, transition: drag ? 'none' : 'transform 0.25s ease-out' }}
+      >
+        {/* Swipe down to dismiss like every other music player; tap or keyboard also close it */}
+        <button
+          type="button"
+          aria-label="Close player"
+          onPointerDown={e => { e.currentTarget.setPointerCapture(e.pointerId); setDrag({ startY: e.clientY, dy: 0 }) }}
+          onPointerMove={e => setDrag(d => d && { ...d, dy: Math.max(0, e.clientY - d.startY) })}
+          onPointerUp={() => { if (drag && (drag.dy > 120 || drag.dy < 6)) setExpanded(false); setDrag(null) }}
+          onPointerCancel={() => setDrag(null)}
+          onClick={e => { if (e.detail === 0) setExpanded(false) }}
+          className="flex h-12 w-full cursor-grab touch-none items-center justify-center text-foreground-muted"
+        >
           <Icon name="chevron" size={28} />
         </button>
         <div className="flex min-h-0 flex-1 items-center justify-center py-4">

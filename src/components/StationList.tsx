@@ -4,6 +4,7 @@ import { flagEmoji } from '../lib/country'
 import type { Playlist } from '../hooks/useLibrary'
 import type { RadioStation } from '../services/radioApi'
 import type { ThemeMode } from '../theme'
+import type { PlayerState } from './AudioPlayer'
 import { EqBars } from './EqBars'
 import { Icon } from './icons'
 import { StationArt } from './StationArt'
@@ -15,7 +16,7 @@ type Props = {
   onRetry: () => void
   theme: ThemeMode
   currentId?: string
-  isPlaying: boolean
+  playerState: PlayerState
   onPlay: (station: RadioStation, queue: RadioStation[]) => void
   favorites: RadioStation[]
   favoriteIds: Set<string>
@@ -33,15 +34,16 @@ const FILTER_MIN = 8
 const SKELETON_KEYS = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
 
 export function StationList(props: Props) {
-  const { country, stations, status, onRetry, theme, currentId, isPlaying, onPlay, favorites, favoriteIds, onToggleFavorite, recents, playlists, signedIn, onRequestSignIn, onManagePlaylists, onTabChange } = props
+  const { country, stations, status, onRetry, theme, currentId, playerState, onPlay, favorites, favoriteIds, onToggleFavorite, recents, playlists, signedIn, onRequestSignIn, onManagePlaylists, onTabChange } = props
   const [requestedTab, setTab] = useState('all')
   const [filter, setFilter] = useState('')
 
+  // counts make what's inside each tab visible without opening it
   const tabs = [
-    { id: 'all', label: 'Stations' },
-    { id: 'favs', label: 'Saved' },
-    { id: 'recent', label: 'Recent' },
-    ...playlists.map(p => ({ id: p.id, label: p.name })),
+    { id: 'all', label: 'Stations', count: 0 },
+    { id: 'favs', label: 'Saved', count: favorites.length },
+    { id: 'recent', label: 'Recent', count: recents.length },
+    ...playlists.map(p => ({ id: p.id, label: p.name, count: p.stations.length })),
   ]
   const tab = tabs.some(t => t.id === requestedTab) ? requestedTab : 'all'
 
@@ -83,6 +85,7 @@ export function StationList(props: Props) {
             )}
           >
             {t.label}
+            {t.count > 0 && <span className="ml-1.5 text-xs tabular-nums opacity-60">{t.count}</span>}
           </button>
         ))}
         {signedIn && (
@@ -161,7 +164,9 @@ export function StationList(props: Props) {
                   <span className={cn('block truncate text-[0.92rem] font-semibold', station.lastcheckok === 0 && 'text-foreground-muted line-through')}>{station.name}</span>
                   <span className="block truncate text-xs text-foreground-muted">{meta}</span>
                 </span>
-                {current && <EqBars playing={isPlaying} className="mr-1" />}
+                {current && (playerState === 'connecting'
+                  ? <span role="status" aria-label="Connecting" className="mr-1 size-4 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+                  : <EqBars playing={playerState === 'playing'} className="mr-1" />)}
               </button>
               <button
                 type="button"

@@ -7,10 +7,12 @@ type Props = {
   onOpenPicker: () => void
   onShuffle: () => void
   shuffling: boolean
+  /** Shown to guests on desktop; phones use the heart/menu prompts */
+  onSignIn?: () => void
   menu: ReactNode
 }
 
-export function Header({ country, onOpenPicker, onShuffle, shuffling, menu }: Props) {
+export function Header({ country, onOpenPicker, onShuffle, shuffling, onSignIn, menu }: Props) {
   return (
     <header className="z-30 flex h-[calc(60px+env(safe-area-inset-top))] shrink-0 items-center gap-2 border-b border-border bg-surface-raised/90 px-3 pt-[env(safe-area-inset-top)] backdrop-blur-xl md:gap-3 md:px-6">
       <div className="flex shrink-0 items-center gap-2.5">
@@ -38,11 +40,16 @@ export function Header({ country, onOpenPicker, onShuffle, shuffling, menu }: Pr
         onClick={onShuffle}
         disabled={shuffling}
         aria-label="Play a random station"
-        className="flex h-11 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full bg-accent px-3.5 text-sm font-bold text-accent-fg shadow-sm transition-all hover:opacity-90 active:scale-95 disabled:opacity-60 md:px-5"
+        className="flex h-11 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full bg-accent px-3.5 text-sm font-bold max-md:hidden text-accent-fg shadow-sm transition-all hover:opacity-90 active:scale-95 disabled:opacity-60 md:px-5"
       >
         <Icon name="shuffle" size={20} className={shuffling ? 'animate-spin' : undefined} />
         <span className="hidden md:inline">Surprise me</span>
       </button>
+      {onSignIn && (
+        <button type="button" onClick={onSignIn} className="hidden h-11 shrink-0 cursor-pointer items-center rounded-full border border-border px-5 text-sm font-semibold hover:bg-surface-muted md:flex">
+          Sign in
+        </button>
+      )}
       {menu}
     </header>
   )

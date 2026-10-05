@@ -1,11 +1,13 @@
 import { useSyncExternalStore } from 'react'
+import { derivePasswordKey, normalizeEmail } from '../lib/passwordKey'
 import { writeStorage } from '../lib/storage'
 
 /**
  * Client side of the auth seam. The app only needs a token the API accepts (see functions/_lib/auth.ts).
  * Your backend decides how users sign in; these two endpoints are the contract:
- *   POST /api/auth/login   { email, password } -> { token }   (or { error } with a 4xx status)
- *   POST /api/auth/signup  { email, password } -> { token }
+ *   POST /api/auth/login   { email, key } -> { token }   (or { error } with a 4xx status)
+ *   POST /api/auth/signup  { email, key } -> { token }
+ * `key` is derived from the password in the browser (src/lib/passwordKey.ts); the password is never sent.
  */
 
 const TOKEN_KEY = 'rxdio_token'
@@ -60,16 +62,18 @@ export function useSession() {
 
 export async function signIn(mode: 'login' | 'signup', email: string, password: string): Promise<string | null> {
   try {
+    const normalized = normalizeEmail(email)
     const res = await fetch(`/api/auth/${mode}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email: normalized, key: await derivePasswordKey(normalized, password) }),
     })
     const body = (await res.json().catch(() => null)) as { token?: string; error?: string } | null
-    if (!res.ok || !body?.token) return body?.error ?? (res.status === 404 ? 'Sign-in is not available yet.' : 'Something went wrong. Please try again.')
+    if (!res.ok || !body?.token) return body?.error ?? 'Something went wrong. Please try again.'
     setToken(body.token)
     return null
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.message === 'insecure-context') return 'Sign-in needs a secure (https) connection.'
     return 'Could not reach the server. Check your connection.'
   }
 }

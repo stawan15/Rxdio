@@ -16,27 +16,48 @@ Tooling notes: TypeScript is v7 (native). `typescript-eslint` doesn't support it
 
 ## Environment
 
-The frontend has no env vars. The Worker needs `AUTH_JWT_SECRET` (`.dev.vars` locally, a Worker secret in production; see `.dev.vars.example`) and the D1 binding `DB` from `wrangler.toml` (replace the placeholder `database_id` after `wrangler d1 create`).
+The frontend has no env vars. The Worker needs `AUTH_JWT_SECRET` (signs login tokens) (`.dev.vars` locally, a Worker secret in production; see `.dev.vars.example`) and the D1 binding `DB` from `wrangler.toml` (replace the placeholder `database_id` after `wrangler d1 create`).
 
 The app is usable without an account. Guests tapping a heart/playlist button get the sign-in dialog.
 
-## Auth contract
+## Auth
 
-The user supplies sign-in; the app and API only agree on a token:
-- API: `worker/auth.ts` `getUserId` verifies `Authorization: Bearer <HS256 JWT>` (needs `sub`, `exp`). Replace that one function to change schemes. `signJwt` mints tokens.
-- Client: `src/services/auth.ts` stores the token (`rxdio_token` in localStorage), decodes it for the session, and calls `POST /api/auth/login|signup` (`{ email, password }` → `{ token }`). Those endpoints are a stub returning 404 in `worker/index.ts` until implemented, and they must run before the auth check there.
-- A 401 from the API signs the user out.
+Email + password accounts live in D1 (`users`, `rate_limits`; `worker/accounts.ts`). Design constraints worth knowing:
+- Workers' free plan allows **10 ms CPU per request**; PBKDF2 at a safe cost (600k rounds ≈ 70 ms) doesn't fit. So the **browser** derives a 256-bit key (`src/lib/passwordKey.ts`: PBKDF2-SHA256, 600k rounds, salt `rxdio:v1:<email>`) and sends only that. The server stores SHA-256 of the key. The password never reaches the server. Changing the salt scheme or rounds locks out every existing account, so a golden-value test pins it.
+- Because of that the password policy (min 8 chars) is enforced client-side in `AuthDialog`.
+- `POST /api/auth/signup|login` take `{ email, key }` and return `{ token }`. Login errors are generic and the unknown-email path does the same work as a wrong password. Attempts are throttled per IP and per email via `rate_limits`.
+- Tokens: HS256 JWT (`sub` = user id, `email`, 14-day `exp`), sent as `Authorization: Bearer`. `worker/auth.ts` `getUserId` is the only place the API reads identity. The client keeps it in localStorage (`rxdio_token`); a 401 from the API signs the user out. There is no server-side revocation, so rotating `AUTH_JWT_SECRET` signs everyone out.
+- Not built: email verification and password reset (both need an email provider). The signup form tells users there is no reset.
+
+## UX principles
+
+The UI is built around the Laws of UX. Keep these intact when changing things:
+
+| Law | Where it shows up |
+| --- | --- |
+| Fitts's Law | Shuffle is a 56px FAB in the phone thumb zone, riding on top of the sheet; every control is ≥ 44px; the full player closes by swiping down |
+| Hick's Law | Phone header is only logo / country / menu; country picker shows 8 "Popular" countries before "All countries"; one visible primary action per surface |
+| Jakob's Law | Bottom sheet, mini → full player, heart to save, swipe-down dismiss, ⌘K search: patterns from maps and music apps |
+| Miller's Law | Lists are chunked (Popular / All countries, tabs with counts) |
+| Doherty Threshold | Optimistic writes, skeleton rows, spinner on the connecting station, haptic tick on play/save, "Connecting…" status |
+| Peak–End Rule | Shuffle announces where you landed; the sleep timer fades the volume out over 10 s and says good night |
+| Postel's Law | Country search accepts English or local-language names, ISO codes and nicknames (usa, uk); emails are trimmed and case-folded |
+| Zeigarnik / Tesler | The app remembers the last country and station and reopens ready to resume (never auto-plays); locale picks the first country |
+| Visibility of status | Tab counts, player state on the row, sleep-timer countdown on its button |
+| Von Restorff | The accent color is reserved for the primary action (play, shuffle, selected country) |
+| Learnability | A one-time tip explains the globe; it dismisses itself on first interaction |
 
 ## Layout
 
 - `src/App.tsx` — composition + app state (country, current station, queue, dialogs). Data logic lives in hooks.
+- `src/lib/passwordKey.ts` — browser-side password stretching (see Auth). `src/lib/haptics.ts` — vibration tick.
 - `src/hooks/` — `useLibrary` (favorites/playlists via `/api`, recents in localStorage, optimistic with rollback), `useRadio` (countries, stations; aborts stale requests), `useTheme`, `useMediaQuery`, `useInstallPrompt`.
 - `src/components/globe/` — `GlobeView` (Canvas, loader, hover tooltip, error fallback; lazy-loaded) and `GlobeScene` (day/night Earth shader, atmosphere, border overlay, markers, ripples, arcs, camera rig). Shaders in `shaders.ts`.
 - `src/components/` — `StationList`, `BottomSheet` (phone: peek/half/full), `AudioPlayer` (desktop bar / mobile mini + full-screen), `Header`, `AppMenu`, `CountryPicker`, `Playlists`, `AuthDialog`, `Dialog`, `icons`.
 - `src/lib/geo.ts` — lat/lon ↔ 3D, point-in-country lookup, nearest centroid. `src/lib/sun.ts` — subsolar point for the day/night terminator. Both are unit-tested.
 - `src/data/` — `borders.json` (Natural Earth 110m via world-atlas, keyed by ISO alpha-2) and `centroids.json` (world-countries). Generated once; edit by regenerating, not by hand.
 - `src/services/` — `radioApi.ts` (Radio Browser), `libraryApi.ts` (typed `/api` client), `auth.ts` (token + session store).
-- `worker/` — Cloudflare Worker: `index.ts` (REST routes over D1, per-user quotas, ownership checks), `auth.ts` (auth seam). Served with `[assets]` from `wrangler.toml`; only `/api/*` runs the Worker.
+- `worker/` — Cloudflare Worker: `index.ts` (REST routes over D1, per-user quotas, ownership checks), `accounts.ts` (signup/login + throttling), `auth.ts` (JWT sign/verify, `getUserId`), `http.ts` (response helpers). Served with `[assets]` from `wrangler.toml`; only `/api/*` runs the Worker.
 - `migrations/` — D1 schema (`wrangler d1 migrations`); never edit an applied file, add a new one.
 - `public/sw.js` — hand-written service worker (app shell offline; never touches streams/API). Bump `CACHE` if caching rules change. `public/textures/` — self-hosted Earth textures.
 
@@ -59,4 +80,5 @@ The user supplies sign-in; the app and API only agree on a token:
 - Globe hit-testing: tap → ray hit on the sphere → lat/lon → polygon lookup; falls back to the nearest centroid within 3° for islands. Taps with drag distance > 6px are ignored.
 - The camera rig runs at `useFrame` priority -2 so it resolves before drei's `OrbitControls` update; keep it negative.
 - `@vercel/speed-insights` only reports on Vercel deployments.
+- The first `d1 migrations apply --remote` after pulling new migrations must happen before the deploy that uses them.
 - Cloudflare Workers Builds needs the Worker name in `wrangler.toml` to match the dashboard project name (`rxdio`).
