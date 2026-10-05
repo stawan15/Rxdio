@@ -1,4 +1,6 @@
+import { handleAuth } from './accounts'
 import { getUserId, type AuthEnv } from './auth'
+import { done, fail, json } from './http'
 
 interface Env extends AuthEnv {
   DB: D1Database
@@ -8,10 +10,6 @@ const STATION_ID = /^[\w-]{1,64}$/
 const MAX_NAME = 60
 // Keeps one account from burning through D1's free write quota
 const LIMITS = { favorites: 1000, playlists: 50, playlistStations: 500 }
-
-const json = (data: unknown, status = 200) => Response.json(data, { status, headers: { 'Cache-Control': 'no-store' } })
-const fail = (status: number, message: string) => json({ error: message }, status)
-const done = () => new Response(null, { status: 204, headers: { 'Cache-Control': 'no-store' } })
 
 async function readName(request: Request) {
   const body = (await request.json().catch(() => null)) as { name?: unknown } | null
@@ -37,9 +35,8 @@ export default {
     const [resource, id, child, childId] = segments
     const { method } = request
 
-    // YOUR SIGN-IN GOES HERE. Handle POST /api/auth/login and /api/auth/signup (see src/services/auth.ts for the
-    // contract) before the auth check below, and return { token: await signJwt(env.AUTH_JWT_SECRET, userId, ttl) }.
-    if (resource === 'auth') return fail(404, 'Sign-in is not available yet.')
+    // Sign-in and sign-up run before the auth check (see accounts.ts)
+    if (resource === 'auth') return handleAuth(request, env, id)
 
     const userId = await getUserId(request, env)
     if (!userId) return fail(401, 'Not signed in')

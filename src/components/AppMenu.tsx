@@ -40,7 +40,19 @@ export function AppMenu({ theme, onTheme, email, onSignIn, onSignOut, onPlaylist
 
   return (
     <div className="relative">
-      <IconButton icon="menu" label="Menu" onClick={() => setOpen(v => !v)} aria-expanded={open} />
+      {email ? (
+        <button
+          type="button"
+          aria-label="Account menu"
+          aria-expanded={open}
+          onClick={() => setOpen(v => !v)}
+          className="flex size-11 cursor-pointer items-center justify-center rounded-full bg-accent text-sm font-bold uppercase text-accent-fg transition-all active:scale-95"
+        >
+          {email[0]}
+        </button>
+      ) : (
+        <IconButton icon="menu" label="Menu" onClick={() => setOpen(v => !v)} aria-expanded={open} />
+      )}
       {open && (
         <>
           <button type="button" aria-label="Close menu" tabIndex={-1} className="fixed inset-0 z-40 cursor-default" onClick={() => setOpen(false)} />
