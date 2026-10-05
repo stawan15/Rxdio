@@ -1,20 +1,27 @@
-# Stage 1: Build stage
-FROM node:20-alpine AS build
+# Stage 1: build
+FROM node:24-alpine AS build
 
 WORKDIR /app
 
-# คัดลอกแพ็กเกจก่อนเพื่อใช้ Docker layer cache และติดตั้ง dependencies
+# Copy manifests first so the dependency layer is cached
 COPY package*.json ./
 RUN npm ci
 
-# คัดลอกแพ็กเกจ lock และโค้ดทั้งหมดแล้ว build
+# Vite inlines these at build time (all optional; without them the app is guest-only)
+ARG VITE_SUPABASE_URL
+ARG VITE_SUPABASE_ANON_KEY
+ARG VITE_SITE_URL
+ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL \
+    VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY \
+    VITE_SITE_URL=$VITE_SITE_URL
+
 COPY . .
 RUN npm run build
 
-# Stage 2: Production stage
+# Stage 2: serve with nginx
 FROM nginx:stable-alpine
 
-# คัดลอกไฟล์ build ที่เสร็จแล้วไปยัง public folder ของ Nginx
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist /usr/share/nginx/html
 
 EXPOSE 80

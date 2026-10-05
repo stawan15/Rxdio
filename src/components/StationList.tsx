@@ -1,211 +1,181 @@
 import { useState } from 'react'
-import { RadioStation } from '../services/radioApi'
-import { avatarUrl, type ThemeMode } from '../theme'
 import { cn } from '../lib/cn'
-import type { Playlist } from '../App'
+import { flagEmoji } from '../lib/country'
+import type { Playlist } from '../hooks/useLibrary'
+import type { RadioStation } from '../services/radioApi'
+import type { ThemeMode } from '../theme'
+import { EqBars } from './EqBars'
+import { Icon } from './icons'
+import { StationArt } from './StationArt'
 
 type Props = {
+  country: { code: string; name: string }
   stations: RadioStation[]
-  onSelect: (s: RadioStation) => void
-  loading: boolean
-  selectedStation: RadioStation | null
-  themeMode: ThemeMode
+  status: 'loading' | 'ready' | 'error'
+  onRetry: () => void
+  theme: ThemeMode
+  currentId?: string
+  isPlaying: boolean
+  onPlay: (station: RadioStation, queue: RadioStation[]) => void
   favorites: RadioStation[]
-  toggleFavorite: (s: RadioStation) => void | Promise<void>
+  favoriteIds: Set<string>
+  onToggleFavorite: (station: RadioStation) => void
   recents: RadioStation[]
   playlists: Playlist[]
-  createPlaylist: (name: string) => void
-  onManagePlaylists?: () => void
+  signedIn: boolean
+  onRequestSignIn: () => void
+  onManagePlaylists: () => void
+  /** Fired when a tab is tapped (lets the phone sheet expand). */
+  onTabChange?: () => void
 }
 
-function promptNewPlaylist(createPlaylist: (name: string) => void) {
-  const name = window.prompt('Enter playlist name:')
-  if (name?.trim()) createPlaylist(name.trim())
-}
+const FILTER_MIN = 8
+const SKELETON_KEYS = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
 
-export function StationList({
-  stations, onSelect, loading, selectedStation, themeMode,
-  favorites, toggleFavorite, recents, playlists, createPlaylist, onManagePlaylists,
-}: Props) {
-  const [activeTab, setActiveTab] = useState('all')
-  const isPink = themeMode === 'pink'
+export function StationList(props: Props) {
+  const { country, stations, status, onRetry, theme, currentId, isPlaying, onPlay, favorites, favoriteIds, onToggleFavorite, recents, playlists, signedIn, onRequestSignIn, onManagePlaylists, onTabChange } = props
+  const [requestedTab, setTab] = useState('all')
+  const [filter, setFilter] = useState('')
 
-  const displayStations: RadioStation[] =
-    activeTab === 'all' ? stations
-    : activeTab === 'favs' ? favorites
-    : activeTab === 'recent' ? recents
-    : playlists.find(p => p.id === activeTab)?.stations ?? []
+  const tabs = [
+    { id: 'all', label: 'Stations' },
+    { id: 'favs', label: 'Saved' },
+    { id: 'recent', label: 'Recent' },
+    ...playlists.map(p => ({ id: p.id, label: p.name })),
+  ]
+  const tab = tabs.some(t => t.id === requestedTab) ? requestedTab : 'all'
 
-  const tabs = ['all', 'favs', 'recent', ...playlists.map(p => p.id)] as const
+  const source = tab === 'all' ? stations : tab === 'favs' ? favorites : tab === 'recent' ? recents : (playlists.find(p => p.id === tab)?.stations ?? [])
+  const query = filter.trim().toLowerCase()
+  const visible = query ? source.filter(s => `${s.name} ${s.tags}`.toLowerCase().includes(query)) : source
+  const loading = tab === 'all' && status === 'loading'
 
-  const tabLabel = (tab: string) => {
-    if (tab === 'all') return 'Stations'
-    if (tab === 'favs') return isPink ? '♡ Saved' : 'Saved'
-    if (tab === 'recent') return 'Recent'
-    return playlists.find(p => p.id === tab)?.name ?? tab
+  const emptyMessage = () => {
+    if (tab === 'all') return status === 'error' ? null : 'No stations found for this country.'
+    if (query) return 'No matches.'
+    if (tab === 'favs') return signedIn ? 'Tap the heart on a station to save it here.' : null
+    if (tab === 'recent') return 'Stations you play will show up here.'
+    return 'This playlist is empty. Use the + button in the player to add stations.'
   }
 
-  const addPlaylistBtn = (
-    <button
-      type="button"
-      onClick={() => promptNewPlaylist(createPlaylist)}
-      title="New playlist"
-      aria-label="New playlist"
-      className={cn(
-        'flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full text-lg font-bold transition-transform active:scale-95',
-        isPink
-          ? 'bunny-btn-primary shadow-[0_3px_12px_rgb(233_140_181/0.4)]'
-          : 'border border-border bg-surface-muted text-foreground hover:bg-selected',
-      )}
-    >
-      +
-    </button>
-  )
-
   return (
-    <aside className="station-list relative z-10 flex h-full w-[340px] shrink-0 flex-col border-l border-border bg-surface max-md:h-[45%] max-md:w-full max-md:border-l-0 max-md:border-t">
-      <header className={cn('px-4 pt-4 md:px-5 md:pt-5')}>
-        <div className={cn('flex items-center gap-2', !isPink && 'border-b border-border')}>
-          <div className="scrollbar-hide flex min-w-0 flex-1 items-center gap-2 overflow-x-auto whitespace-nowrap">
-            {tabs.map(tab => {
-              const active = activeTab === tab
-              if (isPink) {
-                return (
-                  <button
-                    key={tab}
-                    type="button"
-                    onClick={() => setActiveTab(tab)}
-                    className={active ? 'bunny-tab-active' : 'bunny-tab-idle'}
-                  >
-                    {tabLabel(tab)}
-                  </button>
-                )
-              }
-              return (
-                <div
-                  key={tab}
-                  className={cn(
-                    '-mb-px flex items-center border-b-2 pb-3.5 transition-colors',
-                    active ? 'border-foreground' : 'border-transparent',
-                  )}
-                >
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab(tab)}
-                    className={cn(
-                      'cursor-pointer px-1 text-[0.78rem] font-medium uppercase tracking-widest',
-                      active ? 'font-bold text-foreground' : 'text-foreground-muted',
-                    )}
-                  >
-                    {tabLabel(tab)}
-                  </button>
-                </div>
-              )
-            })}
-          </div>
-          {addPlaylistBtn}
-        </div>
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="flex shrink-0 items-baseline justify-between gap-3 px-4 pb-2 md:px-5 md:pt-4">
+        <h1 className="truncate text-xl font-bold tracking-tight">
+          <span aria-hidden="true">{flagEmoji(country.code)}</span> {country.name}
+        </h1>
+        <span className="shrink-0 text-xs tabular-nums text-foreground-muted">
+          {loading ? 'Loading…' : `${visible.length} ${visible.length === 1 ? 'station' : 'stations'}`}
+        </span>
+      </div>
 
-        <div className="mt-2 flex items-center justify-between gap-2 pb-1">
-          <p className={cn('text-[0.72rem] tabular-nums', isPink ? 'font-semibold text-accent' : 'tracking-wide text-foreground-muted')}>
-            {activeTab === 'all'
-              ? loading ? 'Scanning...' : isPink ? `♡ ${stations.length} stations` : `${stations.length} active`
-              : displayStations.length > 0 ? `${displayStations.length} stations` : 'Empty playlist'}
-          </p>
-          {playlists.length > 0 && (
-            <button
-              type="button"
-              onClick={onManagePlaylists}
-              className="hidden cursor-pointer text-[0.72rem] font-semibold text-foreground-muted underline-offset-2 hover:text-accent hover:underline md:inline"
-            >
-              Manage
-            </button>
-          )}
-        </div>
-        {playlists.length > 0 && (
+      <div className="scrollbar-hide flex shrink-0 items-center gap-2 overflow-x-auto px-4 pb-3 md:px-5" role="tablist">
+        {tabs.map(t => (
+          <button
+            key={t.id}
+            type="button"
+            role="tab"
+            aria-selected={tab === t.id}
+            onClick={() => { setTab(t.id); setFilter(''); onTabChange?.() }}
+            className={cn(
+              'h-9 max-w-40 shrink-0 cursor-pointer truncate rounded-full px-4 text-[0.82rem] font-semibold transition-colors',
+              tab === t.id ? 'bg-foreground text-surface' : 'bg-surface-muted text-foreground-muted hover:text-foreground',
+            )}
+          >
+            {t.label}
+          </button>
+        ))}
+        {signedIn && (
           <button
             type="button"
             onClick={onManagePlaylists}
-            className="mb-1 cursor-pointer text-[0.7rem] font-semibold text-accent underline-offset-2 hover:underline md:hidden"
+            aria-label="Playlists"
+            title="Playlists"
+            className="flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-surface-muted text-foreground hover:bg-border"
           >
-            Manage playlists
+            <Icon name="plus" size={18} />
           </button>
         )}
-      </header>
+      </div>
 
-      <ul className="scrollbar-hide flex-1 overflow-y-auto pb-[calc(94px+env(safe-area-inset-bottom))] md:pb-3">
-        {loading ? (
-          <li className="px-6 py-10 text-[0.8rem] text-foreground-muted">{isPink ? 'Loading...' : 'Loading...'}</li>
-        ) : displayStations.length === 0 ? (
-          <li className="px-6 py-10 text-center text-[0.8rem] text-foreground-muted">
-            {activeTab === 'favs' ? (isPink ? 'Tap ♡ to save a station!' : 'Star a station to save it.') : 'No stations found.'}
+      {source.length >= FILTER_MIN && (
+        <label className="mx-4 mb-2 flex shrink-0 items-center gap-2 rounded-full border border-border bg-surface-muted px-4 md:mx-5">
+          <Icon name="search" size={16} className="text-foreground-muted" />
+          <input
+            type="search"
+            value={filter}
+            onChange={e => setFilter(e.target.value)}
+            placeholder="Filter by name or genre"
+            aria-label="Filter stations"
+            className="h-10 min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-foreground-muted md:text-sm"
+          />
+        </label>
+      )}
+
+      <ul className="scrollbar-hide min-h-0 flex-1 overflow-y-auto overscroll-contain pb-4">
+        {loading && SKELETON_KEYS.map(key => (
+          <li key={key} className="flex items-center gap-3 px-4 py-3 md:px-5">
+            <div className="size-11 animate-pulse rounded-lg bg-surface-muted" />
+            <div className="flex-1 space-y-2">
+              <div className="h-3 w-2/3 animate-pulse rounded bg-surface-muted" />
+              <div className="h-2.5 w-1/3 animate-pulse rounded bg-surface-muted" />
+            </div>
           </li>
-        ) : (
-          displayStations.map((station, i) => {
-            const selected = selectedStation?.stationuuid === station.stationuuid
-            const isFav = favorites.some(s => s.stationuuid === station.stationuuid)
-            const offline = station.lastcheckok === 0
-            const img = station.favicon?.startsWith('http') ? station.favicon : avatarUrl(themeMode, station.name)
+        ))}
 
-            return (
-              <li key={station.stationuuid} className={isPink ? 'px-1' : undefined}>
-                <button
-                  type="button"
-                  onClick={() => onSelect(station)}
-                  className={cn(
-                    'flex w-full cursor-pointer items-center gap-3.5 text-left transition-all',
-                    isPink
-                      ? cn('bunny-station-row px-4 py-3', selected && 'is-selected')
-                      : cn('border-b border-border px-6 py-3.5', selected ? 'bg-selected' : 'hover:bg-surface-muted'),
-                  )}
-                >
-                  <span className={cn(
-                    'shrink-0 text-right text-[0.7rem] tabular-nums',
-                    isPink ? 'font-bold text-accent' : 'w-[18px] text-foreground-muted',
-                  )}>
-                    {(i + 1).toString().padStart(2, '0')}
-                  </span>
-                  <img
-                    src={img}
-                    alt=""
-                    className={cn('size-10 shrink-0 object-contain', isPink ? 'bunny-avatar' : 'size-9 rounded-md bg-surface-muted')}
-                    onError={e => { e.currentTarget.src = avatarUrl(themeMode, station.name) }}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
-                      <span className={cn(
-                        'truncate text-[0.88rem]',
-                        isPink ? 'font-bold' : 'font-medium',
-                        offline ? 'text-foreground-muted line-through' : 'text-foreground',
-                      )}>
-                        {station.name}
-                      </span>
-                      {offline && (
-                        <span className="shrink-0 rounded-full bg-red-500/10 px-2 py-0.5 text-[0.55rem] font-bold text-red-500">
-                          OFFLINE
-                        </span>
-                      )}
-                    </div>
-                    <p className="mt-0.5 text-[0.7rem] text-foreground-muted tabular-nums">
-                      {station.codec || 'LIVE'} · {station.bitrate ? `${station.bitrate}k` : '—'}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={e => { e.stopPropagation(); toggleFavorite(station) }}
-                    className={cn(
-                      'relative z-20 shrink-0 cursor-pointer p-1.5 text-lg leading-none transition-transform hover:scale-110',
-                      isFav ? 'text-heart opacity-100' : 'text-foreground-muted opacity-50',
-                    )}
-                  >
-                    {isFav ? '♥' : '♡'}
-                  </button>
-                </button>
-              </li>
-            )
-          })
+        {!loading && tab === 'all' && status === 'error' && (
+          <li className="flex flex-col items-center gap-3 px-6 py-10 text-center text-sm text-foreground-muted">
+            Couldn't reach the radio directory.
+            <button type="button" onClick={onRetry} className="flex h-10 cursor-pointer items-center gap-2 rounded-full bg-foreground px-5 font-semibold text-surface">
+              <Icon name="retry" size={16} /> Try again
+            </button>
+          </li>
         )}
+
+        {!loading && tab === 'favs' && !signedIn && (
+          <li className="flex flex-col items-center gap-3 px-6 py-10 text-center text-sm text-foreground-muted">
+            Sign in to save your favorite stations.
+            <button type="button" onClick={onRequestSignIn} className="h-10 cursor-pointer rounded-full bg-foreground px-5 font-semibold text-surface">
+              Sign in
+            </button>
+          </li>
+        )}
+
+        {!loading && visible.length === 0 && emptyMessage() && (
+          <li className="px-6 py-10 text-center text-sm text-foreground-muted">{emptyMessage()}</li>
+        )}
+
+        {!loading && visible.map(station => {
+          const current = station.stationuuid === currentId
+          const isFavorite = favoriteIds.has(station.stationuuid)
+          const meta = [station.codec || 'LIVE', station.bitrate ? `${station.bitrate}k` : null, station.tags.split(',')[0]?.trim() || null].filter(Boolean).join(' · ')
+          return (
+            <li key={station.stationuuid} className={cn('flex items-center border-b border-border/60 pr-2 md:pr-3', current && 'bg-selected')}>
+              <button
+                type="button"
+                onClick={() => onPlay(station, visible)}
+                className="flex min-h-[60px] min-w-0 flex-1 cursor-pointer items-center gap-3 py-2 pl-4 text-left md:pl-5"
+              >
+                <StationArt station={station} theme={theme} className="size-11 rounded-lg" />
+                <span className="min-w-0 flex-1">
+                  <span className={cn('block truncate text-[0.92rem] font-semibold', station.lastcheckok === 0 && 'text-foreground-muted line-through')}>{station.name}</span>
+                  <span className="block truncate text-xs text-foreground-muted">{meta}</span>
+                </span>
+                {current && <EqBars playing={isPlaying} className="mr-1" />}
+              </button>
+              <button
+                type="button"
+                onClick={() => (signedIn ? onToggleFavorite(station) : onRequestSignIn())}
+                aria-label={isFavorite ? `Remove ${station.name} from saved` : `Save ${station.name}`}
+                aria-pressed={isFavorite}
+                className={cn('flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full transition-transform active:scale-90', isFavorite ? 'text-heart' : 'text-foreground-muted hover:text-foreground')}
+              >
+                <Icon name="heart" size={20} filled={isFavorite} />
+              </button>
+            </li>
+          )
+        })}
       </ul>
-    </aside>
+    </div>
   )
 }

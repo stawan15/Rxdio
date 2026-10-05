@@ -1,8 +1,7 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Space Grotesk", system-ui, sans-serif;
-  --font-bunny: "Nunito", "Quicksand", system-ui, sans-serif;
+  --font-sans: "Space Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
 
   --color-surface: var(--c-surface);
   --color-surface-raised: var(--c-surface-raised);
@@ -19,198 +18,136 @@
   --shadow-dropdown: var(--c-shadow-dropdown);
   --shadow-panel: var(--c-shadow-panel);
   --shadow-player: var(--c-shadow-player);
+
+  --animate-slide-up: slide-up 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  --animate-fade-in: fade-in 0.18s ease-out;
 }
 
+/* Theme tokens — keep `THEME_COLOR` in theme.ts in sync with --c-surface */
 :root,
 [data-theme="light"] {
   --c-surface: #faf9f7;
-  --c-surface-raised: #faf9f7;
-  --c-surface-muted: #f3f1ee;
+  --c-surface-raised: #ffffff;
+  --c-surface-muted: #f1efec;
   --c-surface-panel: rgb(255 255 255 / 0.92);
   --c-foreground: #1a1a1a;
-  --c-foreground-muted: #9a9590;
-  --c-border: #e8e5e0;
+  --c-foreground-muted: #6b6762;
+  --c-border: #e4e1dc;
   --c-accent: #2f6fdb;
   --c-accent-fg: #ffffff;
   --c-selected: #efecea;
-  --c-heart: #f59e0b;
-  --c-shadow-dropdown: 0 12px 40px rgb(0 0 0 / 0.06);
-  --c-shadow-panel: 0 20px 50px rgb(0 0 0 / 0.08);
-  --c-shadow-player: 0 -4px 30px rgb(0 0 0 / 0.1);
+  --c-heart: #e11d48;
+  --c-shadow-dropdown: 0 12px 40px rgb(0 0 0 / 0.1);
+  --c-shadow-panel: 0 20px 50px rgb(0 0 0 / 0.12);
+  --c-shadow-player: 0 -4px 30px rgb(0 0 0 / 0.08);
 }
 
 [data-theme="dark"] {
   --c-surface: #000000;
-  --c-surface-raised: #000000;
-  --c-surface-muted: #111111;
+  --c-surface-raised: #0b0b0b;
+  --c-surface-muted: #151515;
   --c-surface-panel: rgb(0 0 0 / 0.85);
   --c-foreground: #ffffff;
-  --c-foreground-muted: #444444;
-  --c-border: #1a1a1a;
+  --c-foreground-muted: #8c8c8c;
+  --c-border: #262626;
   --c-accent: #00ff88;
   --c-accent-fg: #000000;
-  --c-selected: #111111;
-  --c-heart: #f59e0b;
+  --c-selected: #151515;
+  --c-heart: #ff4d6d;
   --c-shadow-dropdown: 0 12px 40px rgb(0 0 0 / 0.9);
   --c-shadow-panel: 0 20px 50px rgb(0 0 0 / 0.5);
   --c-shadow-player: 0 -4px 30px rgb(0 0 0 / 0.8);
 }
 
-/* Ribbon Bunny — bright strawberry-milk kawaii */
+/* Neon pink — dark cyberpunk */
 [data-theme="pink"] {
-  --c-surface: #fce0e9;
-  --c-surface-raised: #fff8fb;
-  --c-surface-muted: #ffffff;
-  --c-surface-panel: rgb(255 255 255 / 0.88);
-  --c-foreground: #4a2a3a;
-  --c-foreground-muted: #9d6b85;
-  --c-border: rgb(233 140 181 / 0.35);
-  --c-accent: #e98cb5;
-  --c-accent-fg: #ffffff;
-  --c-selected: rgb(233 140 181 / 0.22);
-  --c-heart: #e98cb5;
-  --c-shadow-dropdown: 0 16px 40px rgb(233 140 181 / 0.35);
-  --c-shadow-panel: 0 20px 50px rgb(233 140 181 / 0.3);
-  --c-shadow-player: 0 -8px 32px rgb(233 140 181 / 0.28);
+  --c-surface: #0a0508;
+  --c-surface-raised: #140a10;
+  --c-surface-muted: #1c0d16;
+  --c-surface-panel: rgb(20 10 16 / 0.92);
+  --c-foreground: #ffd1e3;
+  --c-foreground-muted: #b87d97;
+  --c-border: #3d1b2d;
+  --c-accent: #ff2a85;
+  --c-accent-fg: #000000;
+  --c-selected: rgb(255 42 133 / 0.15);
+  --c-heart: #ff2a85;
+  --c-shadow-dropdown: 0 16px 40px rgb(255 42 133 / 0.15);
+  --c-shadow-panel: 0 20px 50px rgb(255 42 133 / 0.15);
+  --c-shadow-player: 0 -8px 32px rgb(255 42 133 / 0.15);
+}
+
+:root {
+  --player-bar: 64px;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --player-bar: 72px;
+  }
 }
 
 @layer base {
   html,
   body,
   #root {
-    @apply m-0 h-full overflow-hidden bg-surface text-foreground font-sans antialiased;
-    min-height: 100svh;
-    min-height: 100vh;
-    scrollbar-width: none;
+    margin: 0;
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none; /* no pull-to-refresh / rubber-banding in the PWA */
+    background: var(--c-surface);
+    color: var(--c-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
   }
 
-  html::-webkit-scrollbar,
-  body::-webkit-scrollbar {
-    display: none;
+  html {
+    touch-action: manipulation; /* no double-tap zoom delay */
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
   }
 
-  *,
-  *::before,
-  *::after {
-    box-sizing: border-box;
-    transition: background-color 0.5s ease, border-color 0.5s ease, color 0.2s ease, box-shadow 0.5s ease;
+  body {
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 
-  [data-theme="pink"] body {
-    font-family: var(--font-bunny);
+  button:not(:disabled),
+  [role="tab"],
+  [role="radio"] {
+    cursor: pointer;
   }
 
-  @keyframes eq {
-    0% { height: 3px; }
-    50% { height: 12px; }
-    100% { height: 3px; }
+  :focus-visible {
+    outline: 2px solid var(--c-accent);
+    outline-offset: 2px;
+  }
+
+  /* inputs below 16px make iOS Safari zoom the page on focus */
+  input {
+    font-size: max(1rem, 16px);
+  }
+
+  @media (min-width: 768px) {
+    input {
+      font-size: inherit;
+    }
   }
 }
 
-/* ── Ribbon Bunny UI kit ── */
-@layer components {
-  [data-theme="pink"] .app-container {
-    background: linear-gradient(180deg, #fff8fb 0%, #fce0e9 38%, #f8c8d3 100%);
-  }
+@keyframes eq {
+  0% { height: 3px; }
+  50% { height: 12px; }
+  100% { height: 3px; }
+}
 
-  [data-theme="pink"] .bunny-header {
-    @apply border-b border-border bg-surface-raised/95 shadow-[0_4px_24px_rgb(233_140_181/0.15)] backdrop-blur-md;
-  }
+@keyframes slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
 
-  [data-theme="pink"] .bunny-logo {
-    @apply rounded-2xl bg-accent text-accent-fg shadow-[0_4px_14px_rgb(233_140_181/0.45)];
-  }
-
-  [data-theme="pink"] .bunny-brand {
-    @apply font-bold text-accent;
-  }
-
-  [data-theme="pink"] .bunny-btn-ghost {
-    @apply rounded-2xl border-2 border-border bg-white/80 text-foreground shadow-sm transition-all hover:border-accent hover:bg-white hover:shadow-md;
-  }
-
-  [data-theme="pink"] .bunny-btn-primary {
-    @apply rounded-2xl border-2 border-accent bg-accent font-bold text-accent-fg shadow-[0_4px_16px_rgb(233_140_181/0.45)] transition-all hover:scale-[1.02] hover:shadow-[0_6px_20px_rgb(233_140_181/0.55)] active:scale-[0.98];
-  }
-
-  [data-theme="pink"] .bunny-scene {
-    background: radial-gradient(ellipse 90% 75% at 50% 35%, #fff 0%, #fff5f9 25%, #fce8ef 55%, #f8c8d3 100%);
-    position: relative;
-    overflow: hidden;
-  }
-
-  [data-theme="pink"] .bunny-scene::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background-image:
-      radial-gradient(circle at 20% 30%, rgb(255 255 255 / 0.9) 0%, transparent 8%),
-      radial-gradient(circle at 75% 20%, rgb(255 230 240 / 0.8) 0%, transparent 6%),
-      radial-gradient(circle at 60% 70%, rgb(255 255 255 / 0.7) 0%, transparent 5%),
-      radial-gradient(circle, rgb(255 255 255 / 0.35) 1px, transparent 1px);
-    background-size: 100% 100%, 100% 100%, 100% 100%, 28px 28px;
-    opacity: 0.85;
-    z-index: 1;
-  }
-
-  [data-theme="pink"] .bunny-scene .globe-canvas {
-    position: relative;
-    z-index: 2;
-  }
-
-  .app-container {
-    min-height: 100svh;
-    min-height: 100vh;
-  }
-
-  .station-list ul {
-    padding-bottom: calc(94px + env(safe-area-inset-bottom));
-  }
-
-  [data-theme="pink"] .bunny-live-card {
-    @apply rounded-3xl border-2 border-border border-l-4 border-l-accent bg-surface-panel shadow-panel backdrop-blur-md;
-  }
-
-  [data-theme="pink"] .bunny-country-title {
-    @apply font-extrabold text-foreground drop-shadow-[0_2px_0_rgb(255_255_255/0.8)];
-  }
-
-  [data-theme="pink"] .bunny-country-meta {
-    @apply inline-flex rounded-full bg-white/70 px-3 py-1 text-[0.7rem] font-semibold text-foreground-muted shadow-sm;
-  }
-
-  [data-theme="pink"] .station-list {
-    @apply rounded-t-[2rem] border-border bg-surface-muted shadow-[0_-8px_40px_rgb(233_140_181/0.2)] max-md:rounded-t-[2rem];
-  }
-
-  [data-theme="pink"] .bunny-tab-active {
-    @apply rounded-full bg-accent px-3 py-1.5 font-bold text-accent-fg shadow-[0_3px_12px_rgb(233_140_181/0.4)];
-  }
-
-  [data-theme="pink"] .bunny-tab-idle {
-    @apply rounded-full px-3 py-1.5 font-semibold text-foreground-muted transition-colors hover:bg-white/60 hover:text-accent;
-  }
-
-  [data-theme="pink"] .bunny-station-row {
-    @apply mx-3 mb-2 rounded-2xl border border-border bg-white/90 shadow-sm transition-all hover:shadow-md hover:border-accent/50;
-  }
-
-  [data-theme="pink"] .bunny-station-row.is-selected {
-    @apply border-accent bg-selected shadow-[0_4px_16px_rgb(233_140_181/0.25)];
-  }
-
-  [data-theme="pink"] .bunny-avatar {
-    @apply rounded-2xl border-2 border-border bg-surface shadow-inner;
-  }
-
-  [data-theme="pink"] .audio-player {
-    @apply rounded-t-3xl border-t-2 border-border bg-white/95 shadow-player backdrop-blur-md;
-  }
-
-  [data-theme="pink"] .bunny-dropdown {
-    @apply rounded-2xl border-2 border-border bg-white shadow-dropdown;
-  }
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @layer utilities {
@@ -223,20 +160,12 @@
   }
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
-
-@keyframes slide-up {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
-}
-
-@keyframes bunny-float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
-}
-
-.animate-spin-slow { animation: spin 1.5s linear infinite; }
-.animate-slide-up { animation: slide-up 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); }
-.animate-bunny-float { animation: bunny-float 4s ease-in-out infinite; }
