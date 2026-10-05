@@ -1,7 +1,16 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Space Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* Plex Sans Thai covers Thai + Latin; Plex Mono carries the instrument-style labels and numbers */
+  --font-sans: "IBM Plex Sans Thai", "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* Squarer than the usual all-pill look: panels and keys are small-radius, only knobs stay round */
+  --radius-md: 4px;
+  --radius-lg: 6px;
+  --radius-xl: 8px;
+  --radius-2xl: 10px;
+  --radius-3xl: 14px;
 
   --color-surface: var(--c-surface);
   --color-surface-raised: var(--c-surface-raised);
@@ -17,64 +26,65 @@
 
   --shadow-dropdown: var(--c-shadow-dropdown);
   --shadow-panel: var(--c-shadow-panel);
-  --shadow-player: var(--c-shadow-player);
+  --shadow-player: none;
 
   --animate-slide-up: slide-up 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
   --animate-fade-in: fade-in 0.18s ease-out;
 }
 
-/* Theme tokens — keep `THEME_COLOR` in theme.ts in sync with --c-surface */
+/* Themes — one accent each, used only for the primary action and the "you are here" marks.
+   Keep `THEME_COLOR` and `GLOBE_LOOK` in theme.ts in sync with these. */
+
+/* Night: warm black, signal orange */
 :root,
-[data-theme="light"] {
-  --c-surface: #faf9f7;
-  --c-surface-raised: #ffffff;
-  --c-surface-muted: #f1efec;
-  --c-surface-panel: rgb(255 255 255 / 0.92);
-  --c-foreground: #1a1a1a;
-  --c-foreground-muted: #6b6762;
-  --c-border: #e4e1dc;
-  --c-accent: #2f6fdb;
-  --c-accent-fg: #ffffff;
-  --c-selected: #efecea;
-  --c-heart: #e11d48;
-  --c-shadow-dropdown: 0 12px 40px rgb(0 0 0 / 0.1);
-  --c-shadow-panel: 0 20px 50px rgb(0 0 0 / 0.12);
-  --c-shadow-player: 0 -4px 30px rgb(0 0 0 / 0.08);
-}
-
 [data-theme="dark"] {
-  --c-surface: #000000;
-  --c-surface-raised: #0b0b0b;
-  --c-surface-muted: #151515;
-  --c-surface-panel: rgb(0 0 0 / 0.85);
-  --c-foreground: #ffffff;
-  --c-foreground-muted: #8c8c8c;
-  --c-border: #262626;
-  --c-accent: #00ff88;
-  --c-accent-fg: #000000;
-  --c-selected: #151515;
-  --c-heart: #ff4d6d;
-  --c-shadow-dropdown: 0 12px 40px rgb(0 0 0 / 0.9);
-  --c-shadow-panel: 0 20px 50px rgb(0 0 0 / 0.5);
-  --c-shadow-player: 0 -4px 30px rgb(0 0 0 / 0.8);
+  --c-surface: #0e0d0b;
+  --c-surface-raised: #161411;
+  --c-surface-muted: #1f1c18;
+  --c-surface-panel: rgb(14 13 11 / 0.96);
+  --c-foreground: #f1ece2;
+  --c-foreground-muted: #9b9385;
+  --c-border: #2b2721;
+  --c-accent: #ff5a1f;
+  --c-accent-fg: #190b04;
+  --c-selected: #1c1915;
+  --c-heart: #ff5a1f;
+  --c-shadow-dropdown: 0 8px 24px rgb(0 0 0 / 0.5);
+  --c-shadow-panel: 0 10px 28px rgb(0 0 0 / 0.45);
 }
 
-/* Neon pink — dark cyberpunk */
-[data-theme="pink"] {
-  --c-surface: #0a0508;
-  --c-surface-raised: #140a10;
-  --c-surface-muted: #1c0d16;
-  --c-surface-panel: rgb(20 10 16 / 0.92);
-  --c-foreground: #ffd1e3;
-  --c-foreground-muted: #b87d97;
-  --c-border: #3d1b2d;
-  --c-accent: #ff2a85;
-  --c-accent-fg: #000000;
-  --c-selected: rgb(255 42 133 / 0.15);
-  --c-heart: #ff2a85;
-  --c-shadow-dropdown: 0 16px 40px rgb(255 42 133 / 0.15);
-  --c-shadow-panel: 0 20px 50px rgb(255 42 133 / 0.15);
-  --c-shadow-player: 0 -8px 32px rgb(255 42 133 / 0.15);
+/* Paper: warm off-white, ink, vermilion */
+[data-theme="light"] {
+  --c-surface: #f2ede2;
+  --c-surface-raised: #f9f6ee;
+  --c-surface-muted: #e8e2d4;
+  --c-surface-panel: rgb(249 246 238 / 0.96);
+  --c-foreground: #17140f;
+  --c-foreground-muted: #6a6354;
+  --c-border: #d6cfbd;
+  --c-accent: #e03d0c;
+  --c-accent-fg: #fffaf3;
+  --c-selected: #e9e3d4;
+  --c-heart: #e03d0c;
+  --c-shadow-dropdown: 0 8px 24px rgb(23 20 15 / 0.14);
+  --c-shadow-panel: 0 10px 28px rgb(23 20 15 / 0.14);
+}
+
+/* Cobalt: deep blue, cream, signal yellow */
+[data-theme="cobalt"] {
+  --c-surface: #0a1f66;
+  --c-surface-raised: #0d2678;
+  --c-surface-muted: #123088;
+  --c-surface-panel: rgb(10 31 102 / 0.96);
+  --c-foreground: #f5f0e2;
+  --c-foreground-muted: #a4b4ea;
+  --c-border: #27449a;
+  --c-accent: #ffc61a;
+  --c-accent-fg: #0b1233;
+  --c-selected: #0f2a80;
+  --c-heart: #ffc61a;
+  --c-shadow-dropdown: 0 8px 24px rgb(2 8 40 / 0.5);
+  --c-shadow-panel: 0 10px 28px rgb(2 8 40 / 0.45);
 }
 
 :root {
@@ -151,6 +161,15 @@
 }
 
 @layer utilities {
+  /* the ruler along the header: minor ticks every 8px, major every 40px */
+  .dial-rule {
+    background-image:
+      linear-gradient(90deg, var(--c-foreground-muted) 1px, transparent 1px),
+      linear-gradient(90deg, var(--c-foreground-muted) 1px, transparent 1px);
+    background-size: 8px 4px, 40px 8px;
+    background-position: 0 100%, 0 100%;
+    background-repeat: repeat-x;
+  }
   .scrollbar-hide {
     scrollbar-width: none;
     -ms-overflow-style: none;

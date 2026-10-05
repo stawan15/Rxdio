@@ -44,19 +44,19 @@ export function CountryPicker({ open, countries, selectedCode, onSelect, onClose
             {c.label}
             {local && local !== c.label && <span className="ml-2 text-sm font-normal text-foreground-muted">{local}</span>}
           </span>
-          <span className="text-xs tabular-nums text-foreground-muted">{c.stationcount}</span>
+          <span className="font-mono text-xs tabular-nums text-foreground-muted">{c.stationcount}</span>
           {c.code === selectedCode && <Icon name="check" size={18} className="text-accent" />}
         </button>
       </li>
     )
   }
 
-  const heading = (text: string) => <h3 className="px-2 pb-1 pt-3 text-xs font-semibold uppercase tracking-widest text-foreground-muted">{text}</h3>
+  const heading = (text: string) => <h3 className="px-2 pb-1 pt-3 font-mono text-[0.7rem] font-medium uppercase tracking-[0.18em] text-foreground-muted">{text}</h3>
 
   return (
     <Dialog open={open} onClose={onClose} title="Choose a country">
       <form onSubmit={e => { e.preventDefault(); const first = popular[0] ?? rest[0]; if (first) pick((q ? rest[0] : first).code) }} className="sticky top-0 z-10 -mx-5 bg-surface-raised px-5 pb-1">
-        <label className="flex items-center gap-2 rounded-full border border-border bg-surface-muted px-4">
+        <label className="flex items-center gap-2 rounded-lg border border-border bg-surface-muted px-4">
           <Icon name="search" size={18} className="text-foreground-muted" />
           <input
             autoFocus

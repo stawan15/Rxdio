@@ -1,10 +1,8 @@
 import { useEffect, useState } from 'react'
 import { cn } from '../lib/cn'
-import { THEMES, type ThemeMode } from '../theme'
+import { THEME_SWATCH, THEMES, type ThemeMode } from '../theme'
 import { Icon, type IconName } from './icons'
 import { IconButton } from './IconButton'
-
-const THEME_ICON: Record<ThemeMode, IconName> = { dark: 'moon', light: 'sun', pink: 'spark' }
 
 type Props = {
   theme: ThemeMode
@@ -46,7 +44,7 @@ export function AppMenu({ theme, onTheme, email, onSignIn, onSignOut, onPlaylist
           aria-label="Account menu"
           aria-expanded={open}
           onClick={() => setOpen(v => !v)}
-          className="flex size-11 cursor-pointer items-center justify-center rounded-full bg-accent text-sm font-bold uppercase text-accent-fg transition-all active:scale-95"
+          className="flex size-11 cursor-pointer items-center justify-center rounded-lg bg-accent font-mono text-sm font-semibold uppercase text-accent-fg transition-all active:scale-95"
         >
           {email[0]}
         </button>
@@ -65,9 +63,10 @@ export function AppMenu({ theme, onTheme, email, onSignIn, onSignOut, onPlaylist
                   type="button"
                   aria-pressed={theme === t.mode}
                   onClick={() => onTheme(t.mode)}
-                  className={cn('flex h-11 cursor-pointer items-center justify-center gap-1.5 rounded-lg text-xs font-semibold transition-colors', theme === t.mode ? 'bg-surface-raised text-foreground shadow-sm' : 'text-foreground-muted')}
+                  className={cn('flex h-11 cursor-pointer items-center justify-center gap-2 rounded-lg font-mono text-[0.7rem] font-medium uppercase tracking-wider transition-colors', theme === t.mode ? 'bg-surface-raised text-foreground shadow-sm' : 'text-foreground-muted')}
                 >
-                  <Icon name={THEME_ICON[t.mode]} size={16} /> {t.label}
+                  <span className="size-3.5 rounded-sm border border-foreground-muted/40" style={{ background: `linear-gradient(135deg, ${THEME_SWATCH[t.mode][0]} 50%, ${THEME_SWATCH[t.mode][1]} 50%)` }} />
+                  {t.label}
                 </button>
               ))}
             </fieldset>

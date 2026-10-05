@@ -63,10 +63,10 @@ export function StationList(props: Props) {
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex shrink-0 items-baseline justify-between gap-3 px-4 pb-2 md:px-5 md:pt-4">
-        <h1 className="truncate text-xl font-bold tracking-tight">
+        <h1 className="truncate text-xl font-semibold tracking-tight">
           <span aria-hidden="true">{flagEmoji(country.code)}</span> {country.name}
         </h1>
-        <span className="shrink-0 text-xs tabular-nums text-foreground-muted">
+        <span className="shrink-0 font-mono text-[0.7rem] uppercase tabular-nums tracking-wider text-foreground-muted">
           {loading ? 'Loading…' : `${visible.length} ${visible.length === 1 ? 'station' : 'stations'}`}
         </span>
       </div>
@@ -80,12 +80,12 @@ export function StationList(props: Props) {
             aria-selected={tab === t.id}
             onClick={() => { setTab(t.id); setFilter(''); onTabChange?.() }}
             className={cn(
-              'h-9 max-w-40 shrink-0 cursor-pointer truncate rounded-full px-4 text-[0.82rem] font-semibold transition-colors',
+              'h-9 max-w-40 shrink-0 cursor-pointer truncate rounded-md px-3.5 font-mono text-[0.72rem] font-medium uppercase tracking-wider transition-colors',
               tab === t.id ? 'bg-foreground text-surface' : 'bg-surface-muted text-foreground-muted hover:text-foreground',
             )}
           >
             {t.label}
-            {t.count > 0 && <span className="ml-1.5 text-xs tabular-nums opacity-60">{t.count}</span>}
+            {t.count > 0 && <span className="ml-1.5 tabular-nums opacity-60">{t.count}</span>}
           </button>
         ))}
         {signedIn && (
@@ -94,7 +94,7 @@ export function StationList(props: Props) {
             onClick={onManagePlaylists}
             aria-label="Playlists"
             title="Playlists"
-            className="flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-surface-muted text-foreground hover:bg-border"
+            className="flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-md bg-surface-muted text-foreground hover:bg-border"
           >
             <Icon name="plus" size={18} />
           </button>
@@ -102,7 +102,7 @@ export function StationList(props: Props) {
       </div>
 
       {source.length >= FILTER_MIN && (
-        <label className="mx-4 mb-2 flex shrink-0 items-center gap-2 rounded-full border border-border bg-surface-muted px-4 md:mx-5">
+        <label className="mx-4 mb-2 flex shrink-0 items-center gap-2 rounded-lg border border-border bg-surface-muted px-3.5 md:mx-5">
           <Icon name="search" size={16} className="text-foreground-muted" />
           <input
             type="search"
@@ -129,7 +129,7 @@ export function StationList(props: Props) {
         {!loading && tab === 'all' && status === 'error' && (
           <li className="flex flex-col items-center gap-3 px-6 py-10 text-center text-sm text-foreground-muted">
             Couldn't reach the radio directory.
-            <button type="button" onClick={onRetry} className="flex h-10 cursor-pointer items-center gap-2 rounded-full bg-foreground px-5 font-semibold text-surface">
+            <button type="button" onClick={onRetry} className="flex h-10 cursor-pointer items-center gap-2 rounded-lg bg-foreground px-5 font-semibold text-surface">
               <Icon name="retry" size={16} /> Try again
             </button>
           </li>
@@ -138,7 +138,7 @@ export function StationList(props: Props) {
         {!loading && tab === 'favs' && !signedIn && (
           <li className="flex flex-col items-center gap-3 px-6 py-10 text-center text-sm text-foreground-muted">
             Sign in to save your favorite stations.
-            <button type="button" onClick={onRequestSignIn} className="h-10 cursor-pointer rounded-full bg-foreground px-5 font-semibold text-surface">
+            <button type="button" onClick={onRequestSignIn} className="h-10 cursor-pointer rounded-lg bg-foreground px-5 font-semibold text-surface">
               Sign in
             </button>
           </li>
@@ -162,7 +162,7 @@ export function StationList(props: Props) {
                 <StationArt station={station} theme={theme} className="size-11 rounded-lg" />
                 <span className="min-w-0 flex-1">
                   <span className={cn('block truncate text-[0.92rem] font-semibold', station.lastcheckok === 0 && 'text-foreground-muted line-through')}>{station.name}</span>
-                  <span className="block truncate text-xs text-foreground-muted">{meta}</span>
+                  <span className="block truncate font-mono text-[0.68rem] uppercase tracking-wide text-foreground-muted">{meta}</span>
                 </span>
                 {current && (playerState === 'connecting'
                   ? <span role="status" aria-label="Connecting" className="mr-1 size-4 animate-spin rounded-full border-2 border-accent border-t-transparent" />

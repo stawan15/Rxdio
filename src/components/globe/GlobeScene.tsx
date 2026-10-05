@@ -263,7 +263,7 @@ function PlayingPin({ code, name, isPlaying, color, earthRef }: {
         <meshBasicMaterial color={color} toneMapped={false} />
       </mesh>
       <Html position={[0, 0.28, 0]} center occlude={[earthRef as React.RefObject<THREE.Object3D>]} zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
-        <div className="flex max-w-[180px] items-center gap-2 whitespace-nowrap rounded-full border border-border bg-surface-panel px-3 py-1.5 text-xs font-semibold text-foreground shadow-panel backdrop-blur-md">
+        <div className="flex max-w-[180px] items-center gap-2 whitespace-nowrap rounded-md border border-border bg-surface-panel px-2.5 py-1.5 font-mono text-[11px] font-medium uppercase tracking-wide text-foreground shadow-panel">
           <EqBars playing={isPlaying} />
           <span className="truncate">{name}</span>
         </div>

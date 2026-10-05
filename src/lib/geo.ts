@@ -1,7 +1,7 @@
 import borders from '../data/borders.json'
-import centroids from '../data/centroids.json'
+import { centroidOf, type LatLon } from './centroids'
 
-export type LatLon = readonly [lat: number, lon: number]
+export { centroidOf, type LatLon }
 type Ring = readonly (readonly [number, number])[]
 type Border = { code: string; rings: Ring[]; bbox: [number, number, number, number]; area: number }
 
@@ -25,8 +25,6 @@ export function angularDistance([lat1, lon1]: LatLon, [lat2, lon2]: LatLon): num
   const a = Math.sin(((lat2 - lat1) * RAD) / 2) ** 2 + Math.cos(lat1 * RAD) * Math.cos(lat2 * RAD) * Math.sin(((lon2 - lon1) * RAD) / 2) ** 2
   return 2 * Math.asin(Math.min(1, Math.sqrt(a))) / RAD
 }
-
-export const centroidOf = (code: string): LatLon | undefined => (centroids as unknown as Record<string, LatLon>)[code]
 
 export const BORDERS: Border[] = Object.entries(borders as unknown as Record<string, Ring[]>).map(([code, rings]) => {
   const lons = rings.flatMap(r => r.map(p => p[0]))

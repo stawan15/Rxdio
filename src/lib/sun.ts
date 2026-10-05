@@ -1,4 +1,4 @@
-import type { LatLon } from './geo'
+import type { LatLon } from './centroids'
 
 /** Point on Earth where the sun is directly overhead (declination + equation of time). */
 export function subsolarPoint(date = new Date()): LatLon {

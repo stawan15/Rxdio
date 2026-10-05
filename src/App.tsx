@@ -129,7 +129,7 @@ export default function App() {
     library.addRecent(next)
   }
 
-  const onTimerEnd = useCallback(() => notify('Sleep timer finished — good night 🌙'), [notify])
+  const onTimerEnd = useCallback(() => notify('Sleep timer finished. Good night.'), [notify])
 
   const shuffle = async () => {
     setShuffling(true)
@@ -221,9 +221,9 @@ export default function App() {
           </Suspense>
           {hintOpen && (
             <div className="pointer-events-none absolute inset-x-0 top-3 z-10 flex justify-center px-4">
-              <p className="pointer-events-auto flex animate-fade-in items-center gap-1 rounded-full border border-border bg-surface-panel py-1 pl-4 pr-1 text-sm shadow-dropdown backdrop-blur-md">
-                <span>Tap a country, or shuffle for a surprise</span>
-                <button type="button" onClick={dismissHint} aria-label="Dismiss tip" className="flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full hover:bg-surface-muted">
+              <p className="pointer-events-auto flex animate-fade-in items-center gap-1 rounded-lg border border-border bg-surface-panel py-1 pl-4 pr-1 text-sm shadow-dropdown">
+                <span>Tap a country, or hit scan for a random station</span>
+                <button type="button" onClick={dismissHint} aria-label="Dismiss tip" className="flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-md hover:bg-surface-muted">
                   <Icon name="close" size={16} />
                 </button>
               </p>
@@ -231,7 +231,7 @@ export default function App() {
           )}
         </div>
 
-        {/* Shuffle lives in the thumb zone on phones, riding on top of the sheet */}
+        {/* Scan (random station) lives in the thumb zone on phones, riding on top of the sheet */}
         {!isDesktop && snap !== 'full' && (
           <button
             type="button"
@@ -241,7 +241,7 @@ export default function App() {
             style={{ bottom: sheetHeight + 16, transition: 'bottom 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)' }}
             className="absolute right-4 z-10 flex size-14 cursor-pointer items-center justify-center rounded-full bg-accent text-accent-fg shadow-panel active:scale-95 disabled:opacity-60"
           >
-            <Icon name="shuffle" size={26} className={shuffling ? 'animate-spin' : undefined} />
+            <Icon name="scan" size={26} className={shuffling ? 'animate-spin' : undefined} />
           </button>
         )}
 

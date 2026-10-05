@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
     <meta name="description" content="Rxdio — tune into live radio from around the world on an interactive 3D globe." />
-    <meta name="theme-color" content="#000000" />
+    <meta name="theme-color" content="#0e0d0b" />
     <meta name="color-scheme" content="dark light" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -20,14 +20,14 @@
     <title>Rxdio</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <script>
       // apply the saved theme before first paint to avoid a flash
       try {
         var t = localStorage.getItem('rxdio_theme');
-        if (t === 'light' || t === 'pink' || t === 'dark') {
+        if (t === 'light' || t === 'cobalt' || t === 'dark') {
           document.documentElement.dataset.theme = t;
-          document.querySelector('meta[name="theme-color"]').content = { dark: '#000000', light: '#faf9f7', pink: '#0a0508' }[t];
+          document.querySelector('meta[name="theme-color"]').content = { dark: '#0e0d0b', light: '#f2ede2', cobalt: '#0a1f66' }[t];
         }
       } catch (e) {}
     </script>

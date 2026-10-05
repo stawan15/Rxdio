@@ -1,4 +1,4 @@
-import { centroidOf } from '../lib/geo'
+import { centroidOf } from '../lib/centroids'
 
 export interface RadioStation {
   stationuuid: string

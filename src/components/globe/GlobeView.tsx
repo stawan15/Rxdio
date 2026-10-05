@@ -15,7 +15,7 @@ function Loader() {
   return (
     <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-3 bg-surface">
       <div className="size-10 animate-spin rounded-full border-4 border-accent border-t-transparent" />
-      <span className="text-xs font-bold uppercase tracking-widest text-accent">Loading globe {Math.round(progress)}%</span>
+      <span className="font-mono text-xs font-medium uppercase tracking-[0.2em] text-accent">Tuning {Math.round(progress)}%</span>
     </div>
   )
 }
@@ -62,7 +62,7 @@ export default function GlobeView({ countries, compact, ...scene }: Props) {
       </ErrorBoundary>
       <div ref={tip} className="pointer-events-none absolute left-0 top-0 z-10" aria-hidden="true">
         {hoverCode && (
-          <div className="whitespace-nowrap rounded-xl border border-border bg-surface-panel px-3 py-2 text-xs font-semibold shadow-panel backdrop-blur-md">
+          <div className="whitespace-nowrap rounded-lg border border-border bg-surface-panel px-3 py-2 text-xs font-semibold shadow-panel">
             {flagEmoji(hoverCode)} {countryName(hoverCode, hovered?.name)}
             {hovered && <span className="ml-2 font-normal text-foreground-muted">{hovered.stationcount} stations</span>}
           </div>
