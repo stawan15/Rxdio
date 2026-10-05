@@ -240,7 +240,7 @@ export function AudioPlayer({ station, theme, isFavorite, onToggleFavorite, onAd
     </>
   )
 
-  const bar = 'fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface-raised/92 pb-[env(safe-area-inset-bottom)] shadow-player backdrop-blur-xl'
+  const bar = 'fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface-raised pb-[env(safe-area-inset-bottom)]'
 
   if (isDesktop) {
     return (

@@ -55,7 +55,7 @@ export function BottomSheet({ snap, onSnapChange, onHeight, children }: Props) {
   return (
     <div
       ref={setRoot}
-      className="absolute inset-x-0 bottom-0 z-20 flex flex-col overflow-hidden rounded-t-3xl border-x border-t border-border bg-surface/95 shadow-player backdrop-blur-xl"
+      className="absolute inset-x-0 bottom-0 z-20 flex flex-col overflow-hidden rounded-t-2xl border-x border-t border-border bg-surface shadow-player"
       style={{ height: dragHeight ?? heights[snap], transition: dragHeight === null ? 'height 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)' : 'none' }}
     >
       <button

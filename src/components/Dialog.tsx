@@ -15,7 +15,7 @@ export function Dialog({ open, onClose, title, children }: Props) {
   if (!open) return null
   return (
     <div className="fixed inset-0 z-60 flex items-end justify-center md:items-center md:p-4">
-      <button type="button" aria-label="Close dialog" tabIndex={-1} onClick={onClose} className="absolute inset-0 cursor-default bg-black/60 backdrop-blur-sm" />
+      <button type="button" aria-label="Close dialog" tabIndex={-1} onClick={onClose} className="absolute inset-0 cursor-default bg-black/70" />
       <div
         role="dialog"
         aria-modal="true"

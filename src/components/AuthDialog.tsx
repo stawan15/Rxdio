@@ -30,8 +30,8 @@ export function AuthDialog({ open, onClose }: { open: boolean; onClose: () => vo
   }
 
   return (
-    <Dialog open={open} onClose={onClose} title={mode === 'login' ? 'Welcome back' : 'Create your account'}>
-      <p className="-mt-1 mb-4 text-sm text-foreground-muted">Sign in to save favorites and build playlists. Browsing and listening never needs an account.</p>
+    <Dialog open={open} onClose={onClose} title={mode === 'login' ? 'Sign in' : 'Create account'}>
+      <p className="-mt-1 mb-4 text-sm text-foreground-muted">Save stations and build playlists. Listening never needs an account.</p>
 
       <div className="mb-4 grid grid-cols-2 gap-1 rounded-xl bg-surface-muted p-1">
         {(['login', 'signup'] as const).map(m => (

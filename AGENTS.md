@@ -29,22 +29,34 @@ Email + password accounts live in D1 (`users`, `rate_limits`; `worker/accounts.t
 - Tokens: HS256 JWT (`sub` = user id, `email`, 14-day `exp`), sent as `Authorization: Bearer`. `worker/auth.ts` `getUserId` is the only place the API reads identity. The client keeps it in localStorage (`rxdio_token`); a 401 from the API signs the user out. There is no server-side revocation, so rotating `AUTH_JWT_SECRET` signs everyone out.
 - Not built: email verification and password reset (both need an email provider). The signup form tells users there is no reset.
 
+## Visual design
+
+The look is a radio receiver, not a generic "AI app". Rules to keep it that way:
+- **One accent per theme** (Night: signal orange, Paper: vermilion, Cobalt: signal yellow), used only for the primary action and "you are here" marks. No gradients, no neon glow, no purple.
+- **No frosted glass.** Surfaces are flat with hairline borders; shadows are subtle. Don't add `backdrop-blur`.
+- **Squarer shapes.** Radii come from the tokens in `index.css` (4–14px). Only knob-like controls (play, scan FAB, icon buttons) stay circular.
+- **Type does the work.** IBM Plex Sans Thai for text (Thai + Latin), IBM Plex Mono uppercase for labels, counts and metadata (tabs, bitrate, station counts).
+- **Plain voice.** No emoji in UI copy (flags are data), no "Welcome back" / "Surprise me". The random button is "Scan".
+- **Decoration must mean something.** The ruler along the header is a tuning scale; its needle sits at the selected country's longitude.
+- Icons are hand-drawn strokes in `components/icons.tsx`; avoid sparkle/magic-wand symbols.
+- The PWA icons in `public/icons/` are generated from an HTML template (Rx over the tuning scale); regenerate them if the palette changes.
+
 ## UX principles
 
 The UI is built around the Laws of UX. Keep these intact when changing things:
 
 | Law | Where it shows up |
 | --- | --- |
-| Fitts's Law | Shuffle is a 56px FAB in the phone thumb zone, riding on top of the sheet; every control is ≥ 44px; the full player closes by swiping down |
+| Fitts's Law | Scan (random station) is a 56px FAB in the phone thumb zone, riding on top of the sheet; every control is ≥ 44px; the full player closes by swiping down |
 | Hick's Law | Phone header is only logo / country / menu; country picker shows 8 "Popular" countries before "All countries"; one visible primary action per surface |
 | Jakob's Law | Bottom sheet, mini → full player, heart to save, swipe-down dismiss, ⌘K search: patterns from maps and music apps |
 | Miller's Law | Lists are chunked (Popular / All countries, tabs with counts) |
 | Doherty Threshold | Optimistic writes, skeleton rows, spinner on the connecting station, haptic tick on play/save, "Connecting…" status |
-| Peak–End Rule | Shuffle announces where you landed; the sleep timer fades the volume out over 10 s and says good night |
+| Peak–End Rule | Scan announces where you landed; the sleep timer fades the volume out over 10 s and says good night |
 | Postel's Law | Country search accepts English or local-language names, ISO codes and nicknames (usa, uk); emails are trimmed and case-folded |
 | Zeigarnik / Tesler | The app remembers the last country and station and reopens ready to resume (never auto-plays); locale picks the first country |
 | Visibility of status | Tab counts, player state on the row, sleep-timer countdown on its button |
-| Von Restorff | The accent color is reserved for the primary action (play, shuffle, selected country) |
+| Von Restorff | The accent color is reserved for the primary action (play, scan, selected country) |
 | Learnability | A one-time tip explains the globe; it dismisses itself on first interaction |
 
 ## Layout
@@ -63,7 +75,7 @@ The UI is built around the Laws of UX. Keep these intact when changing things:
 
 ## Conventions
 
-- Styling is Tailwind v4 (CSS-first config in `src/index.css`). Use the semantic tokens (`bg-surface`, `text-foreground`, `text-foreground-muted`, `border-border`, `bg-accent`, `text-heart`), never raw colors, so all three themes (`dark`, `light`, `pink`) work. A new theme needs: `ThemeMode`/`isThemeMode`/`THEMES`/`THEME_COLOR`/`accentHex`/`GLOBE_LOOK`/`AVATAR_COLORS` in `theme.ts`, a `[data-theme]` block in `index.css`, and the inline theme script in `index.html`.
+- Styling is Tailwind v4 (CSS-first config in `src/index.css`). Use the semantic tokens (`bg-surface`, `text-foreground`, `text-foreground-muted`, `border-border`, `bg-accent`, `text-heart`), never raw colors, so all three themes (`dark` = Night, `light` = Paper, `cobalt`) work. A new theme needs: `ThemeMode`/`isThemeMode`/`THEMES`/`THEME_COLOR`/`accentHex`/`GLOBE_LOOK`/`AVATAR_COLORS` in `theme.ts`, a `[data-theme]` block in `index.css`, and the inline theme script in `index.html`.
 - Compose classes with `cn()` (clsx + tailwind-merge).
 - Touch targets are ≥ 44px. Overlay stacking: header `z-30`, sheet `z-20`, player `z-40`, full player `z-50`, dialogs `z-60`, toast `z-70`.
 - Layout offsets use the CSS var `--player-h` (set on the app root; includes the safe-area inset). `main` has `margin-bottom: var(--player-h)`.
